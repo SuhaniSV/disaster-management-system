@@ -1,0 +1,11 @@
+id,name,type,lat,lon,capacity,status,capabilities
+R01,Rescue Team Alpha,rescue_team,18.5280,73.8550,12,Available,"flood,collapse,evacuation,search"
+R02,Rescue Team Bravo,rescue_team,18.5010,73.8505,10,Available,"flood,evacuation,search"
+R03,Rescue Team Charlie,rescue_team,18.5455,73.8120,10,Available,"flood,landslide,search"
+R04,Medical Rescue Team Delta,medical_rescue,18.5208,73.8795,8,Available,"medical,trauma,flood,evacuation"
+R05,Medical Rescue Team Echo,medical_rescue,18.5640,73.8070,8,Available,"medical,trauma,accident"
+R06,Medical Rescue Team Foxtrot,medical_rescue,18.5070,73.9275,6,Available,"medical,heatstress,evacuation"
+R07,Ambulance Unit 7,ambulance,18.5315,73.8700,2,Available,"medical,accident,transfer"
+R08,Ambulance Unit 8,ambulance,18.4908,73.8588,2,Available,"medical,transfer"
+R09,Fire Response Team 9,fire_response,18.6160,73.8435,8,Available,"fire,hazmat,gas"
+R10,Fire Response Team 10,fire_response,18.5255,73.8402,8,Available,"fire,gas,rescue"

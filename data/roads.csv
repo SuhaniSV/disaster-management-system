@@ -1,0 +1,13 @@
+id,name,from_lat,from_lon,to_lat,to_lon,status
+R-01,FC Road corridor,18.5310,73.8405,18.5200,73.8415,Open
+R-02,JM Road corridor,18.5285,73.8478,18.5160,73.8488,Open
+R-03,Karve Road,18.5168,73.8320,18.5070,73.8150,Open
+R-04,Senapati Bapat Road,18.5300,73.8340,18.5450,73.8200,Open
+R-05,Pune-Mumbai highway stub,18.5800,73.7600,18.5600,73.7900,Open
+R-06,Aundh-Baner link,18.5580,73.8079,18.5590,73.7865,Open
+R-07,Solapur Road approach,18.5050,73.8800,18.5000,73.9300,Open
+R-08,Nagar Road,18.5480,73.8900,18.5800,73.9500,Open
+R-09,Satara Road,18.5018,73.8610,18.4700,73.8600,Open
+R-10,Ahmednagar Road,18.5401,73.8762,18.5633,73.8511,Open
+R-11,Hadapsar industrial link,18.5089,73.9260,18.5128,73.8790,Open
+R-12,Hinjewadi-Wakad corridor,18.5912,73.7380,18.5995,73.7542,Open

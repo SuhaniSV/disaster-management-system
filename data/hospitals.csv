@@ -1,0 +1,6 @@
+id,name,lat,lon,total_beds,available_beds,emergency_capability
+H01,Simulated Sassoon Emergency Wing,18.5276,73.8715,40,9,True
+H02,Simulated Ruby Hall Trauma Desk,18.5334,73.8770,28,7,True
+H03,Simulated KEM Pune Unit,18.5139,73.8408,24,11,True
+H04,Simulated Hadapsar Community Hospital,18.5022,73.9378,18,5,False
+H05,Simulated Hinjewadi Clinic+ER,18.5918,73.7372,16,8,True

@@ -1,0 +1,6 @@
+id,name,lat,lon,capacity,occupied
+S01,Simulated Shiv Chhatrapati Sports Shelter,18.5702,73.9088,200,40
+S02,Simulated Fergusson College Hall,18.5236,73.8404,120,18
+S03,Simulated Swargate Relief Centre,18.4988,73.8582,150,55
+S04,Simulated Baner Civic Shelter,18.5601,73.7899,90,12
+S05,Simulated Hadapsar School Shelter,18.4965,73.9410,110,30
