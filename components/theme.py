@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import streamlit as st
 
-from core.config import DISCLAIMER, DEMO_BANNER
+from core.config import DISCLAIMER
 from core.llm_client import llm_configured
-from core.state import CommandCenter, load_demo_disaster
-from components.session import persist
+from core.state import CommandCenter
 
 
 CSS = """
@@ -149,7 +148,6 @@ button[kind="secondary"]:hover {
 .pill.ok { border-color: #b7e4d4; color: #116149; background: #eaf8f1; }
 .pill.warn { border-color: #f1d5a4; color: #8a4b0b; background: #fff7e8; }
 .pill.bad { border-color: #f0c4c7; color: #a72c37; background: #fff0f1; }
-.pill.demo { border-color: #c9d8ff; color: #244aa5; background: #eef3ff; }
 
 .metric-card {
   background: var(--resq-panel);
@@ -323,7 +321,6 @@ a { color:#9fc2ff!important; }
 .pill.ok { background:#123a34; color:#9de7cb; border-color:#286b5b; }
 .pill.warn { background:#3b2c18; color:#ffd28a; border-color:#755327; }
 .pill.bad { background:#3e2029; color:#ffadb4; border-color:#7d3947; }
-.pill.demo { background:#1d2d4b; color:#b9d0ff; border-color:#3b5786; }
 div[data-testid="stMetricLabel"] p { color:var(--resq-muted)!important; }
 .stDataFrame,[data-testid="stDataFrame"] { border-color:var(--resq-border)!important; }
 .stButton>button,[data-testid="stFormSubmitButton"]>button { background:#202d40; color:var(--resq-ink); border-color:#40516a; }
@@ -491,7 +488,6 @@ ENHANCED_CSS = """
 .resq-header .pill.ok { background: rgba(16,185,129,.15); color: #a7f3d0; border-color: rgba(52,211,153,.4); }
 .resq-header .pill.warn { background: rgba(245,158,11,.14); color: #fde68a; border-color: rgba(245,158,11,.38); }
 .resq-header .pill.bad { background: rgba(244,63,94,.15); color: #fecdd3; border-color: rgba(251,113,133,.4); }
-.resq-header .pill.demo { background: rgba(56,189,248,.13); color: #bae6fd; border-color: rgba(56,189,248,.35); }
 .metric-card, div[data-testid="stMetric"] {
   position: relative;
   overflow: hidden;
@@ -617,12 +613,6 @@ def render_sidebar(center: CommandCenter) -> None:
     st.sidebar.caption("Intelligent Disaster Command Center")
     st.sidebar.markdown(f"**{center.ai_mode}**")
     st.sidebar.markdown("**SYSTEM STATUS:** Operational")
-    st.sidebar.markdown("**DEMO MODE** — simulated Pune-area data")
-    st.sidebar.caption(DEMO_BANNER)
-    if st.sidebar.button("LOAD DEMO DISASTER", use_container_width=True):
-        persist(load_demo_disaster())
-        st.sidebar.success("Flood-city demo scenario loaded.")
-        st.rerun()
     st.sidebar.divider()
     st.sidebar.caption(DISCLAIMER)
     if llm_configured():
@@ -655,7 +645,6 @@ def render_header(center: CommandCenter, subtitle: str) -> None:
           <div class="resq-pills">
             <div class="pill {ai_class}">{center.ai_mode}</div>
             <div class="pill ok">SYSTEM STATUS: OPERATIONAL</div>
-            <div class="pill demo">DEMO MODE</div>
           </div>
         </div>
         """,
