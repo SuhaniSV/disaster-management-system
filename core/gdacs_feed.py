@@ -120,10 +120,11 @@ def fetch_gdacs_events(lookback_days: int = 30, limit: int | None = None) -> dic
             raw_type = _as_text(_value(properties, "eventtype", "event_type", "type")).upper()
             event_type = EVENT_TYPES.get(raw_type, raw_type.title() or "Hazard")
             event_id = _as_text(_value(properties, "eventid", "event_id", "id") or feature.get("id"))
-            if event_id and event_id in seen_ids:
+            dedupe_key = f"{raw_type}:{event_id}" if event_id else ""
+            if dedupe_key and dedupe_key in seen_ids:
                 continue
-            if event_id:
-                seen_ids.add(event_id)
+            if dedupe_key:
+                seen_ids.add(dedupe_key)
 
             name = _as_text(_value(properties, "eventname", "name", "title", "description"), event_type)
             country = _as_text(_value(properties, "country", "countryname", "country_name"), "Not reported")
