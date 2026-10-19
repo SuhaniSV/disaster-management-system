@@ -26,7 +26,7 @@ def render_operations(center: CommandCenter) -> None:
     st.write(incident.get("summary") or incident.get("description") or "No description.")
     st.caption(f"Reported: {incident.get('reported_at') or 'unknown'} · Source: {incident.get('source') or 'unspecified'}")
     st.markdown("#### Update workflow")
-    current = str(incident.get("status") or "Reported")
+    current = str(incident.get("workflow_status") or incident.get("status") or "Reported")
     default = current if current in STATUSES else ("Assigned" if current.lower()=="assigned" else "Reported")
     with st.form("incident_workflow"):
         status = st.selectbox("Status", STATUSES, index=STATUSES.index(default))
