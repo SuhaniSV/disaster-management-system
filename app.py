@@ -1,7 +1,13 @@
 from components.theme import page_setup
 
-page_setup("Command Center")
+page_setup("Live Disaster Intelligence")
 
-from components.dashboard import render_command_center
+import streamlit as st
 
-render_command_center()
+from components.live_disaster_intelligence import render_live_disaster_intelligence
+
+st.sidebar.markdown("### RESQ-AI")
+st.sidebar.caption("Live Disaster Intelligence")
+st.sidebar.divider()
+
+render_live_disaster_intelligence()
