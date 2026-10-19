@@ -719,7 +719,7 @@ def render_sidebar(center: CommandCenter) -> None:
     if llm_configured():
         st.sidebar.caption("AI analysis: model connection configured")
     else:
-        st.sidebar.caption("AI analysis: offline keyword fallback")
+        pass  # No LLM-status notice in the sidebar.
 
 
 def render_header(center: CommandCenter, subtitle: str) -> None:
