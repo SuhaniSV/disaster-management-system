@@ -600,6 +600,82 @@ ENHANCED_CSS = """
   .resq-header { padding: 20px 17px; border-radius: 15px; }
   .metric-card { padding: 14px 12px; }
 }
+
+/* High-contrast RescueX command navigation — intentionally visible in both themes. */
+section[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #0b1727 0%, #10253a 55%, #0d1d30 100%) !important;
+  border-right: 1px solid rgba(94,234,212,.18) !important;
+  box-shadow: 8px 0 28px rgba(3,12,24,.10) !important;
+}
+section[data-testid="stSidebar"] > div { padding: 1.05rem .8rem 1.5rem; }
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+section[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] strong {
+  color: #c2d1e2 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 { color: #f4fbff !important; }
+section[data-testid="stSidebar"] hr { border-color: rgba(173,198,222,.18) !important; }
+[data-testid="stSidebarNav"] { padding: .5rem 0 1rem; }
+[data-testid="stSidebarNav"] a {
+  color: #c7d7e8 !important;
+  margin: 3px 0 !important;
+  padding: .68rem .75rem !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  min-height: 2.8rem;
+}
+[data-testid="stSidebarNav"] a:hover {
+  color: #f3fffe !important;
+  background: rgba(45,212,191,.12) !important;
+  border-color: rgba(94,234,212,.18) !important;
+  transform: translateX(3px);
+}
+[data-testid="stSidebarNav"] a[aria-current="page"] {
+  color: #f4fffd !important;
+  background: linear-gradient(100deg, rgba(13,148,136,.34), rgba(56,189,248,.12)) !important;
+  border: 1px solid rgba(94,234,212,.26) !important;
+  border-left: 3px solid #5eead4 !important;
+  box-shadow: inset 0 0 20px rgba(45,212,191,.045);
+}
+.rx-sidebar-brand {
+  padding: 16px 13px 15px;
+  margin: 0 0 14px;
+  border: 1px solid rgba(94,234,212,.22);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(20,184,166,.15), rgba(56,189,248,.07));
+}
+.rx-brand-row { display:flex; align-items:center; gap:10px; }
+.rx-brand-mark {
+  width:38px; height:38px; display:flex; align-items:center; justify-content:center;
+  border-radius:12px; background:linear-gradient(135deg,#14b8a6,#0284c7);
+  color:#f0fdfa; font-size:20px; font-weight:800;
+  box-shadow:0 6px 18px rgba(20,184,166,.22);
+}
+.rx-brand-name { color:#f4fbff; font-size:19px; line-height:1.1; font-weight:800; letter-spacing:-.045em; }
+.rx-brand-tag { color:#91a9c2; font-size:9px; font-weight:700; letter-spacing:.16em; margin-top:5px; }
+.rx-brand-line { height:1px; background:rgba(173,198,222,.15); margin:13px 0 10px; }
+.rx-brand-status { display:flex; align-items:center; gap:7px; color:#a9c0d5; font-size:10px; font-weight:700; letter-spacing:.08em; }
+.rx-status-dot { width:7px; height:7px; border-radius:50%; background:#34d399; box-shadow:0 0 0 4px rgba(52,211,153,.10); }
+.rx-sidebar-note { padding:10px 11px; border:1px solid rgba(173,198,222,.13); border-radius:11px; background:rgba(255,255,255,.035); }
+.resq-header { min-height: 176px; }
+.resq-kicker { display:flex; align-items:center; gap:8px; }
+.resq-kicker::before { content:""; width:22px; height:2px; border-radius:3px; background:#5eead4; }
+[data-testid="stMainBlockContainer"] h2 { margin-top:1.25rem; }
+[data-testid="stMainBlockContainer"] [data-testid="stMetric"] { min-height:112px; }
+[data-testid="stMainBlockContainer"] [data-testid="stMetricValue"] { letter-spacing:-.045em; }
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] {
+  border:1px solid var(--resq-border); border-radius:16px; padding:20px;
+  background:var(--resq-panel); box-shadow:0 8px 24px rgba(15,36,61,.045);
+}
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] label { font-weight:600; }
+[data-testid="stMainBlockContainer"] [data-testid="stFileUploaderDropzone"] {
+  border:1px dashed #7b9bb4; border-radius:13px; background:rgba(20,184,166,.035);
+}
+[data-testid="stMainBlockContainer"] [data-testid="stDataFrame"] { border:1px solid var(--resq-border); }
+@media (prefers-reduced-motion: reduce) {
+  [data-testid="stSidebarNav"] a { transition:none !important; }
+  [data-testid="stSidebarNav"] a:hover { transform:none !important; }
+}
 </style>
 """
 
@@ -621,16 +697,32 @@ def page_setup(title: str) -> None:
 
 
 def render_sidebar(center: CommandCenter) -> None:
-    st.sidebar.markdown("### RESQ-AI")
-    st.sidebar.caption("Intelligent Disaster Command Center")
+    st.sidebar.markdown(
+        """
+        <div class="rx-sidebar-brand">
+          <div class="rx-brand-row">
+            <div class="rx-brand-mark">R</div>
+            <div>
+              <div class="rx-brand-name">ResQ-AI</div>
+              <div class="rx-brand-tag">DISASTER INTELLIGENCE</div>
+            </div>
+          </div>
+          <div class="rx-brand-line"></div>
+          <div class="rx-brand-status"><span class="rx-status-dot"></span> COMMAND SYSTEM · ONLINE</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.sidebar.markdown(f"**{center.ai_mode}**")
-    st.sidebar.markdown("**SYSTEM STATUS:** Operational")
     st.sidebar.divider()
-    st.sidebar.caption(DISCLAIMER)
-    if llm_configured():
-        st.sidebar.caption("LLM key detected in environment/secrets. Analysis uses the model when reachable.")
-    else:
-        st.sidebar.caption("No LLM key configured. Keyword fallback analysis is active.")
+    with st.sidebar.container():
+        st.markdown('<div class="rx-sidebar-note">', unsafe_allow_html=True)
+        st.caption(DISCLAIMER)
+        if llm_configured():
+            st.caption("AI analysis: model connection configured")
+        else:
+            st.caption("AI analysis: offline keyword fallback")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_header(center: CommandCenter, subtitle: str) -> None:
