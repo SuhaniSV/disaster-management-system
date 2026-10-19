@@ -989,7 +989,7 @@ def render_sidebar(center: CommandCenter) -> None:
           <div class="rx-brand-row">
             <div class="rx-brand-mark">R</div>
             <div>
-              <div class="rx-brand-name">RescueX</div>
+              <div class="rx-brand-name">ResQ-AI</div>
               <div class="rx-brand-tag">DISASTER INTELLIGENCE</div>
             </div>
           </div>
