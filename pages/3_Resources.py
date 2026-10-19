@@ -10,7 +10,14 @@ page_setup("Resources")
 
 center = get_center()
 render_sidebar(center)
-render_header(center, "Rescue units, hospitals and shelters · simulated inventory")
+render_header(center, "Rescue units, hospitals and shelters · source-verified availability")
+
+if not center.demo_mode:
+    st.info("No authorized live feeds for responder status, hospital bed counts, or shelter occupancy are connected. Live inventory is unavailable; sample records are hidden.")
+    st.markdown("### Live hazard observations")
+    from components.live_feed import render_live_earthquake_feed
+    render_live_earthquake_feed()
+    st.stop()
 
 metrics = center.metrics()
 a, b, c, d = st.columns(4)
