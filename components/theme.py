@@ -347,6 +347,7 @@ def render_sidebar(center: CommandCenter) -> None:
         st.session_state.pop("sim_before", None)
         st.session_state.pop("sim_after", None)
         st.session_state.pop("sim_label", None)
+        st.session_state.pop("resq_chat_messages", None)
         st.rerun()
     if mode == "Demo Mode":
         st.sidebar.warning("SIMULATED SAMPLE DATA — not live emergency information")
