@@ -35,7 +35,7 @@ def _next_id(rows: list[dict[str, Any]], prefix: str) -> str:
 
 class CommandCenter:
     def __init__(self, bundle: dict[str, list[dict[str, Any]]] | None = None) -> None:
-        data = bundle or load_demo_bundle()
+        data = bundle if bundle is not None else load_demo_bundle()
         self.incidents: list[dict[str, Any]] = data.get("incidents", [])
         self.resources: list[dict[str, Any]] = data.get("resources", [])
         self.hospitals: list[dict[str, Any]] = data.get("hospitals", [])
@@ -43,7 +43,8 @@ class CommandCenter:
         self.roads: list[dict[str, Any]] = data.get("roads", [])
         self.events: list[dict[str, Any]] = data.get("events", [])
         self.assignments: list[dict[str, Any]] = []
-        self.demo_mode = True
+        self.demo_mode = bool(data.get("demo_mode", True))
+        self.data_mode = str(data.get("data_mode") or ("Demo Mode" if self.demo_mode else "Live Data"))
         self.ai_mode = "Fallback Analysis Mode"
         if not self.events:
             self.events.append(make_event("Command center initialized with simulated demo data", "system"))
@@ -63,6 +64,7 @@ class CommandCenter:
             "events": deepcopy(self.events),
             "assignments": deepcopy(self.assignments),
             "demo_mode": self.demo_mode,
+            "data_mode": self.data_mode,
             "ai_mode": self.ai_mode,
         }
 
@@ -77,6 +79,7 @@ class CommandCenter:
         cc.events = payload.get("events", [])
         cc.assignments = payload.get("assignments", [])
         cc.demo_mode = payload.get("demo_mode", True)
+        cc.data_mode = payload.get("data_mode", "Demo Mode" if cc.demo_mode else "Live Data")
         cc.ai_mode = payload.get("ai_mode", "Fallback Analysis Mode")
         return cc
 
@@ -230,6 +233,7 @@ class CommandCenter:
 def load_demo_disaster() -> CommandCenter:
     cc = CommandCenter(load_demo_bundle())
     cc.demo_mode = True
+    cc.data_mode = "Demo Mode"
     # Prepared flood-city scenario: limited teams, one blocked arterial, tight hospital capacity.
     cc.set_road_status("R-07", "Blocked")
     for resource in cc.resources:
