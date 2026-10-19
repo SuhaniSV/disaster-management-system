@@ -15,9 +15,21 @@ from core.llm_client import llm_configured
 from core.state import CommandCenter, load_demo_disaster
 
 
+def load_live_center() -> CommandCenter:
+    """Start without sample records; only live feeds and operator reports populate live mode."""
+    center = CommandCenter(bundle={"incidents": [], "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": []})
+    center.demo_mode = False
+    center.data_mode = "Live Data"
+    center.events = []
+    return center
+
+
 def get_center() -> CommandCenter:
-    if "center" not in st.session_state:
-        st.session_state.center = load_demo_disaster()
+    mode = st.session_state.get("resq_data_mode", "Live Data")
+    st.session_state["resq_data_mode"] = mode
+    center = st.session_state.get("center")
+    if center is None or getattr(center, "data_mode", "Demo Mode") != mode:
+        st.session_state.center = load_demo_disaster() if mode == "Demo Mode" else load_live_center()
         if llm_configured():
             st.session_state.center.ai_mode = "AI Mode: Active"
     center: CommandCenter = st.session_state.center
