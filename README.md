@@ -59,8 +59,12 @@ Data for the MVP: CSV files + in-memory `CommandCenter` state (session). `core/d
 - Scenario Simulator (road blocked, team unavailable, new emergency, hospital squeeze)
 - Analytics (Plotly)
 - ResQ Assistant chatbot grounded in the current incident/resource snapshot
-- Read-only MCP server over Streamable HTTP for Alexa+ track (incident listing, priority explanations, resource and shelter status)
+- Read-only MCP server over Streamable HTTP for Alexa+ track (incident listing, priority explanations, resource/shelter status, live government alert adapter)
 - Optional Amazon Bedrock briefing tool for the AWS Builder mini-challenge\n- Live Government Alerts page for IMD district nowcasts/warnings and an authorized NDMA SACHET/CAP feed
+- Incident Operations workflow, operator notes and audit timeline
+- Situation Reports with Markdown/JSON/CSV exports
+- Optional driving route estimates with explicit hazard-routing caveats
+- Operator-triggered SMTP situation-summary notifications
 - LOAD DEMO DISASTER for a 3–5 minute walkthrough
 
 ## Tech stack
@@ -90,6 +94,11 @@ Copy `.env.example` to `.env` (optional). Copy `.streamlit/secrets.toml.example`
 | `OPENAI_API_KEY` | Optional. If missing, Fallback Analysis Mode is used |
 | `OPENAI_BASE_URL` | Default `https://api.openai.com/v1` (Groq and others work if compatible) |
 | `OPENAI_MODEL` | Default `gpt-4o-mini` |
+| `IMD_API_TOKEN` | Optional official IMD API token; see live data guide |
+| `NDMA_CAP_FEED_URL` | Optional official authorized SACHET/CAP feed URL |
+| `AWS_REGION`, `AWS_BEDROCK_MODEL_ID` | Optional Amazon Bedrock briefing integration |
+| `RESQ_ROUTING_BASE_URL` | Optional HTTPS OSRM-compatible routing endpoint |
+| `RESQ_SMTP_*`, `RESQ_ALERT_EMAIL_TO` | Optional operator-triggered email notifications |
 
 Never put real keys in source control.
 
@@ -97,7 +106,7 @@ Never put real keys in source control.
 
 See [`docs/ALEXA_PLUS_HACKATHON.md`](docs/ALEXA_PLUS_HACKATHON.md) for MCP setup, the Streamable HTTP endpoint, demo script, optional Amazon Bedrock integration, and the limits required for a safe submission. Start the MCP server with `python -m resq_mcp.server`.
 
-## How to run
+## Expanded features and limitations\n\nSee [docs/EXPANDED_PLATFORM.md](docs/EXPANDED_PLATFORM.md) for added operator workflows, export formats, optional routing/email integrations, setup, and production limitations. These additions preserve deterministic priority scoring.\n\n## How to run
 
 ```bash
 streamlit run app.py
