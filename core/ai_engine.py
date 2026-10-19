@@ -41,7 +41,7 @@ MEDICAL_TERMS = [
 
 BLOCKED_TERMS = ["blocked", "inaccessible", "cut off", "road is closed", "main road is blocked", "no access"]
 RESTRICTED_TERMS = ["debris", "partially blocked", "slow access", "congested", "one-way only"]
-VULN_TERMS = ["student", "child", "children", "school", "elderly", "old age", "pregnant", "disabled", "orphan"]
+VULN_TERMS = ["child", "children", "elderly", "old age", "pregnant", "disabled", "orphan"]
 
 REQUIRED_FIELDS = {
     "disaster_type",
@@ -60,7 +60,7 @@ disaster_type, severity (1-5 integer), people_affected (integer), medical_emerge
 accessibility (Open, Restricted, or Blocked), urgency (Low, Medium, High, Critical),
 summary (one short sentence), vulnerable_population (integer),
 recommended_resource_type (one of: rescue_team, medical_rescue, ambulance, fire_response).
-Use only evidence in the report. If unknown, make a conservative estimate and keep severity honest.
+Use only evidence in the report. vulnerable_population must be the explicitly stated count of vulnerable people only; do not assume all affected people are vulnerable just because a school or students are mentioned. If no count is explicitly supported, return 0. If unknown, make a conservative estimate and keep severity honest.
 """
 
 
@@ -160,11 +160,18 @@ def fallback_analyze(
     else:
         access = "Open"
 
+    # Count vulnerable people only when the report gives an explicit count.
+    # Do not assume every affected person is vulnerable because a school/students
+    # are mentioned, or because a vulnerability keyword appears somewhere.
     vuln = 0
-    if any(term in text for term in VULN_TERMS):
-        vuln = people if people else 10
-        if "student" in text or "school" in text:
-            vuln = max(vuln, people)
+    vulnerable_patterns = [
+        r"(\d+)\s+(?:children|child|elderly people|elderly residents|older adults|pregnant people|disabled people|people with disabilities|orphans)",
+        r"(?:children|child|elderly people|elderly residents|older adults|pregnant people|disabled people|people with disabilities|orphans)\s*[:=]?\s*(\d+)",
+    ]
+    for pattern in vulnerable_patterns:
+        match = re.search(pattern, text)
+        if match:
+            vuln = max(vuln, int(match.group(1)))
 
     severity = 3
     if any(w in text for w in ("trapped", "collapse", "critical", "urgent", "life-threatening")):
