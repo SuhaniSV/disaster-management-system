@@ -703,7 +703,7 @@ def render_sidebar(center: CommandCenter) -> None:
           <div class="rx-brand-row">
             <div class="rx-brand-mark">R</div>
             <div>
-              <div class="rx-brand-name">ResQ-AI</div>
+              <div class="rx-brand-name">RescueX</div>
               <div class="rx-brand-tag">DISASTER INTELLIGENCE</div>
             </div>
           </div>
@@ -715,14 +715,11 @@ def render_sidebar(center: CommandCenter) -> None:
     )
     st.sidebar.markdown(f"**{center.ai_mode}**")
     st.sidebar.divider()
-    with st.sidebar.container():
-        st.markdown('<div class="rx-sidebar-note">', unsafe_allow_html=True)
-        st.caption(DISCLAIMER)
-        if llm_configured():
-            st.caption("AI analysis: model connection configured")
-        else:
-            st.caption("AI analysis: offline keyword fallback")
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.sidebar.caption(DISCLAIMER)
+    if llm_configured():
+        st.sidebar.caption("AI analysis: model connection configured")
+    else:
+        st.sidebar.caption("AI analysis: offline keyword fallback")
 
 
 def render_header(center: CommandCenter, subtitle: str) -> None:
@@ -742,7 +739,7 @@ def render_header(center: CommandCenter, subtitle: str) -> None:
         f"""
         <div class="resq-header">
           <div>
-            <div class="resq-kicker">RESQ-AI</div>
+            <div class="resq-kicker">RESCUEX · LIVE INTELLIGENCE</div>
             <h1 class="resq-title">INTELLIGENT DISASTER COMMAND CENTER</h1>
             <div class="resq-sub">{subtitle}</div>
           </div>
