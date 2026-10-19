@@ -109,6 +109,7 @@ def fetch_gdacs_events(lookback_days: int = 30, limit: int | None = None) -> dic
         if not features:
             break
 
+        count_before_page = len(events)
         for feature in features:
             if not isinstance(feature, dict):
                 continue
@@ -150,7 +151,8 @@ def fetch_gdacs_events(lookback_days: int = 30, limit: int | None = None) -> dic
                 "source": GDACS_SOURCE_NAME,
             })
 
-        if len(features) < page_size:
+        # Stop if the API repeats a page or returns only unusable/duplicate rows.
+        if len(events) == count_before_page or len(features) < page_size:
             break
         page_number += 1
 
