@@ -38,30 +38,15 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {
 [data-testid="stHeader"] {
   background: rgba(245,247,251,.92);
 }
-/* Keep Streamlit's header available so the native sidebar reopen control stays visible. */
-header[data-testid="stHeader"] {
-  display: block !important;
-  visibility: visible !important;
-  height: 2.75rem !important;
-  background: rgba(234,241,245,.94) !important;
-  z-index: 999 !important;
-}
-header[data-testid="stHeader"] [data-testid="stToolbar"] {
-  display: flex !important;
-  visibility: visible !important;
-}
-header[data-testid="stHeader"] [data-testid="stSidebarCollapsedControl"],
-header[data-testid="stHeader"] button[kind="header"] {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
+/* Hide Streamlit-owned top chrome only; keep RescueX navigation and controls intact. */
+header[data-testid="stHeader"],
+[data-testid="stToolbar"],
 [data-testid="stDecoration"],
 #MainMenu,
 footer {
   display: none !important;
   visibility: hidden !important;
+  height: 0 !important;
 }
 [data-testid="stAppViewContainer"] {
   padding-top: 0 !important;
@@ -640,36 +625,6 @@ section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] strong {
 }
 section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 { color: #f4fbff !important; }
 section[data-testid="stSidebar"] hr { border-color: rgba(173,198,222,.18) !important; }
-/* Keep the compact RESQ identity at the top of the sidebar, above native page links. */
-section[data-testid="stSidebar"] { position: relative !important; }
-section[data-testid="stSidebar"] .rx-sidebar-brand {
-  position: absolute !important;
-  top: 3.35rem !important;
-  left: .85rem !important;
-  right: auto !important;
-  width: max-content !important;
-  max-width: calc(100% - 1.7rem) !important;
-  box-sizing: border-box !important;
-  padding: 10px 11px 9px !important;
-  margin: 0 !important;
-  z-index: 20 !important;
-}
-section[data-testid="stSidebar"] .rx-brand-row { gap: 8px !important; }
-section[data-testid="stSidebar"] .rx-brand-mark {
-  width: 30px !important;
-  height: 30px !important;
-  min-width: 30px !important;
-  border-radius: 9px !important;
-  font-size: 16px !important;
-}
-section[data-testid="stSidebar"] .rx-brand-name { font-size: 17px !important; }
-section[data-testid="stSidebar"] .rx-brand-tag { font-size: 8px !important; letter-spacing: .12em !important; margin-top: 3px !important; }
-section[data-testid="stSidebar"] .rx-brand-line { margin: 8px 0 7px !important; }
-section[data-testid="stSidebar"] .rx-brand-status { font-size: 8px !important; letter-spacing: .045em !important; white-space: nowrap !important; }
-section[data-testid="stSidebar"] [data-testid="stSidebarNav"] {
-  padding-top: 10.8rem !important;
-  margin-top: 0 !important;
-}
 [data-testid="stSidebarNav"] { padding: .5rem 0 1rem; }
 [data-testid="stSidebarNav"] a {
   color: #c7d7e8 !important;
@@ -1034,7 +989,7 @@ def render_sidebar(center: CommandCenter) -> None:
           <div class="rx-brand-row">
             <div class="rx-brand-mark">R</div>
             <div>
-              <div class="rx-brand-name">RESQ</div>
+              <div class="rx-brand-name">RescueX</div>
               <div class="rx-brand-tag">DISASTER INTELLIGENCE</div>
             </div>
           </div>
