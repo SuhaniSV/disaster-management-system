@@ -265,6 +265,13 @@ input:focus, textarea:focus, [data-baseweb="input"]:focus-within, [data-baseweb=
   font-size: .91rem;
   letter-spacing: -.01em;
 }
+/* Hide Streamlit's default app icon and page-options ellipsis for the landing item. */
+[data-testid="stSidebarNav"] > ul > li:first-child a > span,
+[data-testid="stSidebarNav"] > ul > li:first-child a > svg,
+[data-testid="stSidebarNav"] > ul > li:first-child a [data-testid="stIconMaterial"],
+[data-testid="stSidebarNav"] > ul > li:first-child button {
+  display: none !important;
+}
 [data-testid="stSidebarNav"] a:hover { background: #eef3fb; }
 [data-testid="stSidebarNav"] a[aria-current="page"] { background: #eaf0ff; color: #204db0 !important; font-weight: 700; }
 button[kind="primary"] { font-weight: 700 !important; }
