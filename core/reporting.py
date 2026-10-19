@@ -13,7 +13,7 @@ def situation_report(center: Any, live_alerts: dict[str, Any] | None = None) -> 
     return {
         "report_title": "ResQ-AI Situation Report",
         "generated_at": _stamp(),
-        "data_mode": "simulated_demo_data" if getattr(center, "demo_mode", True) else "application_state",
+        "data_mode": "demo_mode_simulated" if getattr(center, "demo_mode", True) else "live_data_mode_session_records_only",
         "disclaimer": "Decision support only. Verify all facts and capacity with responsible authorities. Not a dispatch order.",
         "metrics": metrics,
         "incidents": incidents,
