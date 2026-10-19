@@ -445,12 +445,9 @@ ENHANCED_CSS = """
 .stButton > button:hover, [data-testid="stFormSubmitButton"] > button:hover {
   transform: translateY(-1px);
 }
-@keyframes rx-enter {
-  from { opacity: .65; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+/* No page-entry animation: avoid the visible fade/unstyled flash on navigation. */
 [data-testid="stMainBlockContainer"] > div {
-  animation: rx-enter .32s ease-out both;
+  animation: none !important;
 }
 [data-testid="stSidebarNav"] a,
 .stButton > button, [data-testid="stFormSubmitButton"] > button {
@@ -847,9 +844,19 @@ div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) label {
   background: linear-gradient(135deg, #e8f0f4 0%, #edf3f6 54%, #e5eef3 100%) !important;
 }
 section[data-testid="stSidebar"] {
-  background: linear-gradient(180deg, #dce8ee 0%, #e3edf1 55%, #d9e6ed 100%) !important;
-  border-right: 1px solid #c4d5df !important;
-  box-shadow: 4px 0 18px rgba(31,58,78,.055) !important;
+  background: linear-gradient(180deg, #d0e0e8 0%, #d8e5eb 52%, #cbdde6 100%) !important;
+  border-right: 1px solid #b6ccd8 !important;
+  box-shadow: 5px 0 22px rgba(25,58,78,.09) !important;
+}
+section[data-testid="stSidebar"] > div {
+  background: transparent !important;
+}
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
+  color: #17394b !important;
+}
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+  color: #405f72 !important;
 }
 section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
 section[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
@@ -882,12 +889,30 @@ section[data-testid="stSidebar"] hr { border-color: #c8d8e1 !important; }
   background: #d0e5e8 !important;
   border-color: #bddadd !important;
 }
+[data-testid="stSidebarNav"] a {
+  min-height: 2.85rem !important;
+  border-radius: 11px !important;
+  margin: 4px 5px !important;
+  padding: .55rem .75rem !important;
+  color: #294b60 !important;
+  font-weight: 600 !important;
+  transition: background-color .14s ease, color .14s ease, border-color .14s ease !important;
+}
+[data-testid="stSidebarNav"] a:hover {
+  color: #123f4f !important;
+  background: #c1d9e3 !important;
+  border-color: #a9c8d6 !important;
+}
 [data-testid="stSidebarNav"] a[aria-current="page"] {
-  color: #164f5c !important;
-  background: linear-gradient(100deg, #c7e5e2, #d5eaf1) !important;
-  border: 1px solid #a9d4d4 !important;
-  border-left: 3px solid #15988e !important;
-  box-shadow: 0 3px 10px rgba(31,75,89,.05) !important;
+  color: #f4fbfd !important;
+  background: linear-gradient(105deg, #236b78, #2b7f87) !important;
+  border: 1px solid #1f6875 !important;
+  border-left: 3px solid #45d2c1 !important;
+  box-shadow: 0 5px 13px rgba(24,83,99,.16) !important;
+}
+[data-testid="stSidebarNav"] a[aria-current="page"]::before {
+  background: #7ce7db !important;
+  box-shadow: 0 0 0 3px rgba(124,231,219,.18) !important;
 }
 div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) [data-baseweb="input"] {
   background: #f6fbfc !important;
