@@ -3,6 +3,7 @@ from __future__ import annotations
 import streamlit as st
 from components.session import persist
 from core.state import CommandCenter
+from core.duplicate_detection import find_possible_duplicates
 
 STATUSES = ["Reported", "Verified", "Assigned", "Responding", "Resolved"]
 
@@ -52,6 +53,13 @@ def render_operations(center: CommandCenter) -> None:
             with st.container(border=True):
                 st.caption(item.get("at", ""))
                 st.write(item.get("note", ""))
+    st.markdown("#### Possible duplicate reports (review only)")
+    matches = find_possible_duplicates(incident, [row for row in center.incidents if row.get("id") != incident.get("id")])
+    if matches:
+        st.caption("Similarity hints are not proof of duplication. Confirm location and details before linking or resolving any report.")
+        st.dataframe(matches, use_container_width=True, hide_index=True)
+    else:
+        st.caption("No strong duplicate hints found in the current incident snapshot.")
     st.markdown("#### Audit timeline")
     events = [e for e in center.events if incident.get("id") in str(e.get("message", ""))]
     if not events:
