@@ -189,7 +189,13 @@ def render_map(center: CommandCenter) -> None:
         "<br/>People / capacity: {people}<br/>Medical: {medical}<br/>Status: {status}",
         "style": {"backgroundColor": "#121a2b", "color": "#e8eef7"},
     }
-    view = pdk.ViewState(latitude=CITY_LAT, longitude=CITY_LON, zoom=MAP_ZOOM, pitch=35)
+    if not center.demo_mode:
+        locations = [(row["lat"], row["lon"]) for row in incident_rows + resource_rows + hospital_rows + shelter_rows]
+        map_lat = sum(float(point[0]) for point in locations) / len(locations) if locations else CITY_LAT
+        map_lon = sum(float(point[1]) for point in locations) / len(locations) if locations else CITY_LON
+        view = pdk.ViewState(latitude=map_lat, longitude=map_lon, zoom=MAP_ZOOM, pitch=25)
+    else:
+        view = pdk.ViewState(latitude=CITY_LAT, longitude=CITY_LON, zoom=MAP_ZOOM, pitch=35)
     deck = pdk.Deck(
         layers=layers,
         initial_view_state=view,
