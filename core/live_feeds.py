@@ -28,6 +28,13 @@ def _utc_iso_from_ms(value: Any) -> str | None:
         return None
 
 
+def _optional_float(value: Any) -> float | None:
+    try:
+        return float(value) if value is not None else None
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
 def fetch_usgs_earthquakes(limit: int = 20) -> dict[str, Any]:
     """Fetch the USGS past-day GeoJSON feed and return a normalized snapshot.
 
@@ -65,11 +72,8 @@ def fetch_usgs_earthquakes(limit: int = 20) -> dict[str, Any]:
         except (TypeError, ValueError):
             continue
 
-        raw_magnitude = properties.get("mag")
-        try:
-            magnitude = float(raw_magnitude) if raw_magnitude is not None else None
-        except (TypeError, ValueError):
-            magnitude = None
+        magnitude = _optional_float(properties.get("mag"))
+        depth_km = _optional_float(coordinates[2]) if len(coordinates) > 2 else None
 
         events.append(
             {
@@ -79,11 +83,7 @@ def fetch_usgs_earthquakes(limit: int = 20) -> dict[str, Any]:
                 "time_utc": _utc_iso_from_ms(properties.get("time")),
                 "latitude": latitude,
                 "longitude": longitude,
-                "depth_km": (
-                    float(coordinates[2])
-                    if len(coordinates) > 2 and coordinates[2] is not None
-                    else None
-                ),
+                "depth_km": depth_km,
                 "detail_url": str(properties.get("url") or ""),
                 "event_type": str(properties.get("type") or "earthquake"),
                 "tsunami_warning": bool(properties.get("tsunami", 0)),
