@@ -79,6 +79,22 @@ small, .stCaption, [data-testid="stCaptionContainer"] {
 }
 a { color: var(--resq-blue) !important; }
 
+/* Theme toggle sits in the top-right above the main command-center header. */
+div[data-testid="stHorizontalBlock"]:has(button[kind="secondary"]) {
+  align-items: center;
+}
+button[kind="secondary"] {
+  border-radius: 10px !important;
+  border: 1px solid var(--resq-border) !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  min-height: 38px;
+}
+button[kind="secondary"]:hover {
+  border-color: var(--resq-blue) !important;
+}
+
+/* Main command-center header */
 .resq-header {
   display: flex;
   justify-content: space-between;
@@ -648,6 +664,17 @@ def render_sidebar(center: CommandCenter) -> None:
 
 def render_header(center: CommandCenter, subtitle: str) -> None:
     ai_class = "ok" if "Active" in center.ai_mode else "warn"
+    current_theme = st.session_state.get("resq_theme", "Light")
+    spacer, theme_slot = st.columns([0.82, 0.18], vertical_alignment="center")
+    with theme_slot:
+        if st.button(
+            "☀️ Light mode" if current_theme == "Dark" else "🌙 Dark mode",
+            key=f"header_theme_toggle_{st.session_state.get('resq_theme', 'Light')}",
+            help="Switch between light and dark appearance",
+            use_container_width=True,
+        ):
+            st.session_state["resq_theme"] = "Light" if current_theme == "Dark" else "Dark"
+            st.rerun()
     st.markdown(
         f"""
         <div class="resq-header">
