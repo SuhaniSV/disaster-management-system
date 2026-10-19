@@ -7,6 +7,7 @@ import streamlit as st
 from core.config import DISCLAIMER, DEMO_BANNER
 from core.llm_client import llm_configured
 from core.state import CommandCenter, load_demo_disaster
+from components.session import load_live_center
 from components.session import persist
 
 
@@ -337,12 +338,26 @@ def render_sidebar(center: CommandCenter) -> None:
     st.sidebar.caption("Intelligent Disaster Command Center")
     st.sidebar.markdown(f"**{center.ai_mode}**")
     st.sidebar.markdown("**SYSTEM STATUS:** Operational")
-    st.sidebar.markdown("**DEMO MODE** — simulated Pune-area data")
-    st.sidebar.caption(DEMO_BANNER)
-    if st.sidebar.button("LOAD DEMO DISASTER", use_container_width=True):
-        persist(load_demo_disaster())
-        st.sidebar.success("Flood-city demo scenario loaded.")
+    mode = st.session_state.get("resq_data_mode", "Live Data")
+    if "resq_data_mode_selector" not in st.session_state:
+        st.session_state["resq_data_mode_selector"] = mode
+    selected_mode = st.sidebar.radio("DATA MODE", ["Live Data", "Demo Mode"], index=0 if mode == "Live Data" else 1, key="resq_data_mode_selector", help="Live Data never fills missing sources with simulated records. Demo Mode loads clearly labelled sample data.")
+    if selected_mode != mode:
+        st.session_state["resq_data_mode"] = selected_mode
+        st.session_state.pop("center", None)
+        st.session_state.pop("sim_before", None)
+        st.session_state.pop("sim_after", None)
+        st.session_state.pop("sim_label", None)
         st.rerun()
+    if mode == "Demo Mode":
+        st.sidebar.warning("SIMULATED SAMPLE DATA — not live emergency information")
+        st.sidebar.caption(DEMO_BANNER)
+        if st.sidebar.button("RELOAD DEMO SCENARIO", use_container_width=True):
+            persist(load_demo_disaster())
+            st.rerun()
+    else:
+        st.sidebar.success("LIVE DATA MODE")
+        st.sidebar.caption("Only connected live feeds and operator-entered reports are shown. Missing live sources remain unavailable.")
     st.sidebar.divider()
     st.sidebar.caption(DISCLAIMER)
     if llm_configured():
@@ -353,6 +368,9 @@ def render_sidebar(center: CommandCenter) -> None:
 
 def render_header(center: CommandCenter, subtitle: str) -> None:
     ai_class = "ok" if "Active" in center.ai_mode else "warn"
+    data_mode = getattr(center, "data_mode", "Demo Mode")
+    mode_class = "demo" if data_mode == "Demo Mode" else "ok"
+    mode_label = "DEMO MODE · SIMULATED" if data_mode == "Demo Mode" else "LIVE DATA MODE"
     st.markdown(
         f"""
         <div class="resq-header">
@@ -364,7 +382,7 @@ def render_header(center: CommandCenter, subtitle: str) -> None:
           <div class="resq-pills">
             <div class="pill {ai_class}">{center.ai_mode}</div>
             <div class="pill ok">SYSTEM STATUS: OPERATIONAL</div>
-            <div class="pill demo">DEMO MODE</div>
+            <div class="pill {mode_class}">{mode_label}</div>
           </div>
         </div>
         """,
