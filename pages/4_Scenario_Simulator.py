@@ -14,6 +14,10 @@ page_setup("Scenario Simulator")
 
 center = get_center()
 render_sidebar(center)
+if not center.demo_mode:
+    render_header(center, "What-if simulation using sample data")
+    st.info("Scenario Simulator requires sample incidents, teams, roads, and facility capacities. Switch Data Mode to Demo Mode in the sidebar to use this tool. Live Data Mode will not alter or simulate live records.")
+    st.stop()
 render_header(
     center,
     "Dynamic reassignment · change roads, teams or capacity, then recalculate the recommended plan",
