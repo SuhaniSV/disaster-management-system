@@ -630,7 +630,7 @@ def render_sidebar(center: CommandCenter) -> None:
     if llm_configured():
         st.sidebar.caption("LLM key detected in environment/secrets. Analysis uses the model when reachable.")
     else:
-        # Keep the sidebar focused on navigation; omit LLM configuration status.
+        pass  # No LLM-status notice in the sidebar.
 
 
 def render_header(center: CommandCenter, subtitle: str) -> None:
