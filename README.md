@@ -50,7 +50,7 @@ Data for the MVP: CSV files + in-memory `CommandCenter` state (session). `core/d
 
 - Command Center metrics, priority queue, event log
 - Interactive PyDeck map (simulated incidents, teams, hospitals, shelters, roads)
-- Live USGS earthquake feed (past 24 hours), with source attribution, fetch time, source-generated time, and event-detail links; cached for up to five minutes
+- Live USGS earthquake feed (past 24 hours) and a separate Live Global Disaster Intelligence page using the official GDACS API for earthquakes, tropical cyclones, floods, volcanoes, forest fires, and droughts; source links and fetch timestamps are shown, and successful snapshots are cached for up to five minutes
 - Report Emergency with ANALYZE INCIDENT
 - Fallback Analysis Mode when no API key / network / malformed JSON
 - Explainable priority breakdown
@@ -142,16 +142,16 @@ This first integration covers earthquakes only. Live USGS observations are infor
 
 ## Limitations
 
-- Simulated / prototype data only
+- Core incident, resource, hospital, shelter, and road records still use simulated prototype CSV data; USGS and GDACS live hazard feeds are informational and kept separate
 - Straight-line distance, not real routed travel time
 - Greedy assignment, not a proven global optimum
-- No live NDMA/IMD/traffic/IoT feeds
+- IMD/NDMA alerts require valid official feed access; no live ambulance/team availability, hospital capacity, shelter occupancy, or road-closure feed is currently connected
 - Image upload is stored for the operator; there is no computer vision
 - Not a production government system
 
 ## Future scope
 
-Live disaster feeds, emergency-service APIs, IoT and satellite layers, weather/traffic APIs, real road networks, multilingual reports, computer vision, mobile app, role-based access, PostgreSQL/PostGIS, MIP/CP-SAT optimization, predictive modeling.
+Additional official hazard feeds, authorized emergency-service/resource APIs, IoT and satellite layers, traffic/road-closure feeds, real road networks, multilingual reports, computer vision, mobile app, role-based access, PostgreSQL/PostGIS, MIP/CP-SAT optimization, predictive modeling.
 
 ## Project layout
 
