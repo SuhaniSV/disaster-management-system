@@ -8,7 +8,7 @@ page_setup("Route Planner")
 center = get_center()
 render_sidebar(center)
 render_header(center, "Optional road-route estimates · verify closures before any movement")
-st.warning("This planner uses a public demo routing service by default. It may be unavailable, rate-limited, or unaware of current disaster closures. Never use it as the sole basis for emergency routing.")
+st.warning("This planner uses a public routing service, which may be unavailable, rate-limited, or unaware of current disaster closures. Never use it as the sole basis for emergency routing.")
 incidents = [r for r in center.incidents if r.get("lat") is not None and r.get("lon") is not None]
 destinations = []
 for group, rows in (("Resource", center.resources), ("Hospital", center.hospitals), ("Shelter", center.shelters)):
@@ -16,7 +16,7 @@ for group, rows in (("Resource", center.resources), ("Hospital", center.hospital
         if row.get("lat") is not None and row.get("lon") is not None:
             destinations.append((f"{group}: {row.get('name') or row.get('id')} ({row.get('id')})", row))
 if not incidents or not destinations:
-    st.info("The current data bundle does not contain enough valid coordinates for route estimates.")
+    st.info("No verified live origin and destination coordinates are available for route estimates. Connect authorized live incident and responder/facility feeds, or switch to Demo Mode to test the planner with sample coordinates.")
 else:
     labels = [f"{r.get('id')} · {r.get('disaster_type')} · priority {r.get('priority_score',0)}" for r in incidents]
     incident = incidents[labels.index(st.selectbox("Origin incident", labels))]
