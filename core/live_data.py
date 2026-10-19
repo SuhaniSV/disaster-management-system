@@ -31,6 +31,19 @@ def _now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+def _setting(name: str, default: str = "") -> str:
+    """Read environment configuration first, then Streamlit secrets when available."""
+    value = os.getenv(name, "").strip()
+    if value:
+        return value
+    try:
+        import streamlit as st
+        secret = st.secrets.get(name, default)
+        return str(secret).strip() if secret else default
+    except Exception:
+        return default
+
+
 def _as_rows(payload: Any) -> list[dict[str, Any]]:
     """Normalize the list and common wrapped response shapes used by public APIs."""
     if isinstance(payload, list):
@@ -100,7 +113,7 @@ def _clean_rows(rows: list[dict[str, Any]], state: str = "", district: str = "")
 
 def get_imd_live_data(state: str = "", district: str = "") -> dict[str, Any]:
     """Fetch IMD district nowcasts and five-day district warnings."""
-    token = os.getenv("IMD_API_TOKEN", "").strip()
+    token = _setting("IMD_API_TOKEN")
     nowcast = _cached_get_json(f"{IMD_API_BASE}/districtnowcast", token)
     warnings = _cached_get_json(f"{IMD_API_BASE}/districtwarning", token)
     nowcast["rows"] = _clean_rows(nowcast["rows"], state, district)
@@ -164,7 +177,7 @@ def get_ndma_cap_alerts() -> dict[str, Any]:
     SACHET's official agency guide requires ETag-aware caching. We honor ETag
     validators and reuse the last parsed response on HTTP 304.
     """
-    url = os.getenv("NDMA_CAP_FEED_URL", "").strip()
+    url = _setting("NDMA_CAP_FEED_URL")
     if not url:
         return {
             "source": "NDMA SACHET / India CAP",
