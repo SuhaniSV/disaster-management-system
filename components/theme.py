@@ -343,6 +343,7 @@ def render_sidebar(center: CommandCenter) -> None:
     selected_mode = st.sidebar.radio("DATA MODE", ["Live Data", "Demo Mode"], index=0 if mode == "Live Data" else 1, key="resq_data_mode_selector", help="Live Data never fills missing sources with simulated records. Demo Mode loads clearly labelled sample data.")
     if selected_mode != mode:
         st.session_state["resq_data_mode"] = selected_mode
+        st.session_state["resq_settings_data_mode"] = selected_mode
         st.session_state.pop("center", None)
         st.session_state.pop("sim_before", None)
         st.session_state.pop("sim_after", None)
