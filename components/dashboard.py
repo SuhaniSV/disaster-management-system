@@ -24,6 +24,7 @@ def render_command_center() -> None:
     else:
         st.info("Live Data Mode is active. No live incident, responder-location, hospital-bed, shelter-occupancy, or road-closure feed is connected by default. Values for those sources are unavailable—not zero. Only operator-entered reports and verified connected feeds appear here.")
         render_live_earthquake_feed()
+        st.page_link("pages/7_Live_Government_Alerts.py", label="Open Live Government Alerts (IMD / NDMA)")
 
     left, right = st.columns([1.35, 1])
     with left:
