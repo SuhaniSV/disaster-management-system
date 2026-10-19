@@ -38,6 +38,19 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {
 [data-testid="stHeader"] {
   background: rgba(245,247,251,.92);
 }
+/* Hide Streamlit-owned top chrome only; keep RescueX navigation and controls intact. */
+header[data-testid="stHeader"],
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+#MainMenu,
+footer {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+}
+[data-testid="stAppViewContainer"] {
+  padding-top: 0 !important;
+}
 [data-testid="stMainBlockContainer"] {
   padding-top: 1.8rem;
   padding-bottom: 3rem;
