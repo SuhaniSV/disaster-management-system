@@ -6,6 +6,7 @@ Streamlit secrets. Never put that connection string in source control.
 from __future__ import annotations
 
 import os
+from contextlib import closing
 from datetime import datetime
 from typing import Any
 
@@ -108,12 +109,13 @@ def save_incident(
         Json(record["assignment_data"]),
     )
     placeholders = ", ".join(["%s"] * len(values))
-    with _connect() as connection:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                f"INSERT INTO public.incidents ({columns}) VALUES ({placeholders})",
-                values,
-            )
+    with closing(_connect()) as connection:
+        with connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"INSERT INTO public.incidents ({columns}) VALUES ({placeholders})",
+                    values,
+                )
     return True
 
 
@@ -125,13 +127,14 @@ def load_incidents() -> list[dict[str, Any]]:
     import json
     from psycopg2.extras import RealDictCursor
 
-    with _connect() as connection:
-        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(
-                "SELECT incident_data, created_at FROM public.incidents "
-                "ORDER BY created_at ASC, id ASC"
-            )
-            rows = cursor.fetchall()
+    with closing(_connect()) as connection:
+        with connection:
+            with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute(
+                    "SELECT incident_data, created_at FROM public.incidents "
+                    "ORDER BY created_at ASC, id ASC"
+                )
+                rows = cursor.fetchall()
 
     incidents: list[dict[str, Any]] = []
     for row in rows:
