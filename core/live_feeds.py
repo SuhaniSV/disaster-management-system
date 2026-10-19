@@ -35,7 +35,7 @@ def _optional_float(value: Any) -> float | None:
         return None
 
 
-def fetch_usgs_earthquakes(limit: int = 20) -> dict[str, Any]:
+def fetch_usgs_earthquakes(limit: int | None = None) -> dict[str, Any]:
     """Fetch the USGS past-day GeoJSON feed and return a normalized snapshot.
 
     Raises requests.RequestException for network/HTTP failures and ValueError
@@ -91,13 +91,14 @@ def fetch_usgs_earthquakes(limit: int = 20) -> dict[str, Any]:
         )
 
     events.sort(key=lambda event: event["time_utc"] or "", reverse=True)
-    safe_limit = max(1, min(int(limit), 100))
+    if limit is not None:
+        events = events[:max(1, int(limit))]
     return {
         "source_name": USGS_SOURCE_NAME,
         "source_url": USGS_ALL_DAY_URL,
         "fetched_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "feed_generated_at_utc": generated_at,
         "event_count": len(events),
-        "events": events[:safe_limit],
+        "events": events,
         "data_mode": "live",
     }
