@@ -242,6 +242,10 @@ input:focus, textarea:focus, [data-baseweb="input"]:focus-within, [data-baseweb=
 [data-testid="stFileUploader"], [data-testid="stCameraInput"] { border-radius: 12px; }
 [data-testid="stSidebarNav"] { padding-top: .35rem; }
 [data-testid="stSidebarNav"] a { border-radius: 9px; margin: 2px 6px; transition: background .15s ease; }
+/* app.py is the technical Streamlit entrypoint; Command Center is the user-facing home. */
+[data-testid="stSidebarNav"] a[href="/"] {
+  display: none !important;
+}
 [data-testid="stSidebarNav"] a:hover { background: #eef3fb; }
 [data-testid="stSidebarNav"] a[aria-current="page"] { background: #eaf0ff; color: #204db0 !important; font-weight: 700; }
 button[kind="primary"] { font-weight: 700 !important; }
