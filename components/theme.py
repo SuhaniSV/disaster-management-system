@@ -960,6 +960,20 @@ div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) [data-baseweb="
   border-color: #15988e !important;
   box-shadow: 0 0 0 3px rgba(21,152,142,.11) !important;
 }
+/* Keep the selected page label readable on the blue/cyan active navigation pill. */
+section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"],
+section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"] *,
+section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"]::after {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: .91rem !important;
+  opacity: 1 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"] {
+  background: linear-gradient(100deg, #0f9fbd 0%, #0284c7 100%) !important;
+  border-color: rgba(125,211,252,.7) !important;
+  border-left: 3px solid #7dd3fc !important;
+}
 </style>
 """
 
