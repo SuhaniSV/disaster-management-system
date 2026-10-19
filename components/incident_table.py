@@ -28,7 +28,10 @@ def priority_queue(center: CommandCenter) -> str | None:
     for incident in center.incidents:
         rows.append(_row(incident, center.assignment_for(incident.get("id"))))
     if not rows:
-        st.info("No incidents in the current dataset.")
+        if getattr(center, "demo_mode", True):
+            st.info("No incidents in the current demo dataset.")
+        else:
+            st.info("No verified incident reports are available in this session. No connected live incident feed is configured; this does not mean no emergencies are occurring.")
         return None
     df = pd.DataFrame(rows).sort_values(["Priority", "People"], ascending=[False, False])
     st.dataframe(
