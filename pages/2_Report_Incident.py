@@ -37,6 +37,8 @@ with st.form("report_form"):
 
 if submitted:
     errors = validate_report(description, people, lat, lon)
+    if not center.demo_mode and float(lat) == 0.0 and float(lon) == 0.0:
+        errors.append("Enter the actual incident latitude and longitude; 0,0 is only an empty-field placeholder in Live Data Mode.")
     if errors:
         for err in errors:
             st.error(err)
