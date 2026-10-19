@@ -4,7 +4,7 @@ AI-assisted emergency **decision-support** prototype for Smart India Hackathon.
 
 One-line pitch: *An AI-assisted emergency decision-support platform that analyzes incoming disaster reports, prioritizes incidents based on severity and human impact, and recommends allocation of limited emergency resources dynamically.*
 
-This is a **hackathon MVP / prototype**. It does **not** replace emergency authorities, does **not** make autonomous life-critical decisions, and uses **simulated demo data** (Pune-area coordinates), not live government feeds.
+This is a **hackathon MVP / prototype**. It does **not** replace emergency authorities, does **not** make autonomous life-critical decisions, and uses **simulated incident/resource demo data** (Pune-area coordinates); optional live government weather/disaster alerts are shown separately and require official feed access.
 
 ## Problem
 
@@ -59,7 +59,7 @@ Data for the MVP: CSV files + in-memory `CommandCenter` state (session). `core/d
 - Analytics (Plotly)
 - ResQ Assistant chatbot grounded in the current incident/resource snapshot
 - Read-only MCP server over Streamable HTTP for Alexa+ track (incident listing, priority explanations, resource and shelter status)
-- Optional Amazon Bedrock briefing tool for the AWS Builder mini-challenge
+- Optional Amazon Bedrock briefing tool for the AWS Builder mini-challenge\n- Live Government Alerts page for IMD district nowcasts/warnings and an authorized NDMA SACHET/CAP feed
 - LOAD DEMO DISASTER for a 3–5 minute walkthrough
 
 ## Tech stack
@@ -92,7 +92,7 @@ Copy `.env.example` to `.env` (optional). Copy `.streamlit/secrets.toml.example`
 
 Never put real keys in source control.
 
-## Alexa+ hackathon integration
+## Live government data\n\nSee [docs/LIVE_GOVERNMENT_DATA.md](docs/LIVE_GOVERNMENT_DATA.md) for IMD token setup, the authorized NDMA SACHET/CAP feed configuration, source status, and limitations. Live alerts are not automatically promoted to incidents and do not change deterministic scores.\n\n## Alexa+ hackathon integration
 
 See [`docs/ALEXA_PLUS_HACKATHON.md`](docs/ALEXA_PLUS_HACKATHON.md) for MCP setup, the Streamable HTTP endpoint, demo script, optional Amazon Bedrock integration, and the limits required for a safe submission. Start the MCP server with `python -m resq_mcp.server`.
 
