@@ -35,6 +35,7 @@ def render_operations(center: CommandCenter) -> None:
     if submit:
         old = incident.get("workflow_status") or incident.get("status")
         incident["workflow_status"] = status
+        incident["status"] = "Resolved" if status == "Resolved" else ("Active" if old == "Resolved" else incident.get("status", "Active"))
         if note.strip():
             incident.setdefault("operator_notes", []).append({"at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(timespec="seconds"), "note": note.strip()[:2000]})
         center.log(f"{incident.get('id')} workflow status changed from {old} to {status}", "audit")
