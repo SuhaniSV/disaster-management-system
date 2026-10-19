@@ -1,4 +1,4 @@
-# ResQ-AI — Intelligent Disaster Command Center
+# ResQ-AI — Live Disaster Intelligence & Emergency Response
 
 AI-assisted emergency **decision-support** prototype for Smart India Hackathon.
 
@@ -17,7 +17,7 @@ Coordinators must answer, under time pressure:
 
 ## Solution
 
-ResQ-AI is a Streamlit command center that:
+ResQ-AI is a Streamlit disaster-intelligence and emergency-response platform that:
 
 1. Ingests an emergency report
 2. Extracts structured facts with an LLM **or** a keyword fallback
@@ -41,14 +41,14 @@ Geospatial distance + blocked-road penalty
         ↓
 Greedy resource / hospital / shelter recommendation
         ↓
-Command Center dashboard + scenario recalculation
+Incident operations + scenario recalculation
 ```
 
 Data for the MVP: CSV files + in-memory `CommandCenter` state (session). `core/database.py` is the swap point for PostgreSQL later. `database/schema.sql` is reserved.
 
 ## Features
 
-- Command Center metrics, priority queue, event log
+- Live Disaster Intelligence landing page with source-reported GDACS and USGS hazard feeds
 - Interactive PyDeck map (simulated incidents, teams, hospitals, shelters, roads)
 - Live USGS earthquake feed (past 24 hours) and a separate Live Global Disaster Intelligence page using the official GDACS API for earthquakes, tropical cyclones, floods, volcanoes, forest fires, and droughts; source links and fetch timestamps are shown, and successful snapshots are cached for up to five minutes
 - Report Emergency with ANALYZE INCIDENT
@@ -127,16 +127,16 @@ pytest
 ## Demo workflow (about 3–5 minutes)
 
 1. Click **LOAD DEMO DISASTER** (sidebar). You should see a flood-city picture: multiple active incidents, limited teams, R-07 blocked.
-2. Open **Command Center**: map + priority queue + assignments.
+2. Open **Live Disaster Intelligence** to explore source-reported global hazards, filter events, search locations, and verify official source records.
 3. Open **Report Incident**. Keep the school-flood text (70 students, medical, blocked road). Click **ANALYZE INCIDENT**.
 4. Confirm structured extraction (Flood, medical yes, blocked) and a very high priority with a visible score breakdown.
-5. Return to Command Center: the new incident is near the top; a medical-capable resource and hospital/shelter are recommended.
+5. Open **Incident Operations** to review the incident response workflow; use **Situation Reports** for the consolidated operational summary.
 6. Open **Scenario Simulator**. Mark **R03 Unavailable** (scenario C) or block another road. Click **RECALCULATE RESPONSE PLAN**.
 7. Show **Before vs after** assignment changes.
 
 ## Live disaster data
 
-The Command Center displays the public [USGS GeoJSON earthquake feed](https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson) separately from the simulated Pune-area response-planning data. It shows the feed source, last successful fetch time, feed-generation time, event locations/magnitudes, and USGS event links. Feed details are documented in [`docs/LIVE_DATA_FEED.md`](docs/LIVE_DATA_FEED.md).
+The Live Disaster Intelligence landing page displays the public [USGS GeoJSON earthquake feed](https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson) and GDACS events separately from simulated Pune-area response-planning data. It shows the feed source, last successful fetch time, feed-generation time, event locations/magnitudes, and USGS event links. Feed details are documented in [`docs/LIVE_DATA_FEED.md`](docs/LIVE_DATA_FEED.md).
 
 This first integration covers earthquakes only. Live USGS observations are informational and are not automatically inserted into the simulated incident queue or used to make dispatch recommendations.
 
