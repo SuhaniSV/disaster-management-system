@@ -8,6 +8,9 @@ from utils.validation import as_int
 
 
 def render_resources(center: CommandCenter) -> None:
+    if not center.demo_mode:
+        st.info("No verified live responder inventory is connected. This panel will not show simulated teams or availability as live data.")
+        return
     cols = st.columns(2)
     for idx, resource in enumerate(center.resources):
         with cols[idx % 2]:
@@ -31,6 +34,10 @@ def render_resources(center: CommandCenter) -> None:
 
 
 def hospital_shelter_panels(center: CommandCenter) -> None:
+    if not center.demo_mode:
+        st.markdown("**Hospital and shelter capacity**")
+        st.info("Live bed counts and shelter occupancy are unavailable because no authorized real-time capacity feeds are connected. No sample capacities are shown.")
+        return
     left, right = st.columns(2)
     with left:
         st.markdown("**Hospital capacity (simulated)**")
