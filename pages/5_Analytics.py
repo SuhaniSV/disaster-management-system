@@ -19,7 +19,14 @@ page_setup("Analytics")
 
 center = get_center()
 render_sidebar(center)
-render_header(center, "Situation analytics · simulated operational picture")
+render_header(center, "Situation analytics · source-verified response records" if not center.demo_mode else "Situation analytics · simulated operational picture")
+
+if not center.demo_mode and not center.incidents and not center.resources and not center.hospitals and not center.shelters:
+    st.info("Analytics are unavailable until verified incident reports or live operational datasets are connected. This page will not calculate real-world statistics from sample data.")
+    st.markdown("### Live hazard observations")
+    from components.live_feed import render_live_earthquake_feed
+    render_live_earthquake_feed()
+    st.stop()
 
 r1, r2 = st.columns(2)
 fig = incidents_by_type(center)
@@ -51,4 +58,4 @@ if fig:
 
 st.markdown("### Response recommendations")
 st.dataframe(assignment_table(center), use_container_width=True, hide_index=True)
-st.caption("Charts describe the in-memory demo state, not live government statistics.")
+st.caption("Charts describe current response records. In Demo Mode they are simulated; in Live Data Mode they include only operator-entered/verified records available in this session, not population-wide official statistics.")
