@@ -11,6 +11,23 @@ center = get_center()
 render_sidebar(center)
 render_header(center, "Personalize your command-center experience")
 
+st.markdown("## Data source mode")
+st.caption("Live Data is the default. Demo Mode is an explicit opt-in for testing and presentations.")
+current_mode = st.session_state.get("resq_data_mode", "Live Data")
+selected_mode = st.radio("Operational data", ["Live Data", "Demo Mode"], index=0 if current_mode == "Live Data" else 1, horizontal=True, key="resq_settings_data_mode")
+if selected_mode != current_mode:
+    st.session_state["resq_data_mode"] = selected_mode
+    st.session_state["resq_data_mode_selector"] = selected_mode
+    st.session_state.pop("center", None)
+    st.session_state.pop("sim_before", None)
+    st.session_state.pop("sim_after", None)
+    st.session_state.pop("sim_label", None)
+    st.rerun()
+if selected_mode == "Live Data":
+    st.info("Live Data Mode hides simulated incidents and inventories. USGS earthquake observations are public and live; IMD and NDMA feeds require valid official access configuration. Live operational inventories require additional authorized integrations.")
+else:
+    st.warning("Demo Mode loads simulated Pune-area records. Do not use these records for emergency response.")
+
 st.markdown("## Appearance")
 st.caption("Choose the visual theme for ResQ-AI. Your selection is kept for this browser session and applies across the app's pages.")
 
@@ -36,4 +53,4 @@ else:
 st.markdown("### Other settings")
 st.info("Government feeds, AI providers, routing, and notification integrations are configured through environment variables or Streamlit secrets. Do not enter API keys into chat or commit them to the repository.")
 st.markdown("### Safety and data")
-st.caption("ResQ-AI is a decision-support prototype. Its demo data may be simulated; route estimates and AI summaries are advisory and must not replace official emergency instructions.")
+st.caption("ResQ-AI is a decision-support prototype. Verify source, timestamp, location and status with emergency authorities. Live feeds may be incomplete or unavailable; this app does not dispatch responders autonomously.")
