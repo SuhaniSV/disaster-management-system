@@ -21,6 +21,10 @@ def get_center() -> CommandCenter:
         if llm_configured():
             st.session_state.center.ai_mode = "AI Mode: Active"
     center: CommandCenter = st.session_state.center
+    # Clear records loaded by earlier app versions from the session; they were sample CSV data.
+    if getattr(center, "demo_mode", False):
+        st.session_state.center = CommandCenter(bundle={"incidents": [], "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": []})
+        center = st.session_state.center
     if llm_configured() and center.ai_mode.startswith("Fallback"):
         center.ai_mode = "AI Mode: Active"
     elif not llm_configured() and str(center.ai_mode).startswith("AI Mode"):
