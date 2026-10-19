@@ -692,9 +692,154 @@ section[data-testid="stSidebar"] hr { border-color: rgba(173,198,222,.18) !impor
 </style>
 """
 
+
+POLISH_CSS = """
+<style>
+/* Cohesive operations-console redesign: rich navigation rail, brighter workspace. */
+:root {
+  --rx-rail: #091827;
+  --rx-rail-2: #102b40;
+  --rx-mint: #34d399;
+  --rx-sky: #38bdf8;
+}
+section[data-testid="stSidebar"] {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(20,184,166,.19), transparent 42%),
+    linear-gradient(165deg, #081624 0%, #102a40 58%, #0b1c2e 100%) !important;
+  border-right: 1px solid rgba(94,234,212,.28) !important;
+  box-shadow: 10px 0 34px rgba(4,15,28,.13) !important;
+}
+section[data-testid="stSidebar"] > div {
+  padding: 1.15rem .85rem 1.6rem !important;
+}
+.rx-sidebar-brand {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(20,184,166,.19), rgba(56,189,248,.09) 70%, rgba(255,255,255,.025)) !important;
+  border-color: rgba(94,234,212,.32) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.045), 0 12px 28px rgba(0,0,0,.12);
+}
+.rx-sidebar-brand::after {
+  content: "";
+  position: absolute;
+  width: 100px; height: 100px;
+  right: -54px; top: -52px;
+  border: 1px solid rgba(94,234,212,.25);
+  border-radius: 50%;
+  box-shadow: 0 0 0 14px rgba(94,234,212,.035), 0 0 0 28px rgba(94,234,212,.025);
+  pointer-events: none;
+}
+.rx-brand-mark {
+  background: linear-gradient(145deg, #2dd4bf, #0284c7) !important;
+  box-shadow: 0 0 0 4px rgba(45,212,191,.09), 0 8px 22px rgba(20,184,166,.25) !important;
+}
+.rx-brand-name { letter-spacing: -.055em !important; }
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] strong {
+  display: inline-block;
+  padding: 7px 10px;
+  border: 1px solid rgba(94,234,212,.16);
+  border-radius: 9px;
+  background: rgba(255,255,255,.045);
+  color: #c8fff3 !important;
+  font-size: 11px;
+  letter-spacing: .04em;
+}
+[data-testid="stSidebarNav"] { margin-top: .25rem; }
+[data-testid="stSidebarNav"] a {
+  min-height: 44px !important;
+  padding: .72rem .8rem !important;
+  color: #b8cadd !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+}
+[data-testid="stSidebarNav"] a:hover {
+  color: #f0fdfa !important;
+  background: linear-gradient(100deg, rgba(20,184,166,.18), rgba(56,189,248,.08)) !important;
+  border-color: rgba(94,234,212,.22) !important;
+  transform: translateX(3px);
+}
+[data-testid="stSidebarNav"] a[aria-current="page"] {
+  color: #f0fdfa !important;
+  background: linear-gradient(100deg, rgba(13,148,136,.34), rgba(56,189,248,.15)) !important;
+  border: 1px solid rgba(94,234,212,.3) !important;
+  border-left: 3px solid #5eead4 !important;
+  box-shadow: 0 5px 18px rgba(0,0,0,.1), inset 0 0 20px rgba(45,212,191,.04);
+}
+[data-testid="stSidebar"] hr { border-color: rgba(173,198,222,.18) !important; }
+/* Search should look intentional before hover, not like an unstyled white input. */
+div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) [data-baseweb="input"] {
+  min-height: 48px;
+  background: linear-gradient(110deg, #102a40, #153b50) !important;
+  border: 1px solid rgba(20,184,166,.55) !important;
+  border-radius: 13px !important;
+  box-shadow: 0 5px 18px rgba(15,36,61,.09), inset 0 1px 0 rgba(255,255,255,.04) !important;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease !important;
+}
+div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) input {
+  color: #f0fdfa !important;
+  background: transparent !important;
+  caret-color: #5eead4;
+  font-weight: 550;
+}
+div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) input::placeholder {
+  color: #9bb9cc !important;
+  opacity: 1 !important;
+}
+div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) [data-baseweb="input"]:focus-within {
+  border-color: #5eead4 !important;
+  box-shadow: 0 0 0 3px rgba(45,212,191,.16), 0 10px 24px rgba(15,36,61,.12) !important;
+  transform: translateY(-1px);
+}
+div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) label {
+  color: var(--resq-ink) !important;
+  font-weight: 700 !important;
+}
+/* Keep the main workspace clearly distinct from the dark navigation rail. */
+.stApp {
+  background:
+    radial-gradient(ellipse at 2% 0%, rgba(20,184,166,.075), transparent 28%),
+    radial-gradient(ellipse at 100% 10%, rgba(56,189,248,.07), transparent 27%),
+    var(--resq-canvas) !important;
+}
+[data-testid="stMainBlockContainer"] {
+  padding-top: 1.15rem !important;
+}
+.resq-header {
+  border-radius: 20px !important;
+  box-shadow: 0 16px 38px rgba(8,27,46,.16), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stMetric"],
+[data-testid="stMainBlockContainer"] [data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stMainBlockContainer"] [data-testid="stExpander"] {
+  border-radius: 16px !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stDataFrame"] {
+  border-radius: 14px !important;
+  box-shadow: 0 8px 24px rgba(15,36,61,.06);
+}
+[data-testid="stMainBlockContainer"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+  min-height: 43px;
+  border-color: #cbd8e5 !important;
+  box-shadow: 0 2px 8px rgba(15,36,61,.035);
+}
+[data-testid="stMainBlockContainer"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within {
+  border-color: #0f9e91 !important;
+  box-shadow: 0 0 0 3px rgba(20,184,166,.12) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  section[data-testid="stSidebar"] *, [data-testid="stMainBlockContainer"] * {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
+</style>
+"""
+
+
 def inject_theme() -> None:
     st.markdown(CSS, unsafe_allow_html=True)
     st.markdown(ENHANCED_CSS, unsafe_allow_html=True)
+    st.markdown(POLISH_CSS, unsafe_allow_html=True)
     if st.session_state.get("resq_theme", "Light") == "Dark":
         st.markdown(DARK_CSS, unsafe_allow_html=True)
 
