@@ -49,7 +49,8 @@ Data for the MVP: CSV files + in-memory `CommandCenter` state (session). `core/d
 ## Features
 
 - Command Center metrics, priority queue, event log
-- Interactive PyDeck map (incidents, teams, hospitals, shelters, roads)
+- Interactive PyDeck map (simulated incidents, teams, hospitals, shelters, roads)
+- Live USGS earthquake feed (past 24 hours), with source attribution, fetch time, source-generated time, and event-detail links; cached for up to five minutes
 - Report Emergency with ANALYZE INCIDENT
 - Fallback Analysis Mode when no API key / network / malformed JSON
 - Explainable priority breakdown
@@ -123,6 +124,12 @@ pytest
 5. Return to Command Center: the new incident is near the top; a medical-capable resource and hospital/shelter are recommended.
 6. Open **Scenario Simulator**. Mark **R03 Unavailable** (scenario C) or block another road. Click **RECALCULATE RESPONSE PLAN**.
 7. Show **Before vs after** assignment changes.
+
+## Live disaster data
+
+The Command Center displays the public [USGS GeoJSON earthquake feed](https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson) separately from the simulated Pune-area response-planning data. It shows the feed source, last successful fetch time, feed-generation time, event locations/magnitudes, and USGS event links. Feed details are documented in [`docs/LIVE_DATA_FEED.md`](docs/LIVE_DATA_FEED.md).
+
+This first integration covers earthquakes only. Live USGS observations are informational and are not automatically inserted into the simulated incident queue or used to make dispatch recommendations.
 
 ## Limitations
 

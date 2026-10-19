@@ -4,6 +4,7 @@ import streamlit as st
 
 from components.alerts import attention_banner, render_event_log
 from components.incident_table import priority_queue, score_breakdown
+from components.live_feed import render_live_earthquake_feed
 from components.map import render_map
 from components.metrics import metric_cards
 from components.resource_cards import hospital_shelter_panels
@@ -19,9 +20,12 @@ def render_command_center() -> None:
     attention_banner(center)
     metric_cards(center.metrics())
 
+    render_live_earthquake_feed()
+    st.divider()
+
     left, right = st.columns([1.35, 1])
     with left:
-        st.markdown("**Live incident map**")
+        st.markdown("**Simulated incident map**")
         render_map(center)
     with right:
         st.markdown("**Priority incident queue**")
