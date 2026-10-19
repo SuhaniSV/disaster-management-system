@@ -285,6 +285,16 @@ DARK_CSS = """
 html,body,[class*="css"],p,label,li,[data-testid="stMarkdownContainer"] { color:var(--resq-ink); }
 [data-testid="stHeader"] { background:rgba(13,20,32,.94)!important; }
 section[data-testid="stSidebar"] { background:#111b2a!important; border-right-color:var(--resq-border)!important; }
+[data-testid="stSidebarNav"] { color:var(--resq-ink)!important; }
+[data-testid="stSidebarNav"]::before {
+  color:#e6edf7;
+  border-color:rgba(94,234,212,.22);
+  background:
+    radial-gradient(circle at 1.45rem 1.9rem, #5eead4 0 3px, transparent 4px),
+    linear-gradient(135deg, rgba(20,184,166,.18), rgba(56,189,248,.07));
+}
+[data-testid="stSidebarNav"]::after { color:#9aabc0!important; }
+[data-testid="stSidebarNav"] a { color:#d7e2f0!important; }
 [data-testid="stSidebarNav"] a:hover { background:#202d40!important; }
 [data-testid="stSidebarNav"] a[aria-current="page"] { background:#243653!important; color:#c5d9ff!important; font-weight:700; }
 [data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom-color:var(--resq-border); }
@@ -311,6 +321,19 @@ input::placeholder,textarea::placeholder { color:#91a0b5!important; }
 [data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"],[data-baseweb="option"] { background:#172234!important; color:var(--resq-ink)!important; }
 [data-baseweb="option"]:hover { background:#263750!important; }
 [data-testid="stAlert"] { background:#172234; border-color:var(--resq-border); }
+[data-testid="stPopover"],[data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"] {
+  background:#172234!important; color:var(--resq-ink)!important;
+}
+[data-testid="stSidebar"] button:focus-visible,
+[data-testid="stSidebarNav"] a:focus-visible,
+.stButton>button:focus-visible,
+[data-testid="stFormSubmitButton"]>button:focus-visible {
+  outline:2px solid #5eead4!important; outline-offset:2px!important;
+}
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+  color:var(--resq-muted)!important;
+}
 hr { border-color:var(--resq-border)!important; }
 </style>
 """
@@ -328,6 +351,37 @@ ENHANCED_CSS = """
 }
 [data-testid="stSidebarNav"] {
   padding-top: .15rem !important;
+  position: relative;
+}
+[data-testid="stSidebarNav"]::before {
+  content: "RESCUEX";
+  display: block;
+  margin: 0 .65rem .8rem;
+  padding: 1.05rem .8rem .9rem 3.25rem;
+  min-height: 3.9rem;
+  box-sizing: border-box;
+  border: 1px solid rgba(20,184,166,.22);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 1.45rem 1.9rem, #5eead4 0 3px, transparent 4px),
+    linear-gradient(135deg, rgba(20,184,166,.12), rgba(56,189,248,.05));
+  color: var(--resq-ink);
+  font-size: .94rem;
+  font-weight: 800;
+  letter-spacing: .16em;
+  line-height: 1.1;
+}
+[data-testid="stSidebarNav"]::after {
+  content: "DISASTER RESPONSE  /  LIVE CONSOLE";
+  display: block;
+  margin: -.52rem 1.45rem .85rem;
+  color: var(--resq-muted);
+  font-size: .57rem;
+  letter-spacing: .1em;
+  line-height: 1.4;
+}
+[data-testid="stSidebarNav"] > div:first-child {
+  display: none;
 }
 [data-testid="stSidebarNav"] > ul {
   gap: .18rem;
