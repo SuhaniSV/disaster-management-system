@@ -72,7 +72,10 @@ def render_command_center() -> None:
     if assign_rows:
         st.dataframe(assign_rows, use_container_width=True, hide_index=True)
     else:
-        st.info("No assignments yet.")
+        if center.demo_mode:
+            st.info("No assignments yet.")
+        else:
+            st.info("No live allocation is calculated: verified responder and facility inventory feeds are not connected.")
 
     if center.demo_mode:
         hospital_shelter_panels(center)
