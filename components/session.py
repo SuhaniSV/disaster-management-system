@@ -12,19 +12,55 @@ if str(ROOT) not in sys.path:
 import streamlit as st
 
 from core.llm_client import llm_configured
+from core.persistence import is_configured, load_incidents
 from core.state import CommandCenter
 
 
 def get_center() -> CommandCenter:
     if "center" not in st.session_state:
-        st.session_state.center = CommandCenter(bundle={"incidents": [], "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": []})
+        center = CommandCenter(
+            bundle={
+                "incidents": [],
+                "resources": [],
+                "hospitals": [],
+                "shelters": [],
+                "roads": [],
+                "events": [],
+            }
+        )
+        st.session_state.incident_store_configured = is_configured()
+        st.session_state.incident_store_error = None
+
+        if st.session_state.incident_store_configured:
+            try:
+                center.incidents = load_incidents()
+                center.recalculate(reason="Loaded saved incident reports from Supabase")
+            except Exception as exc:
+                # Don't silently show an empty queue when the database could not load.
+                st.session_state.incident_store_error = (
+                    f"Saved incident reports could not be loaded ({type(exc).__name__}). "
+                    "Check the DATABASE_URL secret and Supabase table migration."
+                )
+                st.error(st.session_state.incident_store_error)
+
         if llm_configured():
-            st.session_state.center.ai_mode = "AI Mode: Active"
+            center.ai_mode = "AI Mode: Active"
+        st.session_state.center = center
+
     center: CommandCenter = st.session_state.center
     # Clear records loaded by earlier app versions from the session; they were sample CSV data.
     if getattr(center, "demo_mode", False):
-        st.session_state.center = CommandCenter(bundle={"incidents": [], "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": []})
-        center = st.session_state.center
+        center = CommandCenter(
+            bundle={
+                "incidents": [],
+                "resources": [],
+                "hospitals": [],
+                "shelters": [],
+                "roads": [],
+                "events": [],
+            }
+        )
+        st.session_state.center = center
     if llm_configured() and center.ai_mode.startswith("Fallback"):
         center.ai_mode = "AI Mode: Active"
     elif not llm_configured() and str(center.ai_mode).startswith("AI Mode"):

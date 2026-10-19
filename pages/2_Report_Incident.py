@@ -5,6 +5,7 @@ import streamlit as st
 from components.session import get_center, persist
 from components.theme import page_setup, render_header, render_sidebar
 from core.config import CITY_LAT, CITY_LON
+from core.persistence import is_configured, save_incident
 from utils.validation import validate_report
 
 page_setup("Report Incident")
@@ -36,6 +37,8 @@ if submitted:
             st.error(err)
     else:
         image_name = image.name if image is not None else ""
+        saved_permanently = False
+        save_error = None
         with st.status("Analyzing incident…", expanded=True) as status:
             st.write("Running NLP extraction (LLM if configured, otherwise fallback)…")
             result = center.analyze_and_add_incident(
@@ -47,14 +50,46 @@ if submitted:
                 reporter=reporter,
                 image_name=image_name,
             )
-            persist(center)
-            status.update(label="Analysis complete", state="complete")
-        analysis = result["analysis"]
-        incident = result["incident"]
-        assignment = result["assignment"]
-        st.toast(f"{incident['id']} added to the command queue")
+            analysis = result["analysis"]
+            incident = result["incident"]
+            assignment = result["assignment"]
 
-        st.success(f"Analysis complete · {center.ai_mode}")
+            try:
+                saved_permanently = save_incident(incident, analysis, assignment)
+            except Exception as exc:
+                # Keep the current-session report visible, but never claim it was saved.
+                save_error = type(exc).__name__
+
+            persist(center)
+            st.session_state.incident_store_configured = is_configured()
+            if saved_permanently:
+                st.session_state.incident_store_error = None
+                status.update(label="Analysis complete · report saved", state="complete")
+            elif save_error:
+                st.session_state.incident_store_error = (
+                    "The incident database save failed. The report is only in this session."
+                )
+                status.update(label="Analysis complete · database save failed", state="error")
+            else:
+                st.session_state.incident_store_error = None
+                status.update(label="Analysis complete · not saved permanently", state="complete")
+
+        if saved_permanently:
+            st.toast(f"{incident['id']} saved to the incident database")
+            st.success(f"Analysis complete · {center.ai_mode} · report saved permanently")
+        elif save_error:
+            st.error(
+                "Analysis completed, but the report was NOT saved permanently. "
+                f"Database error type: {save_error}. Check the DATABASE_URL secret and "
+                "confirm the Supabase table migration has been run. This report will disappear "
+                "after the current session ends."
+            )
+        else:
+            st.warning(
+                "Analysis completed, but permanent storage is not configured. This report is "
+                "only in the current session and will disappear after refresh. Add DATABASE_URL "
+                "to Streamlit app secrets to enable saving."
+            )
 
         # Human-readable incident summary; raw structured output stays optional.
         st.markdown("### Incident assessment")
