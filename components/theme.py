@@ -652,7 +652,8 @@ section[data-testid="stSidebar"] .rx-brand-tag { font-size: 8px !important; lett
 section[data-testid="stSidebar"] .rx-brand-line { margin: 8px 0 7px !important; }
 section[data-testid="stSidebar"] .rx-brand-status { font-size: 8px !important; letter-spacing: .045em !important; white-space: nowrap !important; }
 section[data-testid="stSidebar"] [data-testid="stSidebarNav"] {
-  padding-top: 10.8rem !important;
+  /* Reserve only the brand box's actual height; keep page links close beneath it. */
+  padding-top: 8.25rem !important;
   margin-top: 0 !important;
 }
 [data-testid="stSidebarNav"] { padding: .5rem 0 1rem; }
