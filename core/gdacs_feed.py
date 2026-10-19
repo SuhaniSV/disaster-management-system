@@ -73,36 +73,41 @@ def _coordinates(feature: dict[str, Any], properties: dict[str, Any]) -> tuple[f
     return latitude, longitude
 
 
-def fetch_gdacs_events(lookback_days: int = 30, limit: int = 100) -> dict[str, Any]:
+def fetch_gdacs_events(lookback_days: int = 30, limit: int | None = None) -> dict[str, Any]:
     """Fetch and normalize recent GDACS GeoJSON events.
 
     Network and HTTP errors are raised so the UI can show an honest unavailable
     state instead of substituting fabricated or stale events.
     """
     days = max(1, min(int(lookback_days), 365))
-    safe_limit = max(1, min(int(limit), 100))
     today = date.today()
     params = {
         "eventlist": ";".join(EVENT_TYPES),
         "fromdate": (today - timedelta(days=days)).isoformat(),
         "todate": today.isoformat(),
     }
-    response = requests.get(
-        GDACS_API_URL,
-        params=params,
-        timeout=REQUEST_TIMEOUT_SECONDS,
-        headers={
-            "Accept": "application/geo+json, application/json",
-            "User-Agent": "ResQ-AI/1.0 (disaster-intelligence dashboard)",
-        },
-    )
-    response.raise_for_status()
-    payload = response.json()
-    if not isinstance(payload, dict) or not isinstance(payload.get("features"), list):
-        raise ValueError("GDACS returned an unexpected GeoJSON payload.")
-
     events: list[dict[str, Any]] = []
-    for feature in payload["features"]:
+    seen_ids: set[str] = set()
+    page_number = 1
+    page_size = 100
+    while True:
+        response = requests.get(
+            GDACS_API_URL,
+            params={**params, "pageSize": page_size, "pageNumber": page_number},
+            timeout=REQUEST_TIMEOUT_SECONDS,
+            headers={
+                "Accept": "application/geo+json, application/json",
+                "User-Agent": "ResQ-AI/1.0 (disaster-intelligence dashboard)",
+            },
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, dict) or not isinstance(payload.get("features"), list):
+            raise ValueError("GDACS returned an unexpected GeoJSON payload.")
+        features = payload["features"]
+        if not features:
+            break
+        for feature in features:
         if not isinstance(feature, dict):
             continue
         properties = feature.get("properties") or {}
@@ -112,6 +117,10 @@ def fetch_gdacs_events(lookback_days: int = 30, limit: int = 100) -> dict[str, A
         raw_type = _as_text(_value(properties, "eventtype", "event_type", "type")).upper()
         event_type = EVENT_TYPES.get(raw_type, raw_type.title() or "Hazard")
         event_id = _as_text(_value(properties, "eventid", "event_id", "id") or feature.get("id"))
+        if event_id and event_id in seen_ids:
+            continue
+        if event_id:
+            seen_ids.add(event_id)
         name = _as_text(_value(properties, "eventname", "name", "title", "description"), event_type)
         country = _as_text(_value(properties, "country", "countryname", "country_name"), "Not reported")
         alert = _as_text(_value(properties, "alertlevel", "alert_level", "alert"), "Not reported")
@@ -138,7 +147,13 @@ def fetch_gdacs_events(lookback_days: int = 30, limit: int = 100) -> dict[str, A
             "source": GDACS_SOURCE_NAME,
         })
 
+        if len(features) < page_size:
+            break
+        page_number += 1
+
     events.sort(key=lambda item: item.get("updated_at_utc") or item.get("started_at_utc") or "", reverse=True)
+    if limit is not None:
+        events = events[:max(1, int(limit))]
     return {
         "source": GDACS_SOURCE_NAME,
         "source_url": GDACS_SOURCE_URL,
@@ -146,6 +161,6 @@ def fetch_gdacs_events(lookback_days: int = 30, limit: int = 100) -> dict[str, A
         "fetched_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "lookback_days": days,
         "event_count": len(events),
-        "events": events[:safe_limit],
+        "events": events,
         "data_mode": "live",
     }
