@@ -960,6 +960,14 @@ div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) [data-baseweb="
   border-color: #15988e !important;
   box-shadow: 0 0 0 3px rgba(21,152,142,.11) !important;
 }
+/* Disable all UI motion to prevent distracting transitions during Streamlit page navigation. */
+.stApp *, .stApp *::before, .stApp *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+  transform: none !important;
+}
+
 /* Keep the selected page label readable on the blue/cyan active navigation pill. */
 section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"],
 section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"] *,
