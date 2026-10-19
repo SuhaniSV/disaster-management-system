@@ -8,6 +8,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from core.state import load_demo_disaster
+from core.live_data import get_imd_live_data, get_ndma_cap_alerts
 from resq_mcp.logic import (
     explain_priority as _explain_priority,
     find_shelters as _find_shelters,
@@ -71,6 +72,24 @@ def find_shelters(minimum_spaces: int = 0) -> dict[str, Any]:
 def generate_incident_brief() -> dict[str, Any]:
     """Generate a concise response brief, using Amazon Bedrock Converse when configured."""
     return _generate_incident_brief(_center())
+
+
+@mcp.tool()
+def get_live_government_alerts(state: str = "", district: str = "") -> dict[str, Any]:
+    """Fetch current IMD district nowcasts/warnings and the configured official NDMA SACHET/CAP feed.
+
+    Results are source-attributed and may be unavailable without authorized feed credentials.
+    Alerts are not verified incidents and this read-only tool never changes priority scores or dispatches resources.
+    """
+    imd = get_imd_live_data(state=state, district=district)
+    ndma = get_ndma_cap_alerts()
+    return {
+        "data_mode": "live_government_sources",
+        "checked_at": imd.get("fetched_at") or ndma.get("fetched_at"),
+        "imd": imd,
+        "ndma": ndma,
+        "note": "Government hazard alerts are not confirmed rescue incidents. Verify the source and local impact; no scores or assignments are changed.",
+    }
 
 
 if __name__ == "__main__":
