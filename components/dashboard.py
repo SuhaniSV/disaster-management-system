@@ -80,11 +80,18 @@ def render_command_center() -> None:
                     use_container_width=True,
                     hide_index=True,
                 )
-            else:
-                st.info(
-                    "No operator-submitted incidents are currently recorded in this session. "
-                    "No sample incidents are loaded."
+            elif st.session_state.get("incident_store_error"):
+                st.warning(
+                    "The saved incident database could not be read. This empty view does not mean "
+                    "there are no saved reports; resolve the database connection error above."
                 )
+            elif not st.session_state.get("incident_store_configured", False):
+                st.info(
+                    "No reports are loaded. Permanent storage is not configured yet; reports entered "
+                    "now will remain only in the current session until DATABASE_URL is added to app secrets."
+                )
+            else:
+                st.info("No operator-submitted incidents are currently stored in the database.")
             st.page_link(
                 "pages/2_Report_Incident.py",
                 label="Report an incident",
