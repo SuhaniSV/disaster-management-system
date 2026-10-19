@@ -183,7 +183,7 @@ if submitted:
                 }
             )
 
-        st.caption("Open Command Center to see the map and priority queue update.")
+        st.caption("Use Incident Operations to review response actions and Situation Reports for the consolidated operational summary.")
 
 st.divider()
 st.caption(f"Default map center: {CITY_LAT}, {CITY_LON}. Confirm the coordinates before submitting. Reports entered here are operator-submitted and are not independently verified.")
