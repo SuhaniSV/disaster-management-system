@@ -4,7 +4,7 @@ AI-assisted emergency **decision-support** prototype for Smart India Hackathon.
 
 One-line pitch: *An AI-assisted emergency decision-support platform that analyzes incoming disaster reports, prioritizes incidents based on severity and human impact, and recommends allocation of limited emergency resources dynamically.*
 
-This is a **hackathon MVP / prototype**. It does **not** replace emergency authorities, does **not** make autonomous life-critical decisions, and uses **simulated incident/resource demo data** (Pune-area coordinates); optional live government weather/disaster alerts are shown separately and require official feed access.
+This is a **hackathon MVP / prototype**. It does **not** replace emergency authorities or make autonomous life-critical decisions. **Live Data Mode is the default** and never fills missing sources with sample data. It shows public live USGS earthquake observations and any configured official IMD/NDMA alerts; operator-entered reports remain session records. Demo Mode is an explicit opt-in for testing and uses simulated Pune-area records.
 
 ## Problem
 
@@ -48,8 +48,8 @@ Data for the MVP: CSV files + in-memory `CommandCenter` state (session). `core/d
 
 ## Features
 
-- Command Center metrics, priority queue, event log
-- Interactive PyDeck map (simulated incidents, teams, hospitals, shelters, roads)
+- Command Center with source-aware Live Data Mode by default; sample metrics/records appear only when Demo Mode is explicitly selected
+- Interactive PyDeck map for records with known coordinates; sample map layers appear only in Demo Mode
 - Live USGS earthquake feed (past 24 hours), with source attribution, fetch time, source-generated time, and event-detail links; cached for up to five minutes
 - Report Emergency with ANALYZE INCIDENT
 - Fallback Analysis Mode when no API key / network / malformed JSON
@@ -65,7 +65,7 @@ Data for the MVP: CSV files + in-memory `CommandCenter` state (session). `core/d
 - Situation Reports with Markdown/JSON/CSV exports
 - Optional driving route estimates with explicit hazard-routing caveats
 - Operator-triggered SMTP situation-summary notifications
-- LOAD DEMO DISASTER for a 3–5 minute walkthrough
+- Explicit Demo Mode and prepared flood-city scenario for a 3–5 minute walkthrough
 
 ## Tech stack
 
@@ -134,18 +134,18 @@ pytest
 6. Open **Scenario Simulator**. Mark **R03 Unavailable** (scenario C) or block another road. Click **RECALCULATE RESPONSE PLAN**.
 7. Show **Before vs after** assignment changes.
 
-## Live disaster data
+## Live data mode and source limitations
 
-The Command Center displays the public [USGS GeoJSON earthquake feed](https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson) separately from the simulated Pune-area response-planning data. It shows the feed source, last successful fetch time, feed-generation time, event locations/magnitudes, and USGS event links. Feed details are documented in [`docs/LIVE_DATA_FEED.md`](docs/LIVE_DATA_FEED.md).
+Live Data Mode is the default across the app. The Command Center shows the public [USGS GeoJSON earthquake feed](https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson) with source and fetch timestamps. IMD and NDMA SACHET/CAP alerts require the official credentials/feed URL described in [`docs/LIVE_GOVERNMENT_DATA.md`](docs/LIVE_GOVERNMENT_DATA.md).
 
-This first integration covers earthquakes only. Live USGS observations are informational and are not automatically inserted into the simulated incident queue or used to make dispatch recommendations.
+Live hazard alerts are not automatically promoted to verified rescue incidents. The public feeds currently integrated do **not** provide a complete real-time inventory of local incidents, responder locations/availability, hospital beds, shelter occupancy, or road closures. Those panels explicitly report that data as unavailable rather than displaying sample values. Operator-entered reports are session records and must be verified by authorized personnel. Switch to Demo Mode in the sidebar only when you intentionally want sample data for testing.
 
 ## Limitations
 
-- Simulated / prototype data only
+- Live operational coverage is incomplete; some official feeds require credentials and authorized access
 - Straight-line distance, not real routed travel time
 - Greedy assignment, not a proven global optimum
-- No live NDMA/IMD/traffic/IoT feeds
+- No automatic live feed for responder availability, hospital capacity, shelter occupancy, or traffic/road closures; IMD/NDMA feeds require configuration
 - Image upload is stored for the operator; there is no computer vision
 - Not a production government system
 
