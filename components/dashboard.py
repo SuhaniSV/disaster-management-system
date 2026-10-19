@@ -43,7 +43,13 @@ def render_command_center() -> None:
         row for row in getattr(center, "assignments", [])
         if row.get("resource_id")
     ]
-    recent_events = list(getattr(center, "events", []))[:6]
+    # Keep the main activity feed focused on operationally useful events.
+    # Classification and routine planning/system messages belong in incident details or diagnostics.
+    relevant_categories = {"incident", "priority"}
+    recent_events = [
+        event for event in getattr(center, "events", [])
+        if str(event.get("category", "")).strip().casefold() in relevant_categories
+    ][:4]
 
     st.markdown("### Operations at a glance")
     c1, c2, c3 = st.columns(3)
@@ -112,11 +118,8 @@ def render_command_center() -> None:
                 st.dataframe(pd.DataFrame(resource_rows), use_container_width=True, hide_index=True)
                 st.caption("Loaded inventory records; operational freshness is not independently verified.")
             else:
-                st.info(
-                    "No verified operational resource inventory is connected. Live ambulance positions, "
-                    "hospital capacity, shelter occupancy, and dispatch status are unavailable."
-                )
-                st.page_link("pages/3_Resources.py", label="Open resource inventory", icon="📦")
+                st.caption("No operational resource inventory connected.")
+                st.page_link("pages/3_Resources.py", label="Connect resource inventory", icon="📦")
 
     with right:
         with st.container(border=True):
@@ -132,23 +135,22 @@ def render_command_center() -> None:
                 st.dataframe(pd.DataFrame(assignment_rows), use_container_width=True, hide_index=True)
                 st.caption("Allocation suggestions require human review before operational use.")
             else:
-                st.info(
-                    "No resource assignments are available. Assignments appear only when incident reports "
-                    "and an operational resource inventory are present."
-                )
+                st.caption("No response actions to review. Recommendations appear when resources are connected.")
 
         with st.container(border=True):
             st.markdown("### Recent activity")
             if recent_events:
-                for event in recent_events:
+                for index, event in enumerate(recent_events):
                     message = event.get("message", "Activity recorded")
-                    timestamp = event.get("timestamp") or event.get("created_at") or "Time not provided"
+                    timestamp = event.get("timestamp") or event.get("created_at")
                     category = str(event.get("category", "activity")).replace("_", " ").title()
                     st.markdown(f"**{category}** · {message}")
-                    st.caption(str(timestamp))
-                    st.divider()
+                    if timestamp:
+                        st.caption(str(timestamp))
+                    if index < len(recent_events) - 1:
+                        st.divider()
             else:
-                st.caption("No activity has been recorded yet.")
+                st.caption("No recent incident or priority updates.")
 
     st.caption(
         "ResQ-AI is decision-support software, not an emergency dispatch service. "

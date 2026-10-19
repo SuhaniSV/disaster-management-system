@@ -85,11 +85,7 @@ if submitted:
                 "after the current session ends."
             )
         else:
-            st.warning(
-                "Analysis completed, but permanent storage is not configured. This report is "
-                "only in the current session and will disappear after refresh. Add DATABASE_URL "
-                "to Streamlit app secrets to enable saving."
-            )
+            st.caption("Database storage is not connected; this report is session-only.")
 
         # Human-readable incident summary; raw structured output stays optional.
         st.markdown("### Incident assessment")
@@ -187,7 +183,7 @@ if submitted:
                 }
             )
 
-        st.caption("Open Command Center to see the map and priority queue update.")
+        st.caption("Use Incident Operations to review response actions and Situation Reports for the consolidated operational summary.")
 
 st.divider()
 st.caption(f"Default map center: {CITY_LAT}, {CITY_LON}. Confirm the coordinates before submitting. Reports entered here are operator-submitted and are not independently verified.")

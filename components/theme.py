@@ -256,8 +256,20 @@ input:focus, textarea:focus, [data-baseweb="input"]:focus-within, [data-baseweb=
 [data-testid="stFileUploader"], [data-testid="stCameraInput"] { border-radius: 12px; }
 [data-testid="stSidebarNav"] { padding-top: .35rem; }
 [data-testid="stSidebarNav"] a { border-radius: 9px; margin: 2px 6px; transition: background .15s ease; }
-/* Hide the first auto-generated entrypoint link ("app"); Command Center is the user-facing home. */
-[data-testid="stSidebarNav"] > ul > li:first-child {
+/* Label the main app.py entrypoint as the Live Disaster Intelligence landing page. */
+[data-testid="stSidebarNav"] > ul > li:first-child a {
+  font-size: 0 !important;
+}
+[data-testid="stSidebarNav"] > ul > li:first-child a::after {
+  content: "Live Disaster Intelligence";
+  font-size: .91rem;
+  letter-spacing: -.01em;
+}
+/* Hide Streamlit's default app icon and page-options ellipsis for the landing item. */
+[data-testid="stSidebarNav"] > ul > li:first-child a > span,
+[data-testid="stSidebarNav"] > ul > li:first-child a > svg,
+[data-testid="stSidebarNav"] > ul > li:first-child a [data-testid="stIconMaterial"],
+[data-testid="stSidebarNav"] > ul > li:first-child button {
   display: none !important;
 }
 [data-testid="stSidebarNav"] a:hover { background: #eef3fb; }
@@ -618,7 +630,7 @@ def render_sidebar(center: CommandCenter) -> None:
     if llm_configured():
         st.sidebar.caption("LLM key detected in environment/secrets. Analysis uses the model when reachable.")
     else:
-        st.sidebar.caption("No LLM key configured. Keyword fallback analysis is active.")
+        pass  # No LLM-status notice in the sidebar.
 
 
 def render_header(center: CommandCenter, subtitle: str) -> None:
