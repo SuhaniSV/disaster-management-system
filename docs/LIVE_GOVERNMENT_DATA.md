@@ -9,7 +9,7 @@ ResQ-AI includes a **Live Government Alerts** page that connects to official gov
 - Official API portal: https://api.imd.gov.in/public/index.php
 - Official API reference: https://api.imd.gov.in/public/api_reference.html
 - Data endpoints used: district nowcast and district warning under https://api.imd.gov.in/api/v1/
-- Configure IMD_API_TOKEN using an issued credential from IMD. The app reports an unavailable source if the token or permission is missing.
+- Configure IMD_API_TOKEN using an issued credential from IMD. The app reports an unavailable source if the token or permission is missing. If your account uses a different header convention, configure IMD_API_AUTH_HEADER and IMD_API_AUTH_SCHEME to match the current official account documentation.
 - Optional IMD_API_BASE can select the API base documented by IMD. Do not point it to an untrusted host.
 
 The adapter requests the documented districtnowcast and districtwarning resources, uses the configured authorization header, normalizes common response shapes, and caches successful JSON responses for five minutes. If IMD changes the API contract, update the adapter to match the current official reference.
@@ -18,7 +18,7 @@ The adapter requests the documented districtnowcast and districtwarning resource
 
 - Official portal: https://sachet.ndma.gov.in/
 - Official CAP feed guide: https://sachet.ndma.gov.in/CapFeed
-- Configure NDMA_CAP_FEED_URL only with the authorized feed URL supplied by SACHET or the responsible agency. The app does not guess feed identifiers or scrape undocumented endpoints.
+- The official integration guide documents the URL pattern `https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile?identifier=...`. Configure NDMA_CAP_FEED_URL with the complete URL and identifier supplied/authorized by SACHET or the responsible agency. The app does not invent the identifier or scrape undocumented endpoints.
 - The adapter only permits HTTPS on sachet.ndma.gov.in and supports RSS item XML or a single CAP alert XML document. It honors ETag validation if the server returns an ETag.
 
 Availability of feeds and access permissions may vary. If you do not have an authorized feed URL, the page will say setup is required.
