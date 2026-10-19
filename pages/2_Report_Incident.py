@@ -13,10 +13,11 @@ center = get_center()
 render_sidebar(center)
 render_header(center, "Submit an emergency report · NLP extracts facts · the priority engine scores independently")
 
-st.info(
-    "The language model (or fallback keyword engine) extracts structured facts. "
-    "It does not choose the final rescue unit. Priority scoring and assignment are deterministic."
-)
+if center.demo_mode:
+    st.info("Demo Mode is active. The form starts with a clearly simulated sample report; edit it for testing only.")
+else:
+    st.info("Live Data Mode: enter a real operator-observed report and its actual coordinates. The form does not inject a sample incident. Reports remain unverified until an authorized operator confirms them.")
+st.caption("The language model (or fallback keyword engine) extracts structured facts. It does not choose the final rescue unit. Priority scoring and assignment are deterministic.")
 
 demo_text = (
     "Flood water has entered a school. Approximately 70 students are trapped. "
@@ -24,13 +25,13 @@ demo_text = (
 )
 
 with st.form("report_form"):
-    description = st.text_area("Incident description", value=demo_text, height=140)
+    description = st.text_area("Incident description", value=demo_text if center.demo_mode else "", height=140)
     c1, c2, c3 = st.columns(3)
-    people = c1.number_input("Estimated people affected", min_value=0, value=70, step=1)
-    lat = c2.number_input("Latitude", value=18.5164, format="%.4f")
-    lon = c3.number_input("Longitude", value=73.8567, format="%.4f")
+    people = c1.number_input("Estimated people affected", min_value=0, value=70 if center.demo_mode else 0, step=1)
+    lat = c2.number_input("Latitude", value=18.5164 if center.demo_mode else 0.0, format="%.4f", help="Enter the actual incident latitude. The live mode does not assume Pune coordinates.")
+    lon = c3.number_input("Longitude", value=73.8567 if center.demo_mode else 0.0, format="%.4f", help="Enter the actual incident longitude. The live mode does not assume Pune coordinates.")
     accessibility = st.selectbox("Observed accessibility", ["Open", "Restricted", "Blocked"], index=2)
-    reporter = st.text_input("Reporter (optional)", value="field-officer-demo")
+    reporter = st.text_input("Reporter (optional)", value="field-officer-demo" if center.demo_mode else "")
     image = st.file_uploader("Optional image (stored for operator review only — no computer vision in this MVP)", type=["png", "jpg", "jpeg"])
     submitted = st.form_submit_button("ANALYZE INCIDENT", use_container_width=True)
 
