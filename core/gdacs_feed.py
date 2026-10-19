@@ -74,14 +74,14 @@ def _coordinates(feature: dict[str, Any], properties: dict[str, Any]) -> tuple[f
 
 
 def fetch_gdacs_events(lookback_days: int = 30, limit: int | None = None) -> dict[str, Any]:
-    """Fetch and normalize recent GDACS GeoJSON events.
+    """Fetch all available recent GDACS events, paging through 100-record batches.
 
     Network and HTTP errors are raised so the UI can show an honest unavailable
     state instead of substituting fabricated or stale events.
     """
     days = max(1, min(int(lookback_days), 365))
     today = date.today()
-    params = {
+    base_params = {
         "eventlist": ";".join(EVENT_TYPES),
         "fromdate": (today - timedelta(days=days)).isoformat(),
         "todate": today.isoformat(),
@@ -90,10 +90,11 @@ def fetch_gdacs_events(lookback_days: int = 30, limit: int | None = None) -> dic
     seen_ids: set[str] = set()
     page_number = 1
     page_size = 100
+
     while True:
         response = requests.get(
             GDACS_API_URL,
-            params={**params, "pageSize": page_size, "pageNumber": page_number},
+            params={**base_params, "pageSize": page_size, "pageNumber": page_number},
             timeout=REQUEST_TIMEOUT_SECONDS,
             headers={
                 "Accept": "application/geo+json, application/json",
@@ -107,51 +108,56 @@ def fetch_gdacs_events(lookback_days: int = 30, limit: int | None = None) -> dic
         features = payload["features"]
         if not features:
             break
+
         for feature in features:
-        if not isinstance(feature, dict):
-            continue
-        properties = feature.get("properties") or {}
-        if not isinstance(properties, dict):
-            continue
+            if not isinstance(feature, dict):
+                continue
+            properties = feature.get("properties") or {}
+            if not isinstance(properties, dict):
+                continue
 
-        raw_type = _as_text(_value(properties, "eventtype", "event_type", "type")).upper()
-        event_type = EVENT_TYPES.get(raw_type, raw_type.title() or "Hazard")
-        event_id = _as_text(_value(properties, "eventid", "event_id", "id") or feature.get("id"))
-        if event_id and event_id in seen_ids:
-            continue
-        if event_id:
-            seen_ids.add(event_id)
-        name = _as_text(_value(properties, "eventname", "name", "title", "description"), event_type)
-        country = _as_text(_value(properties, "country", "countryname", "country_name"), "Not reported")
-        alert = _as_text(_value(properties, "alertlevel", "alert_level", "alert"), "Not reported")
-        severity = _as_text(_value(properties, "severity", "severitytext", "severity_text"), "")
-        started = _event_time(_value(properties, "fromdate", "from_date", "date", "eventdate"))
-        updated = _event_time(_value(properties, "todate", "to_date", "updated", "pubdate"))
-        latitude, longitude = _coordinates(feature, properties)
-        link = _as_text(_value(properties, "url", "link", "htmlurl", "event_url"))
-        if link and not link.startswith("https://"):
-            link = ""
+            raw_type = _as_text(_value(properties, "eventtype", "event_type", "type")).upper()
+            event_type = EVENT_TYPES.get(raw_type, raw_type.title() or "Hazard")
+            event_id = _as_text(_value(properties, "eventid", "event_id", "id") or feature.get("id"))
+            if event_id and event_id in seen_ids:
+                continue
+            if event_id:
+                seen_ids.add(event_id)
 
-        events.append({
-            "id": event_id or f"{raw_type or 'EVENT'}-{len(events) + 1}",
-            "event_type": event_type,
-            "name": name,
-            "country": country,
-            "alert_level": alert,
-            "severity": severity,
-            "started_at_utc": started,
-            "updated_at_utc": updated,
-            "latitude": latitude,
-            "longitude": longitude,
-            "source_url": link or GDACS_SOURCE_URL,
-            "source": GDACS_SOURCE_NAME,
-        })
+            name = _as_text(_value(properties, "eventname", "name", "title", "description"), event_type)
+            country = _as_text(_value(properties, "country", "countryname", "country_name"), "Not reported")
+            alert = _as_text(_value(properties, "alertlevel", "alert_level", "alert"), "Not reported")
+            severity = _as_text(_value(properties, "severity", "severitytext", "severity_text"), "")
+            started = _event_time(_value(properties, "fromdate", "from_date", "date", "eventdate"))
+            updated = _event_time(_value(properties, "todate", "to_date", "updated", "pubdate"))
+            latitude, longitude = _coordinates(feature, properties)
+            link = _as_text(_value(properties, "url", "link", "htmlurl", "event_url"))
+            if link and not link.startswith("https://"):
+                link = ""
+
+            events.append({
+                "id": event_id or f"{raw_type or 'EVENT'}-{len(events) + 1}",
+                "event_type": event_type,
+                "name": name,
+                "country": country,
+                "alert_level": alert,
+                "severity": severity,
+                "started_at_utc": started,
+                "updated_at_utc": updated,
+                "latitude": latitude,
+                "longitude": longitude,
+                "source_url": link or GDACS_SOURCE_URL,
+                "source": GDACS_SOURCE_NAME,
+            })
 
         if len(features) < page_size:
             break
         page_number += 1
 
-    events.sort(key=lambda item: item.get("updated_at_utc") or item.get("started_at_utc") or "", reverse=True)
+    events.sort(
+        key=lambda item: item.get("updated_at_utc") or item.get("started_at_utc") or "",
+        reverse=True,
+    )
     if limit is not None:
         events = events[:max(1, int(limit))]
     return {
