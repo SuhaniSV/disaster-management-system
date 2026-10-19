@@ -38,15 +38,30 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {
 [data-testid="stHeader"] {
   background: rgba(245,247,251,.92);
 }
-/* Hide Streamlit-owned top chrome only; keep RescueX navigation and controls intact. */
-header[data-testid="stHeader"],
-[data-testid="stToolbar"],
+/* Keep Streamlit's header available so the native sidebar reopen control stays visible. */
+header[data-testid="stHeader"] {
+  display: block !important;
+  visibility: visible !important;
+  height: 2.75rem !important;
+  background: rgba(234,241,245,.94) !important;
+  z-index: 999 !important;
+}
+header[data-testid="stHeader"] [data-testid="stToolbar"] {
+  display: flex !important;
+  visibility: visible !important;
+}
+header[data-testid="stHeader"] [data-testid="stSidebarCollapsedControl"],
+header[data-testid="stHeader"] button[kind="header"] {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
 [data-testid="stDecoration"],
 #MainMenu,
 footer {
   display: none !important;
   visibility: hidden !important;
-  height: 0 !important;
 }
 [data-testid="stAppViewContainer"] {
   padding-top: 0 !important;
