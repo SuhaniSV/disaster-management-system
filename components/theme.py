@@ -12,128 +12,227 @@ from components.session import persist
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
-html, body, [class*="css"]  {
-  font-family: "IBM Plex Sans", sans-serif;
+:root {
+  color-scheme: light;
+  --resq-ink: #152238;
+  --resq-muted: #66758b;
+  --resq-border: #e2e8f0;
+  --resq-panel: #ffffff;
+  --resq-canvas: #f5f7fb;
+  --resq-blue: #2457c5;
+  --resq-teal: #0f766e;
+  --resq-red: #c2414b;
 }
 
+html, body, [class*="css"], [data-testid="stAppViewContainer"] {
+  font-family: "DM Sans", sans-serif;
+  color: var(--resq-ink);
+}
 .stApp {
-  background: radial-gradient(1200px 600px at 20% -10%, #1b2a4a 0%, #0b1220 42%);
+  background: var(--resq-canvas);
+  color: var(--resq-ink);
 }
-
+[data-testid="stHeader"] {
+  background: rgba(245,247,251,.92);
+}
+[data-testid="stMainBlockContainer"] {
+  padding-top: 1.8rem;
+  padding-bottom: 3rem;
+  max-width: 1600px;
+}
 section[data-testid="stSidebar"] {
-  background: #0d1526;
-  border-right: 1px solid #243049;
+  background: #ffffff;
+  border-right: 1px solid var(--resq-border);
 }
+section[data-testid="stSidebar"] > div {
+  padding-top: 1.25rem;
+}
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+  color: var(--resq-muted);
+}
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
+  color: var(--resq-ink);
+  letter-spacing: -.03em;
+}
+h1, h2, h3, h4, h5 {
+  color: var(--resq-ink);
+  letter-spacing: -.035em;
+}
+h1 { font-weight: 700 !important; }
+h2, h3 { font-weight: 650 !important; }
+p, label, li, [data-testid="stMarkdownContainer"] {
+  color: var(--resq-ink);
+}
+small, .stCaption, [data-testid="stCaptionContainer"] {
+  color: var(--resq-muted) !important;
+}
+a { color: var(--resq-blue) !important; }
 
 .resq-header {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 24px;
   align-items: flex-start;
-  padding: 8px 4px 18px 4px;
-  border-bottom: 1px solid #243049;
-  margin-bottom: 16px;
+  padding: 10px 0 22px;
+  border-bottom: 1px solid var(--resq-border);
+  margin-bottom: 22px;
 }
-
 .resq-kicker {
-  color: #7aa2ff;
-  letter-spacing: 0.18em;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.resq-title {
-  font-size: 28px;
+  color: var(--resq-blue);
+  letter-spacing: .16em;
+  font-size: 11px;
   font-weight: 700;
-  color: #f4f7ff;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.resq-title {
+  font-size: clamp(24px, 2.1vw, 32px);
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--resq-ink);
   margin: 0;
 }
-
 .resq-sub {
-  color: #9db0cc;
-  margin-top: 4px;
+  color: var(--resq-muted);
+  margin-top: 8px;
   font-size: 14px;
 }
-
 .resq-pills {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
 }
-
 .pill {
   font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid #2b3b59;
-  background: #121a2b;
-  color: #d5e4ff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #dbe4f0;
+  background: #f8fafc;
+  color: #34445b;
+  white-space: nowrap;
 }
-
-.pill.ok { border-color: #1f6f4a; color: #7dffa6; background: #10261c; }
-.pill.warn { border-color: #8a6a12; color: #ffd56a; background: #2a210e; }
-.pill.bad { border-color: #8a2030; color: #ff8b9a; background: #2a1014; }
-.pill.demo { border-color: #35548a; color: #9ec1ff; }
+.pill.ok { border-color: #b7e4d4; color: #116149; background: #eaf8f1; }
+.pill.warn { border-color: #f1d5a4; color: #8a4b0b; background: #fff7e8; }
+.pill.bad { border-color: #f0c4c7; color: #a72c37; background: #fff0f1; }
+.pill.demo { border-color: #c9d8ff; color: #244aa5; background: #eef3ff; }
 
 .metric-card {
-  background: linear-gradient(180deg, #162033 0%, #121a2b 100%);
-  border: 1px solid #2a3b59;
+  background: var(--resq-panel);
+  border: 1px solid var(--resq-border);
   border-radius: 14px;
-  padding: 14px 16px 12px 16px;
-  min-height: 96px;
+  padding: 17px 18px 15px;
+  min-height: 104px;
+  box-shadow: 0 2px 5px rgba(22,34,56,.025);
 }
-
 .metric-card .label {
-  color: #8ea2c3;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  font-weight: 600;
+  color: var(--resq-muted);
+  font-size: 11px;
+  letter-spacing: .08em;
+  font-weight: 700;
+  text-transform: uppercase;
 }
-
 .metric-card .value {
   font-size: 30px;
+  line-height: 1.15;
   font-weight: 700;
-  color: #f7fbff;
-  margin-top: 6px;
+  color: var(--resq-ink);
+  margin-top: 10px;
   font-family: "IBM Plex Mono", monospace;
 }
-
-.metric-card.critical .value { color: #ff6b7d; }
-.metric-card.medical .value { color: #ffb347; }
-
+.metric-card.critical .value { color: var(--resq-red); }
+.metric-card.medical .value { color: #b66a12; }
 .panel {
-  background: #121a2b;
-  border: 1px solid #2a3b59;
+  background: #fff;
+  border: 1px solid var(--resq-border);
   border-radius: 14px;
-  padding: 12px 14px;
+  padding: 16px;
+  box-shadow: 0 2px 5px rgba(22,34,56,.025);
 }
-
 .event-line {
   font-family: "IBM Plex Mono", monospace;
   font-size: 12px;
-  color: #c5d4ee;
-  padding: 4px 0;
-  border-bottom: 1px solid #1c2940;
+  color: #475569;
+  padding: 7px 0;
+  border-bottom: 1px solid #edf1f6;
 }
-
 .disclaimer {
-  color: #8ea2c3;
+  color: var(--resq-muted);
   font-size: 12px;
   margin-top: 10px;
 }
-
 div[data-testid="stMetric"] {
-  background: #121a2b;
-  border: 1px solid #2a3b59;
+  background: #fff;
+  border: 1px solid var(--resq-border);
   border-radius: 14px;
-  padding: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 5px rgba(22,34,56,.025);
 }
-
-.stDataFrame { border-radius: 12px; overflow: hidden; }
+div[data-testid="stMetricLabel"] p {
+  color: var(--resq-muted) !important;
+  font-size: 12px;
+  font-weight: 600;
+}
+div[data-testid="stMetricValue"] {
+  color: var(--resq-ink);
+  font-family: "IBM Plex Mono", monospace;
+}
+.stDataFrame, [data-testid="stDataFrame"] {
+  border: 1px solid var(--resq-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+[data-testid="stVerticalBlockBorderWrapper"] {
+  border-color: var(--resq-border);
+  border-radius: 14px;
+}
+.stButton > button, [data-testid="stFormSubmitButton"] > button {
+  border-radius: 9px;
+  font-weight: 600;
+  border: 1px solid #d5deeb;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.stButton > button:hover, [data-testid="stFormSubmitButton"] > button:hover {
+  border-color: #9db7ee;
+  box-shadow: 0 3px 10px rgba(36,87,197,.10);
+  transform: translateY(-1px);
+}
+.stButton > button[kind="primary"], [data-testid="stFormSubmitButton"] > button[kind="primary"] {
+  background: var(--resq-blue);
+  border-color: var(--resq-blue);
+  color: #fff;
+}
+input, textarea, [data-baseweb="select"] > div {
+  border-radius: 9px !important;
+}
+[data-testid="stChatMessage"] {
+  background: #fff;
+  border: 1px solid var(--resq-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+[data-testid="stChatInput"] {
+  border-color: #d6dfeb;
+  border-radius: 14px;
+  background: #fff;
+}
+[data-testid="stAlert"] {
+  border-radius: 12px;
+}
+hr {
+  border-color: var(--resq-border);
+}
+@media (max-width: 850px) {
+  .resq-header { flex-direction: column; }
+  .resq-pills { justify-content: flex-start; }
+  .resq-title { font-size: 24px; }
+}
 </style>
 """
 
