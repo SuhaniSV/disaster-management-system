@@ -37,6 +37,10 @@ def _resource_color(resource: dict) -> list[int]:
 
 
 def render_map(center: CommandCenter) -> None:
+    if not center.demo_mode and not (center.incidents or center.resources or center.hospitals or center.shelters or center.roads):
+        st.info("No verified live coordinates are available to plot. Live hazard feeds are shown separately with their source and timestamp; sample Pune coordinates are not used in Live Data Mode.")
+        return
+
     incident_rows = []
     for inc in center.incidents:
         try:
@@ -197,5 +201,5 @@ def render_map(center: CommandCenter) -> None:
     st.caption(
         "🔴 Critical  🟠 High  🟡 Medium  🟢 Resolved  ·  blue teams  ·  pink medical  ·  cyan hospitals  ·  green shelters. "
         + DISTANCE_LABEL
-        + ". Map uses simulated coordinates."
+        + (". Map uses simulated coordinates." if center.demo_mode else ". Map shows only current-session operator reports and available source records; unconnected live layers are omitted.")
     )
