@@ -14,6 +14,7 @@ def situation_report(center: Any, live_alerts: dict[str, Any] | None = None) -> 
         "report_title": "ResQ-AI Situation Report",
         "generated_at": _stamp(),
         "data_mode": "demo_mode_simulated" if getattr(center, "demo_mode", True) else "live_data_mode_session_records_only",
+        "data_scope": "simulated sample records" if getattr(center, "demo_mode", True) else "current session records only; no complete live incident or operational-inventory feed is connected by default",
         "disclaimer": "Decision support only. Verify all facts and capacity with responsible authorities. Not a dispatch order.",
         "metrics": metrics,
         "incidents": incidents,
@@ -49,7 +50,7 @@ def event_log_csv(center: Any) -> str:
 def situation_report_markdown(center: Any) -> str:
     report = situation_report(center)
     m = report["metrics"]
-    lines = ["# ResQ-AI Situation Report", "", f"Generated: {report['generated_at']}", f"Data mode: {report['data_mode']}", "",
+    lines = ["# ResQ-AI Situation Report", "", f"Generated: {report['generated_at']}", f"Data mode: {report['data_mode']}", f"Data scope: {report['data_scope']}", "",
     "> Decision support only. Verify reports and capacities with authorities. Not a dispatch order.", "",
     "## Situation summary", "", f"- Active incidents: {m.get('active_incidents', 0)}", f"- Critical incidents: {m.get('critical_incidents', 0)}",
     f"- People affected (reported): {m.get('people_affected', 0)}", f"- Available resources (reported): {m.get('available_resources', 0)}",
