@@ -55,4 +55,4 @@ def test_briefing_falls_back_without_aws_model(monkeypatch):
     result = generate_incident_brief(FakeCenter())
     assert result["mode"] == "deterministic_fallback"
     assert "Active incidents: 1" in result["brief"]
-    assert "does not authorize dispatch" in result["brief"]
+    assert "not dispatch authorization" in result["brief"]
