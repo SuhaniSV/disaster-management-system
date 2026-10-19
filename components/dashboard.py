@@ -15,13 +15,13 @@ from utils.validation import as_bool
 def render_command_center() -> None:
     center = get_center()
     render_sidebar(center)
-    render_header(center, "AI-assisted emergency decision support · simulated Pune-area prototype")
+    render_header(center, "Emergency response intelligence · simulated Pune-area prototype")
     attention_banner(center)
     metric_cards(center.metrics())
 
     left, right = st.columns([1.35, 1])
     with left:
-        st.markdown("**Live incident map**")
+        st.markdown("**Incident map**")
         render_map(center)
     with right:
         st.markdown("**Priority incident queue**")
