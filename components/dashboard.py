@@ -9,15 +9,21 @@ from components.metrics import metric_cards
 from components.resource_cards import hospital_shelter_panels
 from components.session import get_center
 from components.theme import render_header, render_sidebar
+from components.live_feed import render_live_earthquake_feed
 from utils.validation import as_bool
 
 
 def render_command_center() -> None:
     center = get_center()
     render_sidebar(center)
-    render_header(center, "Emergency response intelligence · simulated Pune-area prototype")
-    attention_banner(center)
-    metric_cards(center.metrics())
+    subtitle = "Emergency response intelligence · live feeds and operator-entered reports" if not center.demo_mode else "Emergency response intelligence · simulated Pune-area prototype"
+    render_header(center, subtitle)
+    if center.demo_mode:
+        attention_banner(center)
+        metric_cards(center.metrics())
+    else:
+        st.info("Live Data Mode is active. No live incident, responder-location, hospital-bed, shelter-occupancy, or road-closure feed is connected by default. Values for those sources are unavailable—not zero. Only operator-entered reports and verified connected feeds appear here.")
+        render_live_earthquake_feed()
 
     left, right = st.columns([1.35, 1])
     with left:
@@ -67,7 +73,11 @@ def render_command_center() -> None:
     else:
         st.info("No assignments yet.")
 
-    hospital_shelter_panels(center)
+    if center.demo_mode:
+        hospital_shelter_panels(center)
+    else:
+        st.markdown("### Resource availability")
+        st.info("Live responder locations, hospital bed availability, shelter occupancy, and road closures require authorized real-time integrations. No simulated inventory is shown in Live Data Mode.")
     st.divider()
     render_event_log(center, limit=14)
     st.caption("Recommended allocation only. Coordinators remain responsible for operational decisions.")
