@@ -19,7 +19,7 @@ page_setup("Analytics")
 
 center = get_center()
 render_sidebar(center)
-render_header(center, "Situation analytics · simulated operational picture")
+render_header(center, "Analytics for operator-submitted incidents and currently available operational records")
 
 r1, r2 = st.columns(2)
 fig = incidents_by_type(center)
@@ -51,4 +51,4 @@ if fig:
 
 st.markdown("### Response recommendations")
 st.dataframe(assignment_table(center), use_container_width=True, hide_index=True)
-st.caption("Charts describe the in-memory demo state, not live government statistics.")
+st.caption("These charts summarize records entered into this session. They are not live government statistics.")
