@@ -832,6 +832,109 @@ div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) label {
     animation-duration: .01ms !important;
   }
 }
+
+/* Balanced slate-and-teal palette: sidebar and workspace sit at similar visual weight. */
+:root {
+  --resq-ink: #203548;
+  --resq-muted: #607487;
+  --resq-border: #d2dfe7;
+  --resq-panel: #f9fcfd;
+  --resq-canvas: #eaf1f5;
+  --resq-blue: #176b78;
+  --resq-teal: #138b83;
+}
+.stApp {
+  background: linear-gradient(135deg, #e8f0f4 0%, #edf3f6 54%, #e5eef3 100%) !important;
+}
+section[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #dce8ee 0%, #e3edf1 55%, #d9e6ed 100%) !important;
+  border-right: 1px solid #c4d5df !important;
+  box-shadow: 4px 0 18px rgba(31,58,78,.055) !important;
+}
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+section[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] strong {
+  color: #496477 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] strong {
+  background: #eef5f7 !important;
+  border-color: #c8dce4 !important;
+  color: #235d68 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 { color: #203b4e !important; }
+section[data-testid="stSidebar"] hr { border-color: #c8d8e1 !important; }
+.rx-sidebar-brand {
+  background: linear-gradient(135deg, #d2e9e8, #dcecf4 72%, #e6f0f4) !important;
+  border-color: #b8d8dc !important;
+  box-shadow: 0 6px 16px rgba(31,75,89,.06) !important;
+}
+.rx-brand-name { color: #17394b !important; }
+.rx-brand-tag, .rx-brand-status { color: #527183 !important; }
+.rx-brand-line { background: #bfd4dd !important; }
+.rx-status-dot { background: #0f9b83 !important; box-shadow: 0 0 0 4px rgba(15,155,131,.12) !important; }
+.rx-brand-mark { box-shadow: 0 5px 14px rgba(20,120,135,.15) !important; }
+[data-testid="stSidebarNav"] a {
+  color: #39566a !important;
+  border-color: transparent !important;
+}
+[data-testid="stSidebarNav"] a:hover {
+  color: #164f5c !important;
+  background: #d0e5e8 !important;
+  border-color: #bddadd !important;
+}
+[data-testid="stSidebarNav"] a[aria-current="page"] {
+  color: #164f5c !important;
+  background: linear-gradient(100deg, #c7e5e2, #d5eaf1) !important;
+  border: 1px solid #a9d4d4 !important;
+  border-left: 3px solid #15988e !important;
+  box-shadow: 0 3px 10px rgba(31,75,89,.05) !important;
+}
+div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) [data-baseweb="input"] {
+  background: #f6fbfc !important;
+  border: 1px solid #b7d1dc !important;
+  box-shadow: 0 2px 8px rgba(31,58,78,.045) !important;
+}
+div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) input {
+  color: #203548 !important;
+}
+div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) input::placeholder {
+  color: #71899a !important;
+}
+div[data-testid="stTextInput"]:has(input[placeholder*="Search"]) [data-baseweb="input"]:focus-within {
+  border-color: #15988e !important;
+  box-shadow: 0 0 0 3px rgba(21,152,142,.13) !important;
+}
+.resq-header {
+  box-shadow: 0 10px 26px rgba(24,54,75,.10) !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stMetric"],
+[data-testid="stMainBlockContainer"] [data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stMainBlockContainer"] [data-testid="stExpander"] {
+  box-shadow: 0 4px 15px rgba(31,58,78,.045) !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] {
+  background: #f7fafc !important;
+  border-color: #d1dfe7 !important;
+  box-shadow: 0 8px 22px rgba(31,58,78,.055) !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] label {
+  color: #304d60 !important;
+  font-weight: 650 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] input,
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] textarea,
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-baseweb="select"] > div {
+  background: #ffffff !important;
+  border-color: #c4d6e0 !important;
+  color: #203548 !important;
+  border-radius: 10px !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] input:focus,
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] textarea:focus,
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-baseweb="select"]:focus-within {
+  border-color: #15988e !important;
+  box-shadow: 0 0 0 3px rgba(21,152,142,.11) !important;
+}
 </style>
 """
 
