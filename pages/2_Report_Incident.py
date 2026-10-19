@@ -72,7 +72,7 @@ if submitted:
                 status.update(label="Analysis complete · database save failed", state="error")
             else:
                 st.session_state.incident_store_error = None
-                status.update(label="Analysis complete · not saved permanently", state="complete")
+                status.update(label="Analysis complete · session-only", state="complete")
 
         if saved_permanently:
             st.toast(f"{incident['id']} saved to the incident database")
