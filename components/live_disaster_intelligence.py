@@ -11,12 +11,12 @@ from core.live_feeds import USGS_ALL_DAY_URL, fetch_usgs_earthquakes
 
 @st.cache_data(ttl=300, show_spinner=False)
 def _cached_gdacs(lookback_days: int) -> dict:
-    return fetch_gdacs_events(lookback_days=lookback_days, limit=100)
+    return fetch_gdacs_events(lookback_days=lookback_days)
 
 
 @st.cache_data(ttl=300, show_spinner=False)
 def _cached_usgs() -> dict:
-    return fetch_usgs_earthquakes(limit=100)
+    return fetch_usgs_earthquakes()
 
 
 def render_live_disaster_intelligence() -> None:
@@ -102,7 +102,7 @@ def render_live_disaster_intelligence() -> None:
 
     connected = sum(row["Status"] == "Connected" for row in source_rows)
     c1, c2, c3 = st.columns(3)
-    c1.metric("Source-reported events", len(events))
+    c1.metric("Source-reported records", len(events))
     c2.metric("Feeds connected", f"{connected} / {len(source_rows)}")
     c3.metric("Monitoring window", f"{lookback} days + USGS past day")
 
