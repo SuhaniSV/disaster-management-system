@@ -241,8 +241,8 @@ def load_demo_disaster() -> CommandCenter:
         if hospital.get("id") == "H02":
             hospital["available_beds"] = 6
     cc.events = [e for e in cc.events if e.get("category") == "system"][:1]
-    cc.log("DEMO MODE: flood-city scenario loaded (simulated data)", "demo")
-    cc.log("Road R-07 (Solapur Road approach) marked blocked", "demo")
-    cc.log("Resources R08 and R10 marked unavailable to reflect limited capacity", "demo")
-    cc.recalculate(reason="Demo disaster response plan calculated")
+    cc.log("What-if scenario loaded: flood response constraints applied", "scenario")
+    cc.log("Scenario change: Road R-07 marked blocked", "scenario")
+    cc.log("Scenario change: Resources R08 and R10 marked unavailable", "scenario")
+    cc.recalculate(reason="What-if response plan recalculated")
     return cc
