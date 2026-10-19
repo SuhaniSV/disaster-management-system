@@ -118,11 +118,8 @@ def render_command_center() -> None:
                 st.dataframe(pd.DataFrame(resource_rows), use_container_width=True, hide_index=True)
                 st.caption("Loaded inventory records; operational freshness is not independently verified.")
             else:
-                st.info(
-                    "No verified operational resource inventory is connected. Live ambulance positions, "
-                    "hospital capacity, shelter occupancy, and dispatch status are unavailable."
-                )
-                st.page_link("pages/3_Resources.py", label="Open resource inventory", icon="📦")
+                st.caption("No operational resource inventory connected.")
+                st.page_link("pages/3_Resources.py", label="Connect resource inventory", icon="📦")
 
     with right:
         with st.container(border=True):
@@ -138,10 +135,7 @@ def render_command_center() -> None:
                 st.dataframe(pd.DataFrame(assignment_rows), use_container_width=True, hide_index=True)
                 st.caption("Allocation suggestions require human review before operational use.")
             else:
-                st.info(
-                    "No resource assignments are available. Assignments appear only when incident reports "
-                    "and an operational resource inventory are present."
-                )
+                st.caption("No response actions to review. Recommendations appear when resources are connected.")
 
         with st.container(border=True):
             st.markdown("### Recent activity")
