@@ -46,3 +46,13 @@ def test_shelter_and_resource_capacity_are_reported_without_mutation():
     assert status["available_resource_count"] == 1
     assert status["hospital_beds_available"] == 4
     assert status["shelter_spaces_available"] == 25
+
+
+def test_briefing_falls_back_without_aws_model(monkeypatch):
+    from resq_mcp.logic import generate_incident_brief
+
+    monkeypatch.delenv("AWS_BEDROCK_MODEL_ID", raising=False)
+    result = generate_incident_brief(FakeCenter())
+    assert result["mode"] == "deterministic_fallback"
+    assert "Active incidents: 1" in result["brief"]
+    assert "does not authorize dispatch" in result["brief"]
