@@ -14,7 +14,7 @@ center = get_center()
 render_sidebar(center)
 render_header(
     center,
-    "Rescue units and field inventory · simulated inventory",
+    "Verified operational inventory is not connected. No live unit status is available yet.",
 )
 
 # Field resources

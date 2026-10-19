@@ -8,7 +8,7 @@ from typing import Any
 
 from core.ai_engine import analyze_incident
 from core.config import CITY_LAT, CITY_LON
-from core.database import load_demo_bundle
+from core.database import load_demo_bundle  # Explicit fixture used only by labelled export tests.
 from core.geo import nearest
 from core.optimizer import assign_resources
 from core.priority import calculate_priority, recommended_action
@@ -35,7 +35,7 @@ def _next_id(rows: list[dict[str, Any]], prefix: str) -> str:
 
 class CommandCenter:
     def __init__(self, bundle: dict[str, list[dict[str, Any]]] | None = None) -> None:
-        data = bundle or load_demo_bundle()
+        data = bundle if bundle is not None else {"incidents": [], "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": []}
         self.incidents: list[dict[str, Any]] = data.get("incidents", [])
         self.resources: list[dict[str, Any]] = data.get("resources", [])
         self.hospitals: list[dict[str, Any]] = data.get("hospitals", [])
@@ -43,11 +43,11 @@ class CommandCenter:
         self.roads: list[dict[str, Any]] = data.get("roads", [])
         self.events: list[dict[str, Any]] = data.get("events", [])
         self.assignments: list[dict[str, Any]] = []
-        self.demo_mode = True
+        self.demo_mode = False
         self.ai_mode = "Fallback Analysis Mode"
         if not self.events:
-            self.events.append(make_event("Command center initialized with simulated demo data", "system"))
-        self.recalculate(reason="Initial response plan")
+            self.events.append(make_event("Command center initialized; awaiting incident reports and verified operational feeds", "system"))
+        self.recalculate(reason="Command center initialized with no verified operational records")
 
     def log(self, message: str, category: str = "info") -> None:
         self.events.insert(0, make_event(message, category))
@@ -76,7 +76,7 @@ class CommandCenter:
         cc.roads = payload.get("roads", [])
         cc.events = payload.get("events", [])
         cc.assignments = payload.get("assignments", [])
-        cc.demo_mode = payload.get("demo_mode", True)
+        cc.demo_mode = payload.get("demo_mode", False)
         cc.ai_mode = payload.get("ai_mode", "Fallback Analysis Mode")
         return cc
 
@@ -241,8 +241,8 @@ def load_demo_disaster() -> CommandCenter:
         if hospital.get("id") == "H02":
             hospital["available_beds"] = 6
     cc.events = [e for e in cc.events if e.get("category") == "system"][:1]
-    cc.log("DEMO MODE: flood-city scenario loaded (simulated data)", "demo")
-    cc.log("Road R-07 (Solapur Road approach) marked blocked", "demo")
-    cc.log("Resources R08 and R10 marked unavailable to reflect limited capacity", "demo")
-    cc.recalculate(reason="Demo disaster response plan calculated")
+    cc.log("What-if scenario loaded: flood response constraints applied", "scenario")
+    cc.log("Scenario change: Road R-07 marked blocked", "scenario")
+    cc.log("Scenario change: Resources R08 and R10 marked unavailable", "scenario")
+    cc.recalculate(reason="What-if response plan recalculated")
     return cc

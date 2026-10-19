@@ -5,12 +5,10 @@ DATA_DIR = ROOT_DIR / "data"
 UPLOAD_DIR = ROOT_DIR / "uploads"
 DATABASE_DIR = ROOT_DIR / "database"
 
-CITY_NAME = "Pune (simulated)"
+CITY_NAME = "Global hazard intelligence"
 CITY_LAT = 18.5204
 CITY_LON = 73.8567
 MAP_ZOOM = 11.2
-
-DEMO_BANNER = "SIMULATED DEMO DATA — prototype only, not live government feeds"
 
 DISCLAIMER = (
     "ResQ-AI is an AI-assisted decision-support prototype. "

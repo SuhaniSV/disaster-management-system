@@ -12,15 +12,19 @@ if str(ROOT) not in sys.path:
 import streamlit as st
 
 from core.llm_client import llm_configured
-from core.state import CommandCenter, load_demo_disaster
+from core.state import CommandCenter
 
 
 def get_center() -> CommandCenter:
     if "center" not in st.session_state:
-        st.session_state.center = load_demo_disaster()
+        st.session_state.center = CommandCenter(bundle={"incidents": [], "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": []})
         if llm_configured():
             st.session_state.center.ai_mode = "AI Mode: Active"
     center: CommandCenter = st.session_state.center
+    # Clear records loaded by earlier app versions from the session; they were sample CSV data.
+    if getattr(center, "demo_mode", False):
+        st.session_state.center = CommandCenter(bundle={"incidents": [], "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": []})
+        center = st.session_state.center
     if llm_configured() and center.ai_mode.startswith("Fallback"):
         center.ai_mode = "AI Mode: Active"
     elif not llm_configured() and str(center.ai_mode).startswith("AI Mode"):

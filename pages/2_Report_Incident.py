@@ -18,19 +18,14 @@ st.info(
     "It does not choose the final rescue unit. Priority scoring and assignment are deterministic."
 )
 
-demo_text = (
-    "Flood water has entered a school. Approximately 70 students are trapped. "
-    "Two require urgent medical assistance. The main road is blocked."
-)
-
 with st.form("report_form"):
-    description = st.text_area("Incident description", value=demo_text, height=140)
+    description = st.text_area("Incident description", placeholder="Describe what happened, exact location, hazards, and people affected", height=140)
     c1, c2, c3 = st.columns(3)
-    people = c1.number_input("Estimated people affected", min_value=0, value=70, step=1)
-    lat = c2.number_input("Latitude", value=18.5164, format="%.4f")
-    lon = c3.number_input("Longitude", value=73.8567, format="%.4f")
-    accessibility = st.selectbox("Observed accessibility", ["Open", "Restricted", "Blocked"], index=2)
-    reporter = st.text_input("Reporter (optional)", value="field-officer-demo")
+    people = c1.number_input("Estimated people affected", min_value=0, value=0, step=1)
+    lat = c2.number_input("Latitude", value=0.0, format="%.4f")
+    lon = c3.number_input("Longitude", value=0.0, format="%.4f")
+    accessibility = st.selectbox("Observed accessibility", ["Open", "Restricted", "Blocked"], index=0)
+    reporter = st.text_input("Reporter (optional)", placeholder="Name or call sign")
     image = st.file_uploader("Optional image (stored for operator review only — no computer vision in this MVP)", type=["png", "jpg", "jpeg"])
     submitted = st.form_submit_button("ANALYZE INCIDENT", use_container_width=True)
 
@@ -160,4 +155,4 @@ if submitted:
         st.caption("Open Command Center to see the map and priority queue update.")
 
 st.divider()
-st.caption(f"Default map center is simulated {CITY_LAT}, {CITY_LON} (Pune area). All reports in this MVP are prototype data.")
+st.caption(f"Default map center: {CITY_LAT}, {CITY_LON}. Confirm the coordinates before submitting. Reports entered here are operator-submitted and are not independently verified.")

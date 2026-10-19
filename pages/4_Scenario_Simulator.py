@@ -40,11 +40,11 @@ def snapshot():
     }
 
 
-st.markdown("### Prepared scenarios")
+st.markdown("### What-if scenarios")
 a, b, c, d, e = st.columns(5)
 if a.button("A · Normal", use_container_width=True):
     persist(load_demo_disaster())
-    # Unblock demo constraints for a "normal" picture
+    # Reset prepared scenario constraints for a normal baseline
     center = get_center()
     center.set_road_status("R-07", "Open")
     for rid in ("R08", "R10"):
