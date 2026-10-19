@@ -335,7 +335,6 @@ def page_setup(title: str) -> None:
 def render_sidebar(center: CommandCenter) -> None:
     st.sidebar.markdown("### RESQ-AI")
     st.sidebar.caption("Intelligent Disaster Command Center")
-    st.sidebar.selectbox("Appearance", ["Light", "Dark"], key="resq_theme", help="Switch the command center between light and dark themes.")
     st.sidebar.markdown(f"**{center.ai_mode}**")
     st.sidebar.markdown("**SYSTEM STATUS:** Operational")
     st.sidebar.markdown("**DEMO MODE** — simulated Pune-area data")
