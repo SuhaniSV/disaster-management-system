@@ -14,14 +14,14 @@ def render_operations(center: CommandCenter) -> None:
     if not rows:
         st.info("No incidents are currently recorded.")
         return
-    labels = [f"{r.get('id')} · {r.get('disaster_type')} · score {r.get('priority_score', 0)} · {r.get('status')}" for r in rows]
+    labels = [f"{r.get('id')} · {r.get('disaster_type')} · score {r.get('priority_score', 0)} · {r.get('workflow_status') or r.get('status')}" for r in rows]
     selected_label = st.selectbox("Select incident", labels)
     incident = rows[labels.index(selected_label)]
     st.markdown(f"### {incident.get('id')} — {incident.get('disaster_type')}")
     a,b,c,d = st.columns(4)
     a.metric("Deterministic priority", f"{incident.get('priority_score',0)}/100")
     b.metric("People reported", int(incident.get("people_affected") or 0))
-    c.metric("Status", str(incident.get("status") or "Reported"))
+    c.metric("Status", str(incident.get("workflow_status") or incident.get("status") or "Reported"))
     d.metric("Medical emergency", "Yes" if str(incident.get("medical_emergency")).lower() in {"true","1","yes"} else "No")
     st.write(incident.get("summary") or incident.get("description") or "No description.")
     st.caption(f"Reported: {incident.get('reported_at') or 'unknown'} · Source: {incident.get('source') or 'unspecified'}")
@@ -33,15 +33,14 @@ def render_operations(center: CommandCenter) -> None:
         note = st.text_area("Operator note (optional)", placeholder="Verification result, handover note, or field update…")
         submit = st.form_submit_button("Save update", type="primary")
     if submit:
-        old = incident.get("status")
-        incident["status"] = status
+        old = incident.get("workflow_status") or incident.get("status")
+        incident["workflow_status"] = status
         if note.strip():
             incident.setdefault("operator_notes", []).append({"at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(timespec="seconds"), "note": note.strip()[:2000]})
         center.log(f"{incident.get('id')} workflow status changed from {old} to {status}", "audit")
         if note.strip():
             center.log(f"Operator note added to {incident.get('id')}", "note")
         center.recalculate(reason=f"Response plan reviewed after {incident.get('id')} workflow update")
-        # recalculate preserves custom workflow statuses after its assignment refresh.
         persist(center)
         st.success("Workflow update saved in the current session.")
         st.rerun()
