@@ -35,7 +35,7 @@ def _next_id(rows: list[dict[str, Any]], prefix: str) -> str:
 
 class CommandCenter:
     def __init__(self, bundle: dict[str, list[dict[str, Any]]] | None = None) -> None:
-        data = bundle or load_demo_bundle()
+        data = bundle if bundle is not None else load_demo_bundle()
         self.incidents: list[dict[str, Any]] = data.get("incidents", [])
         self.resources: list[dict[str, Any]] = data.get("resources", [])
         self.hospitals: list[dict[str, Any]] = data.get("hospitals", [])
@@ -43,10 +43,10 @@ class CommandCenter:
         self.roads: list[dict[str, Any]] = data.get("roads", [])
         self.events: list[dict[str, Any]] = data.get("events", [])
         self.assignments: list[dict[str, Any]] = []
-        self.demo_mode = True
+        self.demo_mode = False
         self.ai_mode = "Fallback Analysis Mode"
         if not self.events:
-            self.events.append(make_event("Command center initialized with simulated demo data", "system"))
+            self.events.append(make_event("Command center initialized; awaiting incident reports and verified operational feeds", "system"))
         self.recalculate(reason="Initial response plan")
 
     def log(self, message: str, category: str = "info") -> None:
