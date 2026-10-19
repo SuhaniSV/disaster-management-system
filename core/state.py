@@ -8,6 +8,7 @@ from typing import Any
 
 from core.ai_engine import analyze_incident
 from core.config import CITY_LAT, CITY_LON
+from core.database import load_demo_bundle  # Explicit fixture used only by labelled export tests.
 from core.geo import nearest
 from core.optimizer import assign_resources
 from core.priority import calculate_priority, recommended_action
