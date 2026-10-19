@@ -57,6 +57,9 @@ Data for the MVP: CSV files + in-memory `CommandCenter` state (session). `core/d
 - Hospital and shelter capacity
 - Scenario Simulator (road blocked, team unavailable, new emergency, hospital squeeze)
 - Analytics (Plotly)
+- ResQ Assistant chatbot grounded in the current incident/resource snapshot
+- Read-only MCP server over Streamable HTTP for Alexa+ track (incident listing, priority explanations, resource and shelter status)
+- Optional Amazon Bedrock briefing tool for the AWS Builder mini-challenge
 - LOAD DEMO DISASTER for a 3–5 minute walkthrough
 
 ## Tech stack
@@ -88,6 +91,10 @@ Copy `.env.example` to `.env` (optional). Copy `.streamlit/secrets.toml.example`
 | `OPENAI_MODEL` | Default `gpt-4o-mini` |
 
 Never put real keys in source control.
+
+## Alexa+ hackathon integration
+
+See [`docs/ALEXA_PLUS_HACKATHON.md`](docs/ALEXA_PLUS_HACKATHON.md) for MCP setup, the Streamable HTTP endpoint, demo script, optional Amazon Bedrock integration, and the limits required for a safe submission. Start the MCP server with `python -m resq_mcp.server`.
 
 ## How to run
 
