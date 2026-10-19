@@ -261,7 +261,7 @@ input:focus, textarea:focus, [data-baseweb="input"]:focus-within, [data-baseweb=
   font-size: 0 !important;
 }
 [data-testid="stSidebarNav"] > ul > li:first-child a::after {
-  content: "🌍 Live Disaster Intelligence";
+  content: "Live Disaster Intelligence";
   font-size: .91rem;
   letter-spacing: -.01em;
 }
