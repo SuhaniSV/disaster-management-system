@@ -237,8 +237,41 @@ hr {
 """
 
 
+DARK_CSS = """
+<style>
+:root { color-scheme: dark; --resq-ink:#e6edf7; --resq-muted:#a3b1c6; --resq-border:#303d50; --resq-panel:#172234; --resq-canvas:#0d1420; --resq-blue:#8ab4ff; --resq-red:#ff858d; }
+.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"] { background:var(--resq-canvas)!important; color:var(--resq-ink)!important; }
+html,body,[class*="css"],p,label,li,[data-testid="stMarkdownContainer"] { color:var(--resq-ink); }
+[data-testid="stHeader"] { background:rgba(13,20,32,.94)!important; }
+section[data-testid="stSidebar"] { background:#111b2a!important; border-right-color:var(--resq-border)!important; }
+h1,h2,h3,h4,h5,.resq-title,.metric-card .value,div[data-testid="stMetricValue"] { color:var(--resq-ink)!important; }
+small,.stCaption,[data-testid="stCaptionContainer"],.resq-sub,.disclaimer { color:var(--resq-muted)!important; }
+a { color:#9fc2ff!important; }
+.metric-card,.panel,div[data-testid="stMetric"],[data-testid="stChatMessage"],[data-testid="stChatInput"],[data-testid="stVerticalBlockBorderWrapper"] { background:var(--resq-panel)!important; border-color:var(--resq-border)!important; color:var(--resq-ink)!important; box-shadow:none!important; }
+.event-line { color:#c4d0e0; border-bottom-color:var(--resq-border); }
+.pill { background:#202d40; color:#dbe7f7; border-color:#394b63; }
+.pill.ok { background:#123a34; color:#9de7cb; border-color:#286b5b; }
+.pill.warn { background:#3b2c18; color:#ffd28a; border-color:#755327; }
+.pill.bad { background:#3e2029; color:#ffadb4; border-color:#7d3947; }
+.pill.demo { background:#1d2d4b; color:#b9d0ff; border-color:#3b5786; }
+div[data-testid="stMetricLabel"] p { color:var(--resq-muted)!important; }
+.stDataFrame,[data-testid="stDataFrame"] { border-color:var(--resq-border)!important; }
+.stButton>button,[data-testid="stFormSubmitButton"]>button { background:#202d40; color:var(--resq-ink); border-color:#40516a; }
+.stButton>button[kind="primary"],[data-testid="stFormSubmitButton"]>button[kind="primary"] { background:#315fb7; border-color:#4778d2; color:#fff; }
+input,textarea,[data-baseweb="select"]>div,[data-baseweb="input"]>div,[data-baseweb="textarea"]>div { background:#172234!important; color:var(--resq-ink)!important; border-color:#40516a!important; }
+input::placeholder,textarea::placeholder { color:#91a0b5!important; }
+[data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"],[data-baseweb="option"] { background:#172234!important; color:var(--resq-ink)!important; }
+[data-baseweb="option"]:hover { background:#263750!important; }
+[data-testid="stAlert"] { background:#172234; border-color:var(--resq-border); }
+hr { border-color:var(--resq-border)!important; }
+</style>
+"""
+
+
 def inject_theme() -> None:
     st.markdown(CSS, unsafe_allow_html=True)
+    if st.session_state.get("resq_theme", "Light") == "Dark":
+        st.markdown(DARK_CSS, unsafe_allow_html=True)
 
 
 def page_setup(title: str) -> None:
@@ -254,6 +287,7 @@ def page_setup(title: str) -> None:
 def render_sidebar(center: CommandCenter) -> None:
     st.sidebar.markdown("### RESQ-AI")
     st.sidebar.caption("Intelligent Disaster Command Center")
+    st.sidebar.selectbox("Appearance", ["Light", "Dark"], key="resq_theme", help="Switch the command center between light and dark themes.")
     st.sidebar.markdown(f"**{center.ai_mode}**")
     st.sidebar.markdown("**SYSTEM STATUS:** Operational")
     st.sidebar.markdown("**DEMO MODE** — simulated Pune-area data")
