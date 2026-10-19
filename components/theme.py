@@ -338,7 +338,42 @@ hr { border-color:var(--resq-border)!important; }
 
 ENHANCED_CSS = """
 <style>
-/* Removed custom sidebar brand block: keep native navigation compact. */
+/* Compact operations label in the upper sidebar breathing space. */
+.ops-minihead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 5px 18px;
+  padding: 5px 3px 13px;
+  border-bottom: 1px solid var(--resq-border);
+}
+.ops-minihead-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border: 1px solid rgba(15,118,110,.22);
+  border-radius: 9px;
+  background: rgba(15,118,110,.08);
+  color: #0f9488;
+  font-size: 25px;
+  line-height: 1;
+}
+.ops-minihead-copy { display: flex; flex-direction: column; gap: 3px; }
+.ops-minihead-copy strong {
+  color: var(--resq-ink);
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: .15em;
+}
+.ops-minihead-copy small {
+  color: var(--resq-muted) !important;
+  font-size: 9px;
+  line-height: 1.2;
+  letter-spacing: .09em;
+}
+/* Keep native navigation compact below the operations label. */
 [data-testid="stSidebarNav"] > ul {
   gap: .18rem;
 }
@@ -596,6 +631,18 @@ def page_setup(title: str) -> None:
 
 
 def render_sidebar(center: CommandCenter) -> None:
+    st.sidebar.markdown(
+        """
+        <div class="ops-minihead" aria-label="Operations control system">
+          <span class="ops-minihead-icon">⌁</span>
+          <span class="ops-minihead-copy">
+            <strong>OPS</strong>
+            <small>CONTROL SYSTEM</small>
+          </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.sidebar.markdown("### RESQ-AI")
     st.sidebar.caption("Intelligent Disaster Command Center")
     st.sidebar.markdown(f"**{center.ai_mode}**")
