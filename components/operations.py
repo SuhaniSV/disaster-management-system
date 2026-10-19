@@ -13,7 +13,10 @@ def render_operations(center: CommandCenter) -> None:
     st.caption("Track verification and response progress. Status changes are operator-entered and are not dispatch commands.")
     rows = sorted(center.incidents, key=lambda r: int(r.get("priority_score") or 0), reverse=True)
     if not rows:
-        st.info("No incidents are currently recorded.")
+        if center.demo_mode:
+            st.info("No incidents are currently recorded in the demo dataset.")
+        else:
+            st.info("No operator-reported incidents are recorded in this session, and no live incident feed is connected. This does not mean no emergencies are occurring.")
         return
     labels = [f"{r.get('id')} · {r.get('disaster_type')} · score {r.get('priority_score', 0)} · {r.get('workflow_status') or r.get('status')}" for r in rows]
     selected_label = st.selectbox("Select incident", labels)
