@@ -8,7 +8,6 @@ from typing import Any
 
 from core.ai_engine import analyze_incident
 from core.config import CITY_LAT, CITY_LON
-from core.database import load_demo_bundle
 from core.geo import nearest
 from core.optimizer import assign_resources
 from core.priority import calculate_priority, recommended_action
@@ -35,7 +34,7 @@ def _next_id(rows: list[dict[str, Any]], prefix: str) -> str:
 
 class CommandCenter:
     def __init__(self, bundle: dict[str, list[dict[str, Any]]] | None = None) -> None:
-        data = bundle if bundle is not None else load_demo_bundle()
+        data = bundle if bundle is not None else {"incidents": [], "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": []}
         self.incidents: list[dict[str, Any]] = data.get("incidents", [])
         self.resources: list[dict[str, Any]] = data.get("resources", [])
         self.hospitals: list[dict[str, Any]] = data.get("hospitals", [])
@@ -47,7 +46,7 @@ class CommandCenter:
         self.ai_mode = "Fallback Analysis Mode"
         if not self.events:
             self.events.append(make_event("Command center initialized; awaiting incident reports and verified operational feeds", "system"))
-        self.recalculate(reason="Initial response plan")
+        self.recalculate(reason="Command center initialized with no verified operational records")
 
     def log(self, message: str, category: str = "info") -> None:
         self.events.insert(0, make_event(message, category))
@@ -76,7 +75,7 @@ class CommandCenter:
         cc.roads = payload.get("roads", [])
         cc.events = payload.get("events", [])
         cc.assignments = payload.get("assignments", [])
-        cc.demo_mode = payload.get("demo_mode", True)
+        cc.demo_mode = payload.get("demo_mode", False)
         cc.ai_mode = payload.get("ai_mode", "Fallback Analysis Mode")
         return cc
 
