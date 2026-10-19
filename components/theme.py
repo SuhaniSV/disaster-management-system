@@ -355,38 +355,7 @@ hr { border-color:var(--resq-border)!important; }
 ENHANCED_CSS = """
 <style>
 /* Compact operations label in the main header's upper-left corner. */
-.ops-corner-label {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin: 0 0 16px;
-  color: var(--resq-ink);
-}
-.ops-corner-mark {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border: 1px solid rgba(15,118,110,.24);
-  border-radius: 8px;
-  background: rgba(15,118,110,.08);
-  color: #0f9488;
-  font-size: 22px;
-  line-height: 1;
-}
-.ops-corner-label > span:last-child { display: flex; flex-direction: column; gap: 3px; }
-.ops-corner-label strong {
-  font-size: 11px;
-  line-height: 1;
-  letter-spacing: .16em;
-  color: var(--resq-ink);
-}
-.ops-corner-label small {
-  font-size: 9px;
-  line-height: 1.2;
-  letter-spacing: .08em;
-  color: var(--resq-muted) !important;
-}
+
 [data-testid="stSidebarNav"] > ul {
   gap: .18rem;
 }
@@ -665,12 +634,12 @@ def render_sidebar(center: CommandCenter) -> None:
 def render_header(center: CommandCenter, subtitle: str) -> None:
     ai_class = "ok" if "Active" in center.ai_mode else "warn"
     current_theme = st.session_state.get("resq_theme", "Light")
-    spacer, theme_slot = st.columns([0.82, 0.18], vertical_alignment="center")
+    spacer, theme_slot = st.columns([0.94, 0.06], vertical_alignment="center")
     with theme_slot:
         if st.button(
-            "☀️ Light mode" if current_theme == "Dark" else "🌙 Dark mode",
-            key=f"header_theme_toggle_{st.session_state.get('resq_theme', 'Light')}",
-            help="Switch between light and dark appearance",
+            "☀" if current_theme == "Dark" else "☾",
+            key=f"header_theme_toggle_{current_theme}",
+            help="Switch to light mode" if current_theme == "Dark" else "Switch to dark mode",
             use_container_width=True,
         ):
             st.session_state["resq_theme"] = "Light" if current_theme == "Dark" else "Dark"
@@ -679,7 +648,6 @@ def render_header(center: CommandCenter, subtitle: str) -> None:
         f"""
         <div class="resq-header">
           <div>
-            <div class="ops-corner-label"><span class="ops-corner-mark">⌁</span><span><strong>OPS</strong><small>CONTROL SYSTEM</small></span></div>
             <div class="resq-kicker">RESQ-AI</div>
             <h1 class="resq-title">INTELLIGENT DISASTER COMMAND CENTER</h1>
             <div class="resq-sub">{subtitle}</div>
