@@ -1548,11 +1548,19 @@ section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="pa
 
 
 def inject_theme() -> None:
-    # Seed the app's CSS theme from Streamlit's actual active theme on the
-    # first run. Previously the CSS defaulted to Light even when the viewer
-    # selected Streamlit's native Dark theme, leaving brand cards and badges
-    # with their light-mode colors on a dark page.
-    if "resq_theme" not in st.session_state:
+    # Keep the selected theme in the URL so it survives a browser refresh
+    # and navigation between Streamlit pages. Session state alone is reset
+    # when the app is reloaded.
+    try:
+        requested_theme = str(st.query_params.get("theme", "")).strip().lower()
+    except Exception:
+        requested_theme = ""
+
+    if requested_theme in {"light", "dark"}:
+        st.session_state["resq_theme"] = requested_theme.title()
+    elif "resq_theme" not in st.session_state:
+        # Fall back to Streamlit's native theme only when no saved preference
+        # is present in the URL (for example, the first-ever visit).
         active_theme = "Light"
         try:
             active_theme = (
@@ -1638,7 +1646,10 @@ def render_header(center: CommandCenter, subtitle: str) -> None:
             help="Switch to light mode" if current_theme == "Dark" else "Switch to dark mode",
             use_container_width=True,
         ):
-            st.session_state["resq_theme"] = "Light" if current_theme == "Dark" else "Dark"
+            next_theme = "Light" if current_theme == "Dark" else "Dark"
+            st.session_state["resq_theme"] = next_theme
+            # Persist the choice across refreshes and page navigation.
+            st.query_params["theme"] = next_theme.lower()
             st.rerun()
     st.markdown(
         f"""
