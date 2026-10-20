@@ -1599,6 +1599,7 @@ def inject_theme() -> None:
     st.markdown(CSS, unsafe_allow_html=True)
     st.markdown(ENHANCED_CSS, unsafe_allow_html=True)
     st.markdown(POLISH_CSS, unsafe_allow_html=True)
+    st.markdown('<style>.stApp .rx-welcome-bubble{animation:rx-bubble-in .45s ease-out both,rx-bubble-out .5s ease-in 7s forwards!important}.stApp .st-key-resq_floating_assistant button{animation:rx-robot-pop .6s ease-out both!important}@media(prefers-reduced-motion:reduce){.stApp .rx-welcome-bubble,.stApp .st-key-resq_floating_assistant button{animation:none!important}}</style>', unsafe_allow_html=True)
     if st.session_state.get("resq_theme", "Light") == "Dark":
         st.markdown(DARK_CSS, unsafe_allow_html=True)
 
