@@ -49,7 +49,7 @@ def incidents_by_severity(center: CommandCenter):
     if df.empty:
         return None
     fig = px.histogram(df, x="severity", nbins=5, title="Incidents by severity")
-    fig.update_layout(**PLOTLY_LAYOUT)
+    fig.update_layout(**_plotly_layout())
     return fig
 
 
@@ -63,7 +63,7 @@ def people_over_time(center: CommandCenter):
     work["people_affected"] = work["people_affected"].apply(as_int)
     work["cumulative_people"] = work["people_affected"].cumsum()
     fig = px.line(work, x="reported_at", y="cumulative_people", title="People affected over time (cumulative)")
-    fig.update_layout(**PLOTLY_LAYOUT)
+    fig.update_layout(**_plotly_layout())
     return fig
 
 
@@ -72,7 +72,7 @@ def priority_distribution(center: CommandCenter):
     if df.empty:
         return None
     fig = px.histogram(df, x="priority_score", nbins=10, title="Priority distribution")
-    fig.update_layout(**PLOTLY_LAYOUT)
+    fig.update_layout(**_plotly_layout())
     return fig
 
 
@@ -91,7 +91,7 @@ def resource_utilization(center: CommandCenter):
     if not rows:
         return None
     fig = px.pie(pd.DataFrame(rows), names="status", title="Resource utilization (recommended plan)")
-    fig.update_layout(**PLOTLY_LAYOUT)
+    fig.update_layout(**_plotly_layout())
     return fig
 
 
@@ -100,7 +100,7 @@ def hospital_chart(center: CommandCenter):
     if df.empty:
         return None
     fig = px.bar(df, x="id", y=["available_beds", "total_beds"], barmode="group", title="Hospital capacity")
-    fig.update_layout(**PLOTLY_LAYOUT)
+    fig.update_layout(**_plotly_layout())
     return fig
 
 
@@ -110,7 +110,7 @@ def shelter_chart(center: CommandCenter):
         return None
     df["available"] = df.apply(lambda r: as_int(r.get("capacity")) - as_int(r.get("occupied")), axis=1)
     fig = px.bar(df, x="id", y=["occupied", "available"], barmode="stack", title="Shelter occupancy")
-    fig.update_layout(**PLOTLY_LAYOUT)
+    fig.update_layout(**_plotly_layout())
     return fig
 
 
