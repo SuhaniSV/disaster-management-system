@@ -158,3 +158,15 @@ Additional official hazard feeds, authorized emergency-service/resource APIs, Io
 ## Project layout
 
 See `app.py`, `pages/`, `core/`, `components/`, `data/`, `tests/`.
+
+
+## Operational inventory setup
+
+To enable operator-managed rescue-team, hospital-capacity and shelter inventories:
+
+1. Run `migrations/002_operational_inventory.sql` in the Supabase SQL editor.
+2. Keep the existing `DATABASE_URL` secret configured in Streamlit Community Cloud.
+3. Add a strong `INVENTORY_ADMIN_TOKEN` secret in Streamlit Community Cloud. Do not commit it to GitHub or paste it into issue comments.
+4. Open Scenario Simulator, unlock inventory management with the token, and upload current CSV records provided by authorized partners.
+
+The app persists uploaded inventory when the database and migration are available. Without those settings, uploaded records are session-only. Public hospital directory matches are automatically searched around each incident's coordinates, but they are displayed as **availability unknown** until an operator uploads current capacity. Rescue teams are never invented or assigned from the public hospital directory.
