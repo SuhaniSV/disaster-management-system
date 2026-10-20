@@ -62,6 +62,8 @@ header[data-testid="stHeader"] {
   z-index: 999998 !important;
 }
 header[data-testid="stHeader"] button,
+[data-testid="collapsedControl"],
+[data-testid="collapsedControl"] button,
 [data-testid="stSidebarCollapseButton"],
 [data-testid="stSidebarCollapsedControl"],
 button[data-testid="stSidebarCollapsedControl"],
@@ -86,6 +88,8 @@ button[aria-label*="Expand sidebar"] {
   color: #164e63 !important;
   box-shadow: 0 4px 14px rgba(7,89,133,.28) !important;
 }
+[data-testid="collapsedControl"],
+[data-testid="collapsedControl"] button,
 [data-testid="stSidebarCollapsedControl"],
 button[data-testid="stSidebarCollapsedControl"] {
   position: fixed !important;
@@ -94,6 +98,8 @@ button[data-testid="stSidebarCollapsedControl"] {
   z-index: 1000001 !important;
 }
 header[data-testid="stHeader"] button svg,
+[data-testid="collapsedControl"] svg,
+[data-testid="collapsedControl"] button svg,
 [data-testid="stSidebarCollapseButton"] svg,
 [data-testid="stSidebarCollapsedControl"] svg,
 button[aria-label*="Collapse sidebar"] svg,
