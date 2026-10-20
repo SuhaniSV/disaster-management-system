@@ -26,6 +26,38 @@ def render_operations(center: CommandCenter) -> None:
     d.metric("Medical emergency", "Yes" if str(incident.get("medical_emergency")).lower() in {"true","1","yes"} else "No")
     st.write(incident.get("summary") or incident.get("description") or "No description.")
     st.caption(f"Reported: {incident.get('reported_at') or 'unknown'} · Source: {incident.get('source') or 'unspecified'}")
+    # Make the existing allocation engine's recommendation visible at the point of triage.
+    st.markdown("#### Resource allocation review")
+    assignment = center.assignment_for(str(incident.get("id")))
+    if assignment and assignment.get("resource_id"):
+        x, y, z = st.columns(3)
+        x.metric("Recommended resource", str(assignment.get("resource_name") or assignment.get("resource_id")))
+        distance = assignment.get("distance_km")
+        y.metric("Estimated distance", f"{distance} km" if distance is not None else "Unavailable")
+        z.metric("Assignment state", "Recommendation only")
+        st.write(assignment.get("reason") or "Selected by the current weighted allocation logic.")
+    else:
+        st.warning("No suitable available resource was found for this incident. Review resource availability and capability before deciding next steps.")
+        if assignment and assignment.get("reason"):
+            st.caption(str(assignment.get("reason")))
+
+    support = []
+    if assignment and assignment.get("hospital_name"):
+        hospital_distance = assignment.get("hospital_km")
+        hospital_text = f"Nearest hospital recommendation: **{assignment.get('hospital_name')}**"
+        if hospital_distance is not None:
+            hospital_text += f" ({hospital_distance} km estimate)"
+        support.append(hospital_text)
+    if assignment and assignment.get("shelter_name"):
+        shelter_distance = assignment.get("shelter_km")
+        shelter_text = f"Shelter recommendation: **{assignment.get('shelter_name')}**"
+        if shelter_distance is not None:
+            shelter_text += f" ({shelter_distance} km estimate)"
+        support.append(shelter_text)
+    for item in support:
+        st.markdown(f"- {item}")
+    st.caption("Recommendations use the prototype's current resource and facility records; they are not live dispatch confirmations. Distance estimates are not guaranteed travel times.")
+
     st.markdown("#### Update workflow")
     current = str(incident.get("workflow_status") or incident.get("status") or "Reported")
     default = current if current in STATUSES else ("Assigned" if current.lower()=="assigned" else "Reported")
