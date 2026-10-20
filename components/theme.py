@@ -188,38 +188,6 @@ button[kind="secondary"]:hover {
   border-color: var(--resq-blue) !important;
 }
 
-
-/* Floating left-side assistant inspired by the PM Internship portal. */
-.rx-welcome-bubble {
-  position: fixed; left: 92px; bottom: 35px; z-index: 999990;
-  max-width: 285px; padding: 14px 17px; border-radius: 16px 16px 16px 5px;
-  background: #ffffff; color: #203548; border: 1px solid #cfe0e8;
-  box-shadow: 0 10px 32px rgba(15,45,65,.18);
-  font: 600 13px/1.45 "DM Sans", sans-serif;
-  animation: rx-bubble-in .45s ease-out both, rx-bubble-out .5s ease-in 7s forwards;
-  pointer-events: none;
-}
-.rx-welcome-bubble small { display:block; margin-top:5px; color:#607487; font-weight:500; }
-.st-key-resq_floating_assistant {
-  position: fixed !important; left: 22px !important; bottom: 22px !important;
-  z-index: 999991 !important; width: 62px !important; height: 62px !important;
-}
-.st-key-resq_floating_assistant > div { width:62px !important; }
-.st-key-resq_floating_assistant button {
-  width:62px !important; height:62px !important; min-height:62px !important;
-  border-radius:50% !important; border:2px solid #d4fff5 !important;
-  background:linear-gradient(145deg,#14b8a6,#087eaa) !important;
-  color:#fff !important; font-size:28px !important;
-  box-shadow:0 7px 24px rgba(5,100,120,.32) !important;
-  animation: rx-robot-pop .6s cubic-bezier(.2,.8,.2,1) both;
-}
-.st-key-resq_floating_assistant button:hover { transform:translateY(-3px) scale(1.04) !important; }
-@keyframes rx-bubble-in { from { opacity:0; transform:translateY(10px) scale(.96); } to { opacity:1; transform:translateY(0) scale(1); } }
-@keyframes rx-bubble-out { to { opacity:0; visibility:hidden; } }
-@keyframes rx-robot-pop { 0% { opacity:0; transform:scale(.45) rotate(-12deg); } 75% { transform:scale(1.08) rotate(3deg); } 100% { opacity:1; transform:scale(1) rotate(0); } }
-@media (max-width: 600px) { .rx-welcome-bubble { left:78px; bottom:27px; max-width:220px; } .st-key-resq_floating_assistant { left:12px !important; bottom:12px !important; } }
-@media (prefers-reduced-motion: reduce) { .rx-welcome-bubble,.st-key-resq_floating_assistant button { animation:none !important; } }
-
 /* Main command-center header */
 .resq-header {
   display: flex;
@@ -1599,7 +1567,6 @@ def inject_theme() -> None:
     st.markdown(CSS, unsafe_allow_html=True)
     st.markdown(ENHANCED_CSS, unsafe_allow_html=True)
     st.markdown(POLISH_CSS, unsafe_allow_html=True)
-    st.markdown('<style>.stApp .rx-welcome-bubble{animation:rx-bubble-in .45s ease-out both,rx-bubble-out .5s ease-in 7s forwards!important}.stApp .st-key-resq_floating_assistant button{animation:rx-robot-pop .6s ease-out both!important}@media(prefers-reduced-motion:reduce){.stApp .rx-welcome-bubble,.stApp .st-key-resq_floating_assistant button{animation:none!important}}</style>', unsafe_allow_html=True)
     if st.session_state.get("resq_theme", "Light") == "Dark":
         st.markdown(DARK_CSS, unsafe_allow_html=True)
 
@@ -1612,17 +1579,6 @@ def page_setup(title: str) -> None:
         initial_sidebar_state="expanded",
     )
     inject_theme()
-    render_floating_assistant_widget()
-
-
-def render_floating_assistant_widget() -> None:
-    """Render a persistent, left-side floating shortcut to the existing assistant."""
-    st.markdown(
-        """<div class="rx-welcome-bubble">Hey there! Need help with disaster response?\n<small>Click the ResQ-AI robot to chat.</small></div>""",
-        unsafe_allow_html=True,
-    )
-    if st.button("🤖", key="resq_floating_assistant", help="Open the ResQ-AI assistant"):
-        st.switch_page("pages/6_ResQ_Assistant.py")
 
 
 def render_sidebar(center: CommandCenter) -> None:
