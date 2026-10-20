@@ -74,7 +74,27 @@ def calculate_priority(
     access = str(incident.get("accessibility") or "Open").strip().title()
 
     severity_pts = severity * 6  # 6–30
-    people_pts = min(25, int(round(people * (20 / 70))))  # 70 people ≈ 20 points
+    # Scale impact beyond small incidents: the old 25-point cap made 120,000
+    # affected people contribute no more than a report involving ~88 people.
+    # Keep the existing small-incident scale, then increase points by impact tier.
+    if people <= 70:
+        people_pts = int(round(people * (20 / 70)))
+    elif people < 100:
+        people_pts = round(20 + (people - 70) * (5 / 30))
+    elif people < 500:
+        people_pts = round(25 + (people - 100) * (5 / 400))
+    elif people < 1_000:
+        people_pts = round(30 + (people - 500) * (5 / 500))
+    elif people < 5_000:
+        people_pts = round(35 + (people - 1_000) * (10 / 4_000))
+    elif people < 10_000:
+        people_pts = round(45 + (people - 5_000) * (10 / 5_000))
+    elif people < 50_000:
+        people_pts = round(55 + (people - 10_000) * (10 / 40_000))
+    elif people < 100_000:
+        people_pts = round(65 + (people - 50_000) * (10 / 50_000))
+    else:
+        people_pts = 75
     medical_pts = 20 if medical else 0
     vuln_pts = min(10, 4 + min(6, vulnerable // 10)) if vulnerable > 0 else 0
     if access == "Blocked":
@@ -105,7 +125,7 @@ def calculate_priority(
 
     components = [
         {"label": "Severity", "points": severity_pts, "detail": f"Severity {severity}/5 × 6"},
-        {"label": "People affected", "points": people_pts, "detail": f"{people} people (capped at 25)"},
+        {"label": "People affected", "points": people_pts, "detail": f"{people:,} people affected; impact contribution {people_pts}/75"},
         {"label": "Medical emergency", "points": medical_pts, "detail": "Yes" if medical else "No"},
         {"label": "Vulnerability", "points": vuln_pts, "detail": f"{vulnerable} vulnerable / children / elderly"},
         {"label": "Accessibility risk", "points": access_pts, "detail": access},
@@ -119,7 +139,9 @@ def calculate_priority(
         "components": components,
         "formula_note": (
             "Priority Score = severity + people + medical + vulnerability "
-            "+ accessibility + time + proximity (capped at 100)."
+            "+ accessibility + time + proximity (capped at 100). "
+            "People-impact points scale with reported impact: 70 people = 20 points; "
+            "100,000 or more = 75 points."
         ),
     }
 
