@@ -799,6 +799,63 @@ section[data-testid="stSidebar"] > div {
   opacity: 1 !important;
 }
 
+/* Accessible custom page navigation and dark workspace polish. */
+[data-testid="stSidebar"] [data-testid="stPageLink"] a {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 42px !important;
+  padding: .65rem .8rem !important;
+  margin: 3px 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 11px !important;
+  color: #d4e3f4 !important;
+  background: transparent !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+}
+[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {
+  color: #f3fffe !important;
+  background: #1b3448 !important;
+  border-color: #36586b !important;
+}
+[data-testid="stSidebar"] [data-testid="stPageLink"] a:focus-visible {
+  outline: 2px solid #5eead4 !important;
+  outline-offset: 2px !important;
+}
+[data-testid="stSidebar"] h4 {
+  color: #9fb8d0 !important;
+  font-size: .72rem !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stPlotlyChart"],
+[data-testid="stMainBlockContainer"] [data-testid="stVegaLiteChart"],
+[data-testid="stMainBlockContainer"] [data-testid="stDataFrame"],
+[data-testid="stMainBlockContainer"] [data-testid="stDataEditor"],
+[data-testid="stMainBlockContainer"] [data-testid="stTable"] {
+  border: 1px solid #33465d !important;
+  border-radius: 14px !important;
+  background: #111e2e !important;
+  color: #e7eef8 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stMainBlockContainer"] [data-testid="stExpander"],
+[data-testid="stMainBlockContainer"] [data-testid="stMetric"] {
+  border: 1px solid #33465d !important;
+  border-radius: 15px !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stMainBlockContainer"] [data-testid="stMarkdownContainer"] li,
+[data-testid="stMainBlockContainer"] [data-testid="stCaptionContainer"],
+[data-testid="stMainBlockContainer"] [data-testid="stWidgetLabel"] {
+  color: #dce7f5 !important;
+}
+[data-testid="stMainBlockContainer"] :is(input, textarea):focus,
+[data-testid="stMainBlockContainer"] [data-baseweb="select"]:focus-within {
+  border-color: #5eead4 !important;
+  box-shadow: 0 0 0 3px rgba(94,234,212,.14) !important;
+}
+
 /* Sidebar dark-mode repair: brand card, AI-mode badge, and nav labels. */
 section[data-testid="stSidebar"],
 section[data-testid="stSidebar"] > div,
@@ -1542,6 +1599,20 @@ def render_sidebar(center: CommandCenter) -> None:
         unsafe_allow_html=True,
     )
     st.sidebar.markdown(f"**{center.ai_mode}**")
+    st.sidebar.markdown("#### COMMAND NAVIGATION")
+    nav_items = [
+        ("app.py", "⌂", "Command Center"),
+        ("pages/2_Report_Incident.py", "＋", "Report Incident"),
+        ("pages/4_Scenario_Simulator.py", "◈", "Scenario Simulator"),
+        ("pages/5_Analytics.py", "▥", "Analytics"),
+        ("pages/6_ResQ_Assistant.py", "✦", "ResQ Assistant"),
+        ("pages/7_Live_Government_Alerts.py", "◉", "Live Government Alerts"),
+        ("pages/8_Incident_Operations.py", "⇄", "Incident Operations"),
+        ("pages/9_Situation_Reports.py", "▤", "Situation Reports"),
+        ("pages/10_Route_Planner.py", "⌖", "Route Planner"),
+    ]
+    for page_path, glyph, label in nav_items:
+        st.sidebar.page_link(page_path, label=f"{glyph}  {label}")
     st.sidebar.divider()
     st.sidebar.caption(DISCLAIMER)
     if llm_configured():
