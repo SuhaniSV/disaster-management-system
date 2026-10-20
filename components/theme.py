@@ -671,6 +671,47 @@ hr { border-color:var(--resq-border)!important; }
 }
 
 
+
+/* Incident form dark-mode repair: override the light form panel and low-contrast labels. */
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] {
+  background: #111e2e !important;
+  background-color: #111e2e !important;
+  border: 1px solid #334b65 !important;
+  color: #e7eef8 !important;
+  color-scheme: dark !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] label,
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-testid="stWidgetLabel"],
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-testid="stWidgetLabel"] *,
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-testid="stMarkdownContainer"],
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] p {
+  color: #dce7f5 !important;
+  -webkit-text-fill-color: #dce7f5 !important;
+  opacity: 1 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] input,
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] textarea,
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-baseweb="input"],
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-baseweb="textarea"],
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-baseweb="select"] > div,
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-testid="stNumberInput"] button {
+  background: #0e1a2a !important;
+  background-color: #0e1a2a !important;
+  color: #f1f6fd !important;
+  -webkit-text-fill-color: #f1f6fd !important;
+  border-color: #405670 !important;
+  box-shadow: none !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-testid="stFileUploaderDropzone"],
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-testid="stFileUploaderDropzone"] section {
+  background: #101e30 !important;
+  color: #dce7f5 !important;
+  border-color: #4b6684 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-testid="stFileUploaderDropzone"] * {
+  color: #dce7f5 !important;
+  -webkit-text-fill-color: #dce7f5 !important;
+}
 </style>
 """
 
