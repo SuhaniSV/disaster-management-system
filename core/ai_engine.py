@@ -127,6 +127,9 @@ def fallback_analyze(
     accessibility_hint: str | None = None,
 ) -> dict[str, Any]:
     text = (description or "").lower()
+    # Correct a common misspelling before deterministic hazard matching.
+    text = re.sub(r"\bearthqauke(s?)\b", r"earthquake\1", text)
+    text = re.sub(r"\bearthquack(e?s?)\b", r"earthquake\1", text)
     disaster = "Unknown"
     hits = 0
     for label, words in DISASTER_KEYWORDS.items():
