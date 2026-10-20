@@ -1601,7 +1601,6 @@ def render_sidebar(center: CommandCenter) -> None:
     st.sidebar.markdown(f"**{center.ai_mode}**")
     st.sidebar.markdown("#### COMMAND NAVIGATION")
     nav_items = [
-        ("app.py", "⌂", "Command Center"),
         ("pages/2_Report_Incident.py", "＋", "Report Incident"),
         ("pages/4_Scenario_Simulator.py", "◈", "Scenario Simulator"),
         ("pages/5_Analytics.py", "▥", "Analytics"),
