@@ -107,7 +107,7 @@ def render_live_disaster_intelligence() -> None:
             failures.append(("USGS", type(exc).__name__, USGS_ALL_DAY_URL))
             source_rows.append({
                 "Source": "USGS Earthquake Hazards Program", "Status": "Unavailable",
-                "Events": "—", "Retrieved (UTC)": "—", "Official source": USGS_ALL_DAY_URL,
+                "Events": "—", "Retrieved by app (UTC)": "—", "Source feed generated (UTC)": "—", "Official source": USGS_ALL_DAY_URL,
             })
 
     connected = sum(row["Status"] == "Connected" for row in source_rows)
