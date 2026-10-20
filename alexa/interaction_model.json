@@ -1,0 +1,85 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "rescue assistant",
+      "intents": [
+        {
+          "name": "EarthquakeSafetyIntent",
+          "samples": [
+            "what should I do in an earthquake",
+            "earthquake safety",
+            "how do I stay safe during an earthquake",
+            "what to do after an earthquake"
+          ]
+        },
+        {
+          "name": "FloodSafetyIntent",
+          "samples": [
+            "flood safety",
+            "what should I do in a flood",
+            "how do I stay safe from flooding",
+            "what if floodwater is on the road"
+          ]
+        },
+        {
+          "name": "CycloneSafetyIntent",
+          "samples": [
+            "cyclone safety",
+            "how do I prepare for a cyclone",
+            "what should I do during a cyclone",
+            "severe storm safety"
+          ]
+        },
+        {
+          "name": "FireSafetyIntent",
+          "samples": [
+            "fire safety",
+            "what should I do in a fire",
+            "how do I escape smoke",
+            "building fire guidance"
+          ]
+        },
+        {
+          "name": "HeatSafetyIntent",
+          "samples": [
+            "heat safety",
+            "how do I stay safe in a heatwave",
+            "extreme heat advice",
+            "what are heat stroke warning signs"
+          ]
+        },
+        {
+          "name": "PreparednessIntent",
+          "samples": [
+            "emergency preparedness",
+            "what should be in an emergency kit",
+            "help me prepare for a disaster",
+            "what supplies should I keep ready"
+          ]
+        },
+        {
+          "name": "EmergencyHelpIntent",
+          "samples": [
+            "emergency help",
+            "what number do I call in India",
+            "someone is in danger",
+            "how do I get emergency help"
+          ]
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        }
+      ],
+      "types": []
+    }
+  }
+}
