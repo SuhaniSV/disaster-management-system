@@ -103,52 +103,52 @@ elif not st.session_state.get("inventory_admin_authenticated", False):
             st.error("The inventory access token is incorrect.")
 if inventory_admin_configured() and st.session_state.get("inventory_admin_authenticated", False):
     with st.expander("CSV format and inventory upload", expanded=not center.resources):
-    st.markdown(
-        "**Rescue teams/resources** — id,name,type,lat,lon,status,capacity,capabilities\n\n"
-        "Type examples: rescue_team, medical_rescue, ambulance, fire_response. "
-        "Status must be Available, Idle, Standby, Busy, or Unavailable.\n\n"
-        "**Hospitals** — id,name,lat,lon,available_beds,emergency_capability (yes/no/unknown).\n\n"
-        "**Shelters** — id,name,lat,lon,capacity,occupied."
-    )
-    resource_upload = st.file_uploader("Rescue-team / ambulance inventory CSV", type=["csv"], key="resource_inventory_upload")
-    hospital_upload = st.file_uploader("Verified hospital capacity CSV", type=["csv"], key="hospital_inventory_upload")
-    shelter_upload = st.file_uploader("Shelter capacity CSV", type=["csv"], key="shelter_inventory_upload")
-    if st.button("Save and recalculate inventory", type="primary", use_container_width=True):
-        try:
-            new_resources = _parse_inventory(resource_upload, "resources") if resource_upload else []
-            new_hospitals = _parse_inventory(hospital_upload, "hospitals") if hospital_upload else []
-            new_shelters = _parse_inventory(shelter_upload, "shelters") if shelter_upload else []
-            if not any([new_resources, new_hospitals, new_shelters]):
-                st.warning("Choose at least one inventory CSV before saving.")
-            else:
-                for attr, incoming in (
-                    ("resources", new_resources),
-                    ("hospitals", new_hospitals),
-                    ("shelters", new_shelters),
-                ):
-                    if incoming:
-                        current = {str(item.get("id")): item for item in getattr(center, attr)}
-                        current.update({str(item["id"]): item for item in incoming})
-                        setattr(center, attr, list(current.values()))
-                center.recalculate(reason="Operator inventory uploaded; allocations recalculated")
-                persist(center)
-                if is_configured():
-                    save_inventory({
-                        "resources": new_resources,
-                        "hospitals": new_hospitals,
-                        "shelters": new_shelters,
-                    })
-                    st.success("Inventory saved to Supabase and allocation recalculated.")
+        st.markdown(
+            "**Rescue teams/resources** — id,name,type,lat,lon,status,capacity,capabilities\n\n"
+            "Type examples: rescue_team, medical_rescue, ambulance, fire_response. "
+            "Status must be Available, Idle, Standby, Busy, or Unavailable.\n\n"
+            "**Hospitals** — id,name,lat,lon,available_beds,emergency_capability (yes/no/unknown).\n\n"
+            "**Shelters** — id,name,lat,lon,capacity,occupied."
+        )
+        resource_upload = st.file_uploader("Rescue-team / ambulance inventory CSV", type=["csv"], key="resource_inventory_upload")
+        hospital_upload = st.file_uploader("Verified hospital capacity CSV", type=["csv"], key="hospital_inventory_upload")
+        shelter_upload = st.file_uploader("Shelter capacity CSV", type=["csv"], key="shelter_inventory_upload")
+        if st.button("Save and recalculate inventory", type="primary", use_container_width=True):
+            try:
+                new_resources = _parse_inventory(resource_upload, "resources") if resource_upload else []
+                new_hospitals = _parse_inventory(hospital_upload, "hospitals") if hospital_upload else []
+                new_shelters = _parse_inventory(shelter_upload, "shelters") if shelter_upload else []
+                if not any([new_resources, new_hospitals, new_shelters]):
+                    st.warning("Choose at least one inventory CSV before saving.")
                 else:
-                    st.warning("Inventory is active for this app session only. Configure DATABASE_URL and run migrations/002_operational_inventory.sql for persistence.")
-                st.rerun()
-        except (ValueError, TypeError, KeyError, pd.errors.ParserError) as exc:
-            st.error(f"Inventory was not saved: {exc}")
-        except Exception as exc:
-            st.error(
-                f"Inventory persistence failed ({type(exc).__name__}). Run "
-                "migrations/002_operational_inventory.sql in Supabase; records remain session-only."
-            )
+                    for attr, incoming in (
+                        ("resources", new_resources),
+                        ("hospitals", new_hospitals),
+                        ("shelters", new_shelters),
+                    ):
+                        if incoming:
+                            current = {str(item.get("id")): item for item in getattr(center, attr)}
+                            current.update({str(item["id"]): item for item in incoming})
+                            setattr(center, attr, list(current.values()))
+                    center.recalculate(reason="Operator inventory uploaded; allocations recalculated")
+                    persist(center)
+                    if is_configured():
+                        save_inventory({
+                            "resources": new_resources,
+                            "hospitals": new_hospitals,
+                            "shelters": new_shelters,
+                        })
+                        st.success("Inventory saved to Supabase and allocation recalculated.")
+                    else:
+                        st.warning("Inventory is active for this app session only. Configure DATABASE_URL and run migrations/002_operational_inventory.sql for persistence.")
+                    st.rerun()
+            except (ValueError, TypeError, KeyError, pd.errors.ParserError) as exc:
+                st.error(f"Inventory was not saved: {exc}")
+            except Exception as exc:
+                st.error(
+                    f"Inventory persistence failed ({type(exc).__name__}). Run "
+                    "migrations/002_operational_inventory.sql in Supabase; records remain session-only."
+                )
 
 if st.session_state.get("inventory_store_error"):
     st.warning(str(st.session_state["inventory_store_error"]))
