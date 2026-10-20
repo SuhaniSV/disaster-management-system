@@ -181,6 +181,29 @@ a { color: var(--resq-blue) !important; }
   font-size: 12px;
   margin-top: 10px;
 }
+
+.resq-map-frame {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 12px 0 8px;
+  padding: 11px 14px;
+  border: 1px solid #354963;
+  border-radius: 12px;
+  background: #152238;
+  color: #d9e7fb;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .045em;
+}
+.resq-map-frame span + span {
+  color: #aebdd2;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
 div[data-testid="stMetric"] {
   background: #fff;
   border: 1px solid var(--resq-border);
