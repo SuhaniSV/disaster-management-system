@@ -12,15 +12,14 @@ center = get_center()
 render_sidebar(center)
 render_header(
     center,
-    "Review response recommendations generated only from reported incidents and available records",
+    "Assess reported emergencies and review resource readiness using records actually available to ResQ-AI",
 )
 
 st.caption(
-    "Recommendations use records currently loaded by ResQ-AI. Resource locations, availability, "
-    "hospital capacity and road status must be verified; this page does not confirm dispatch."
+    "This page uses operator-submitted incidents only. It does not create sample incidents or treat "
+    "unverified assets as real. An assessment is not a dispatch confirmation."
 )
 
-# Never seed the simulator with CSV fixtures, fabricated incidents, or example inventory.
 active_incidents = [
     incident for incident in center.incidents
     if str(incident.get("status") or "").strip().lower() != "resolved"
@@ -28,113 +27,131 @@ active_incidents = [
 
 if not active_incidents:
     st.info(
-        "No incidents reported yet. Submit an incident through Report Incident to see "
-        "a response assessment here. No incident, distance, team, or recommendation will be invented."
+        "No incidents reported yet. Submit an incident through Report Incident to generate an assessment. "
+        "No incident, distance, rescue team, hospital, or recommendation will be invented."
     )
     st.stop()
 
-st.markdown("### Reported incidents")
 incident_labels = {
     str(item.get("id")): (
-        f'{item.get("id")} · {item.get("disaster_type") or "Incident"} · '
-        f'{item.get("people_affected") or 0} people affected'
+        f'{item.get("id")} · {item.get("disaster_type") or "Unclassified"} · '
+        f'{item.get("people_affected") or 0:,} people affected'
     )
     for item in active_incidents
     if item.get("id")
 }
 incident_ids = list(incident_labels)
 if not incident_ids:
-    st.info("Reported incidents do not have usable incident IDs, so recommendations cannot be displayed.")
+    st.warning("Incident records were loaded, but none has a usable ID. Please review the saved report.")
     st.stop()
 
+st.markdown("### Reported incident")
 selected_id = st.selectbox(
     "Choose a reported incident",
     incident_ids,
     format_func=lambda value: incident_labels[value],
 )
 incident = next((item for item in active_incidents if str(item.get("id")) == selected_id), {})
-assignment = center.assignment_for(selected_id)
 
-left, right = st.columns(2)
-with left:
-    st.metric("Priority", incident.get("priority_score", "Not calculated"))
-    st.metric("People affected", incident.get("people_affected") or 0)
-with right:
-    st.metric("Incident type", incident.get("disaster_type") or "Not classified")
-    st.metric("Status", incident.get("status") or "Active")
+raw_type = str(incident.get("disaster_type") or "").strip()
+is_unclassified = not raw_type or raw_type.lower() in {"unknown", "unclassified", "none", "null"}
+incident_type = "Unclassified — review the report details" if is_unclassified else raw_type
+people = incident.get("people_affected")
+try:
+    people_label = f"{int(people):,}" if people is not None and str(people).strip() else "Not provided"
+except (TypeError, ValueError):
+    people_label = str(people or "Not provided")
+lat, lon = incident.get("lat"), incident.get("lon")
+location = (
+    f"{lat}, {lon}"
+    if lat is not None and lon is not None
+    else "Location coordinates not available"
+)
 
-st.markdown("### Response recommendation")
-if not assignment:
-    st.warning("No allocation recommendation is available for this reported incident yet.")
+a, b, c, d = st.columns(4)
+a.metric("Priority score", f'{incident.get("priority_score", "—")}/100')
+b.metric("People affected", people_label)
+c.metric("Incident type", incident_type)
+d.metric("Status", str(incident.get("status") or "Active"))
+
+st.markdown("**Reported description**")
+description = str(incident.get("description") or incident.get("summary") or "").strip()
+if description:
+    st.write(description)
 else:
-    resource_id = assignment.get("resource_id")
-    resource_name = assignment.get("resource_name")
-    distance = assignment.get("distance_km")
-    if resource_id and resource_name and isinstance(distance, (int, float)):
-        st.success(f"Suggested resource: {resource_name} ({resource_id}) · {distance:.2f} km")
-    else:
-        st.warning(
-            assignment.get("reason")
-            or "No suitable verified resource can currently be recommended. Check the available resource records."
-        )
+    st.warning("This saved incident has no description. Review the original report; the hazard type cannot be verified from this record.")
 
-    if assignment.get("hospital_name") or assignment.get("hospital_id"):
-        st.write(
-            "**Hospital recommendation:** "
-            + str(assignment.get("hospital_name") or assignment.get("hospital_id"))
-            + (
-                f' · {assignment.get("hospital_km"):.2f} km'
-                if isinstance(assignment.get("hospital_km"), (int, float))
-                else ""
-            )
-        )
-    elif incident.get("medical_emergency"):
-        st.info("Medical assistance is indicated, but no verified hospital recommendation is available in the loaded records.")
+detail_left, detail_right = st.columns(2)
+with detail_left:
+    st.markdown("**Reported location**")
+    st.write(location)
+with detail_right:
+    st.markdown("**Reported at**")
+    st.write(str(incident.get("reported_at") or "Timestamp not available"))
 
-    if assignment.get("shelter_name") or assignment.get("shelter_id"):
-        st.write(
-            "**Shelter recommendation:** "
-            + str(assignment.get("shelter_name") or assignment.get("shelter_id"))
-            + (
-                f' · {assignment.get("shelter_km"):.2f} km'
-                if isinstance(assignment.get("shelter_km"), (int, float))
-                else ""
-            )
-        )
+if is_unclassified:
+    st.warning(
+        "The saved report is not classified as a known hazard. ResQ-AI will not guess the incident type. "
+        "Review or resubmit the report with the hazard and location clearly described."
+    )
 
-st.markdown("### Available operational records")
-st.caption("Only records actually loaded into the operational session are shown. Empty inventory is not replaced with sample teams.")
+st.markdown("### Response assessment")
+action = str(incident.get("recommended_action") or "").strip()
+if action:
+    st.info(action)
+else:
+    st.info("No response action has been generated for this report yet.")
+
+assignment = center.assignment_for(selected_id)
+if assignment and assignment.get("reason"):
+    st.caption(str(assignment["reason"]))
+
+st.markdown("### Resource readiness")
+st.caption(
+    "Incident assessment and resource availability are separate. A priority score can be calculated "
+    "without a verified rescue-team, hospital, medicine, or shelter inventory."
+)
+
 counts = {
-    "Reported incidents": len(active_incidents),
-    "Resource records": len(center.resources),
-    "Hospital records": len(center.hospitals),
-    "Shelter records": len(center.shelters),
-    "Road records": len(center.roads),
+    "Active reported incidents": len(active_incidents),
+    "Verified resource records loaded": len(center.resources),
+    "Hospital records loaded": len(center.hospitals),
+    "Shelter records loaded": len(center.shelters),
 }
 cols = st.columns(len(counts))
 for col, (label, count) in zip(cols, counts.items()):
     col.metric(label, count)
 
 if not center.resources:
-    st.warning(
-        "No resource inventory is connected to the operational session. ResQ-AI will not invent "
-        "a rescue team or distance. Connect verified resource records with coordinates, capabilities, "
-        "capacity and current availability to enable real resource recommendations."
+    st.error(
+        "Resource allocation unavailable: no verified rescue-team inventory is connected. "
+        "No team name, distance, ambulance, or medication availability can be recommended until "
+        "real resource records or a trusted live feed is configured."
     )
-if incident.get("medical_emergency") and not center.hospitals:
+elif not assignment or not assignment.get("resource_id"):
     st.warning(
-        "This incident indicates a medical need, but no hospital inventory is connected. "
-        "No hospital will be fabricated."
+        "No eligible nearby resource has been assigned from the currently loaded records. "
+        "Check verified resource coordinates, capabilities, capacity, and current availability."
     )
+else:
+    resource_id = assignment.get("resource_id")
+    resource_name = assignment.get("resource_name")
+    distance = assignment.get("distance_km")
+    if resource_id and resource_name and isinstance(distance, (int, float)):
+        st.success(f"Candidate resource: {resource_name} ({resource_id}) · {distance:.2f} km")
+        st.caption("This is a decision-support candidate, not a confirmed dispatch.")
 
-if center.resources:
-    resource_rows = []
-    for resource in center.resources:
-        resource_rows.append({
-            "Resource": resource.get("name") or resource.get("id") or "Unnamed",
-            "Type": resource.get("type") or "Unknown",
-            "Status": resource.get("status") or "Unknown",
-            "Latitude": resource.get("lat"),
-            "Longitude": resource.get("lon"),
-        })
-    st.dataframe(pd.DataFrame(resource_rows), use_container_width=True, hide_index=True)
+if not center.hospitals:
+    st.warning(
+        "No verified hospital inventory is connected. Hospital capacity, ambulance destination, "
+        "and medicine stock cannot be confirmed from the current data."
+    )
+elif assignment and (assignment.get("hospital_name") or assignment.get("hospital_id")):
+    st.write("**Hospital candidate:** " + str(assignment.get("hospital_name") or assignment.get("hospital_id")))
+else:
+    st.info("No hospital recommendation is available from the currently loaded records.")
+
+if center.shelters and assignment and (assignment.get("shelter_name") or assignment.get("shelter_id")):
+    st.write("**Shelter candidate:** " + str(assignment.get("shelter_name") or assignment.get("shelter_id")))
+elif not center.shelters:
+    st.caption("No verified shelter inventory is connected.")
