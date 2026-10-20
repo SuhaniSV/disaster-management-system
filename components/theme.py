@@ -181,6 +181,29 @@ a { color: var(--resq-blue) !important; }
   font-size: 12px;
   margin-top: 10px;
 }
+
+.resq-map-frame {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 12px 0 8px;
+  padding: 11px 14px;
+  border: 1px solid #354963;
+  border-radius: 12px;
+  background: #152238;
+  color: #d9e7fb;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .045em;
+}
+.resq-map-frame span + span {
+  color: #aebdd2;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
 div[data-testid="stMetric"] {
   background: #fff;
   border: 1px solid var(--resq-border);
@@ -312,6 +335,64 @@ input::placeholder,textarea::placeholder { color:#91a0b5!important; }
 [data-baseweb="option"]:hover { background:#263750!important; }
 [data-testid="stAlert"] { background:#172234; border-color:var(--resq-border); }
 hr { border-color:var(--resq-border)!important; }
+/* High-contrast hierarchy: override Streamlit's generated CSS classes as well as native headings. */
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5,
+[data-testid="stMarkdownContainer"] h1, [data-testid="stMarkdownContainer"] h2,
+[data-testid="stMarkdownContainer"] h3, [data-testid="stMarkdownContainer"] h4,
+[data-testid="stMarkdownContainer"] h5,
+[data-testid="stHeading"] h1, [data-testid="stHeading"] h2,
+[data-testid="stHeading"] h3, [data-testid="stHeading"] h4,
+[data-testid="stHeading"] h5 {
+  color: #f3f7ff !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+.stMarkdown h1, [data-testid="stMarkdownContainer"] h1,
+[data-testid="stHeading"] h1 {
+  font-size: clamp(1.8rem, 2.4vw, 2.35rem) !important;
+  font-weight: 800 !important;
+  line-height: 1.16 !important;
+  letter-spacing: -.035em !important;
+  padding-bottom: .45rem !important;
+  border-bottom: 2px solid #4269a8 !important;
+}
+.stMarkdown h2, [data-testid="stMarkdownContainer"] h2,
+[data-testid="stHeading"] h2 {
+  font-size: clamp(1.35rem, 1.8vw, 1.7rem) !important;
+  font-weight: 760 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -.025em !important;
+  border-left: 4px solid #79aaff !important;
+  padding-left: .65rem !important;
+  margin-top: 1.15rem !important;
+}
+.stMarkdown h3, [data-testid="stMarkdownContainer"] h3,
+[data-testid="stHeading"] h3 {
+  color: #bcd5ff !important;
+  font-weight: 730 !important;
+  letter-spacing: -.015em !important;
+}
+.stMarkdown h4, .stMarkdown h5, [data-testid="stMarkdownContainer"] h4,
+[data-testid="stMarkdownContainer"] h5, [data-testid="stHeading"] h4,
+[data-testid="stHeading"] h5 {
+  color: #d7e5ff !important;
+  font-weight: 700 !important;
+}
+.resq-title { color: #f3f7ff !important; }
+.resq-kicker { color: #9fc2ff !important; }
+.resq-header { border-bottom-color: #344760 !important; }
+[data-testid="stSubheader"] { color: #f3f7ff !important; }
+[data-testid="stMetricLabel"] p { color: #b6c5da !important; }
+[data-testid="stMetricValue"] { color: #f3f7ff !important; }
+[data-testid="stCaptionContainer"], .stCaption, small { color: #aebdd2 !important; }
+[data-testid="stAlert"] p, [data-testid="stAlert"] li { color: #e6edf7 !important; }
+[data-testid="stDataFrame"], [data-testid="stTable"] { background: #172234 !important; }
+[data-testid="stDeckGlJsonChart"], [data-testid="stPyplot"], [data-testid="stVegaLiteChart"] {
+  border: 1px solid #354963 !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+
 </style>
 """
 
