@@ -162,6 +162,12 @@ def _fallback(question: str, center: CommandCenter) -> str:
 
 
 def answer_question(question: str, center: CommandCenter, history: list[dict[str, str]] | None = None) -> str:
+    # Safety-critical, well-defined guidance must not depend on LLM availability or output.
+    # Keep these known hazard answers deterministic even when an AI provider is configured.
+    guidance = _safety_guidance(question)
+    if guidance:
+        return guidance
+
     if not llm_configured():
         return _fallback(question, center)
     prompt = json.dumps({
