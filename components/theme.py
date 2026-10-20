@@ -40,9 +40,8 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {
 }
 /* Hide menus/decorations, but keep Streamlit's header alive because it hosts
    the native collapsed-sidebar reopen control. */
-/* Do not hide stToolbar: Streamlit may place the collapsed-sidebar
-   reopen control inside this toolbar. Hiding the toolbar makes the arrow flash
-   during initial render and then disappear when the app finishes mounting. */
+/* Keep Streamlit's header alive for the native sidebar toggle, but hide
+   the cloud-hosted Fork/GitHub toolbar actions. */
 [data-testid="stToolbar"] {
   display: flex !important;
   visibility: visible !important;
@@ -50,6 +49,11 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {
   pointer-events: auto !important;
   background: transparent !important;
 }
+[data-testid="stToolbarActions"],
+[data-testid="stToolbar"] a[href*="github.com"],
+[data-testid="stToolbar"] a[aria-label*="GitHub"],
+[data-testid="stToolbar"] button[aria-label*="Deploy"],
+[data-testid="stToolbar"] button[aria-label*="GitHub"],
 [data-testid="stDecoration"],
 #MainMenu,
 footer {
@@ -57,9 +61,8 @@ footer {
   visibility: hidden !important;
 }
 
-/* Streamlit moves the sidebar toggle into its header when the sidebar is
-   collapsed. Keep the header measurable and force either version of the native
-   toggle above the page content; the native button retains its real behavior. */
+/* Preserve the real Streamlit sidebar toggle and give it a clear, visible
+   RescueX teal treatment in both expanded and collapsed states. */
 header[data-testid="stHeader"] {
   display: flex !important;
   visibility: visible !important;
@@ -70,7 +73,6 @@ header[data-testid="stHeader"] {
   position: relative !important;
   z-index: 999998 !important;
 }
-header[data-testid="stHeader"] button,
 [data-testid="collapsedControl"],
 [data-testid="collapsedControl"] button,
 [data-testid="stSidebarCollapseButton"],
@@ -83,42 +85,48 @@ button[aria-label*="Expand sidebar"] {
   visibility: visible !important;
   opacity: 1 !important;
   pointer-events: auto !important;
-  position: relative !important;
-  z-index: 1000000 !important;
   align-items: center !important;
   justify-content: center !important;
-  min-width: 44px !important;
-  min-height: 44px !important;
-  width: 44px !important;
-  height: 44px !important;
-  border: 2px solid #0e7490 !important;
-  border-radius: 12px !important;
-  background: #cffafe !important;
-  color: #164e63 !important;
-  box-shadow: 0 4px 14px rgba(7,89,133,.28) !important;
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  border: 2px solid #0f766e !important;
+  border-radius: 14px !important;
+  background: #0f766e !important;
+  color: #ffffff !important;
+  box-shadow: 0 5px 16px rgba(15,118,110,.32) !important;
+  z-index: 1000001 !important;
 }
 [data-testid="collapsedControl"],
 [data-testid="collapsedControl"] button,
 [data-testid="stSidebarCollapsedControl"],
 button[data-testid="stSidebarCollapsedControl"] {
   position: fixed !important;
-  top: 10px !important;
-  left: 10px !important;
-  z-index: 1000001 !important;
+  top: 12px !important;
+  left: 12px !important;
 }
-header[data-testid="stHeader"] button svg,
 [data-testid="collapsedControl"] svg,
 [data-testid="collapsedControl"] button svg,
 [data-testid="stSidebarCollapseButton"] svg,
 [data-testid="stSidebarCollapsedControl"] svg,
 button[aria-label*="Collapse sidebar"] svg,
-button[aria-label*="Expand sidebar"] svg {
+button[aria-label*="Expand sidebar"] svg,
+[data-testid="stSidebar"] button[aria-label*="Collapse"] svg {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  color: #164e63 !important;
+  color: #ffffff !important;
   fill: currentColor !important;
   stroke: currentColor !important;
+}
+[data-testid="collapsedControl"] button:hover,
+[data-testid="stSidebarCollapsedControl"] button:hover,
+button[aria-label*="Collapse sidebar"]:hover,
+button[aria-label*="Expand sidebar"]:hover {
+  background: #115e59 !important;
+  border-color: #115e59 !important;
+  box-shadow: 0 7px 20px rgba(15,118,110,.4) !important;
 }
 [data-testid="stAppViewContainer"] {
   padding-top: 0 !important;
