@@ -151,3 +151,62 @@ def load_incidents() -> list[dict[str, Any]]:
             )
         incidents.append(incident)
     return incidents
+
+
+def load_inventory() -> dict[str, list[dict[str, Any]]]:
+    """Load operator-managed resource, hospital and shelter records from Supabase."""
+    if not is_configured():
+        return {"resources": [], "hospitals": [], "shelters": []}
+    import json
+    from psycopg2.extras import RealDictCursor
+
+    result: dict[str, list[dict[str, Any]]] = {}
+    tables = {
+        "resources": "resource_inventory",
+        "hospitals": "hospital_inventory",
+        "shelters": "shelter_inventory",
+    }
+    with closing(_connect()) as connection:
+        with connection:
+            with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                for key, table in tables.items():
+                    cursor.execute(f"SELECT record FROM public.{table} ORDER BY record_id")
+                    rows = cursor.fetchall()
+                    records = []
+                    for row in rows:
+                        payload = row.get("record")
+                        if isinstance(payload, str):
+                            payload = json.loads(payload)
+                        if isinstance(payload, dict):
+                            records.append(dict(payload))
+                    result[key] = records
+    return result
+
+
+def save_inventory(inventory: dict[str, list[dict[str, Any]]]) -> bool:
+    """Upsert explicitly supplied operator inventory; never imports demo CSV data."""
+    if not is_configured():
+        return False
+    from psycopg2.extras import Json
+
+    tables = {
+        "resources": "resource_inventory",
+        "hospitals": "hospital_inventory",
+        "shelters": "shelter_inventory",
+    }
+    with closing(_connect()) as connection:
+        with connection:
+            with connection.cursor() as cursor:
+                for key, table in tables.items():
+                    for record in inventory.get(key, []):
+                        record_id = str(record.get("id") or "").strip()
+                        if not record_id:
+                            raise ValueError(f"A {key[:-1]} record is missing its ID.")
+                        cursor.execute(
+                            f"INSERT INTO public.{table} (record_id, record, updated_at) "
+                            "VALUES (%s, %s, now()) "
+                            "ON CONFLICT (record_id) DO UPDATE SET "
+                            "record = EXCLUDED.record, updated_at = now()",
+                            (record_id, Json(record)),
+                        )
+    return True
