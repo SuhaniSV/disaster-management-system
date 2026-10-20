@@ -93,3 +93,45 @@ def test_empty_resources_does_not_crash():
     ]
     result = assign_resources(incidents, [])
     assert result[0]["resource_id"] is None
+
+def test_empty_resource_inventory_explains_unassigned_reason():
+    incident = {
+        "id": "INC-EMPTY",
+        "disaster_type": "Earthquake",
+        "priority_score": 99,
+        "people_affected": 120_000,
+        "medical_emergency": False,
+        "status": "Active",
+        "lat": 18.5,
+        "lon": 73.8,
+    }
+    result = assign_resources([incident], [])
+    assert result[0]["resource_id"] is None
+    assert "No resource inventory is loaded" in result[0]["reason"]
+
+
+def test_all_resources_unavailable_explains_unassigned_reason():
+    incident = {
+        "id": "INC-UNAVAILABLE",
+        "disaster_type": "Flood",
+        "priority_score": 90,
+        "people_affected": 20,
+        "medical_emergency": False,
+        "status": "Active",
+        "lat": 18.5,
+        "lon": 73.8,
+    }
+    resource = {
+        "id": "R01",
+        "name": "Team Alpha",
+        "type": "rescue_team",
+        "lat": 18.51,
+        "lon": 73.81,
+        "capacity": 8,
+        "status": "Unavailable",
+        "capabilities": "flood",
+    }
+    result = assign_resources([incident], [resource])
+    assert result[0]["resource_id"] is None
+    assert "No resource is currently marked Available" in result[0]["reason"]
+
