@@ -38,13 +38,22 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {
 [data-testid="stHeader"] {
   background: rgba(245,247,251,.92);
 }
-/* Remove Streamlit Cloud's top toolbar/header chrome (including the
-   Fork on GitHub area), while keeping the sidebar toggle independently visible. */
-[data-testid="stToolbar"],
+/* Keep Streamlit's header and toolbar mounted so its native sidebar
+   reopen control continues to exist after the sidebar is collapsed.
+   Hide only the cloud toolbar actions (Fork/GitHub/Deploy). */
+[data-testid="stToolbar"] {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  background: transparent !important;
+}
 [data-testid="stToolbarActions"],
 [data-testid="stAppDeployButton"],
-[data-testid="stHeader"] [data-testid="stToolbar"],
-[data-testid="stHeader"] [data-testid="stAppDeployButton"],
+[data-testid="stToolbar"] a[href*="github.com"],
+[data-testid="stToolbar"] a[aria-label*="GitHub"],
+[data-testid="stToolbar"] button[aria-label*="Deploy"],
+[data-testid="stToolbar"] button[aria-label*="GitHub"],
 [data-testid="stDecoration"],
 #MainMenu,
 footer {
@@ -52,11 +61,13 @@ footer {
   visibility: hidden !important;
 }
 
-/* Keep the native sidebar toggle fixed outside the hidden cloud toolbar. */
+/* Keep the real native sidebar toggle accessible in both states. */
 header[data-testid="stHeader"] {
-  display: block !important;
-  height: 0 !important;
-  min-height: 0 !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: 3.5rem !important;
+  min-height: 3.5rem !important;
   padding: 0 !important;
   margin: 0 !important;
   overflow: visible !important;
