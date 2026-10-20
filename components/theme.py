@@ -451,6 +451,224 @@ input::placeholder,textarea::placeholder { color:#91a0b5!important; }
   color:var(--resq-muted)!important;
 }
 hr { border-color:var(--resq-border)!important; }
+/* Comprehensive dark-mode overrides. These intentionally out-rank the light-theme
+   form/card rules declared by POLISH_CSS earlier in this file. */
+:root {
+  color-scheme: dark !important;
+  --resq-ink: #e7eef8 !important;
+  --resq-muted: #a8b8cc !important;
+  --resq-border: #33465d !important;
+  --resq-panel: #152235 !important;
+  --resq-canvas: #0b1421 !important;
+  --resq-blue: #8abaff !important;
+  --resq-teal: #5eead4 !important;
+}
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+[data-testid="stMainBlockContainer"] {
+  background-color: #0b1421 !important;
+  color: #e7eef8 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stForm"],
+[data-testid="stMainBlockContainer"] [data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stMainBlockContainer"] [data-testid="stExpander"],
+[data-testid="stMainBlockContainer"] [data-testid="stContainer"],
+[data-testid="stMainBlockContainer"] [data-testid="stPopover"],
+[data-testid="stMainBlockContainer"] [data-testid="stChatMessage"],
+[data-testid="stMainBlockContainer"] [data-testid="stChatInput"],
+[data-testid="stMainBlockContainer"] [data-testid="stMetric"],
+[data-testid="stMainBlockContainer"] .panel,
+[data-testid="stMainBlockContainer"] .metric-card {
+  background: #152235 !important;
+  color: #e7eef8 !important;
+  border-color: #33465d !important;
+  box-shadow: none !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] label,
+[data-testid="stMainBlockContainer"] label,
+[data-testid="stMainBlockContainer"] [data-testid="stWidgetLabel"] p,
+[data-testid="stMainBlockContainer"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stMainBlockContainer"] [data-testid="stMarkdownContainer"] li,
+[data-testid="stMainBlockContainer"] [data-testid="stMarkdownContainer"] strong,
+[data-testid="stMainBlockContainer"] [data-testid="stMarkdownContainer"] em,
+[data-testid="stMainBlockContainer"] [data-testid="stCaptionContainer"] {
+  color: #dce7f5 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] input,
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] textarea,
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-baseweb="select"] > div,
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-baseweb="input"],
+[data-testid="stMainBlockContainer"] [data-testid="stForm"] [data-baseweb="textarea"],
+[data-testid="stMainBlockContainer"] input,
+[data-testid="stMainBlockContainer"] textarea,
+[data-testid="stMainBlockContainer"] [data-baseweb="input"],
+[data-testid="stMainBlockContainer"] [data-baseweb="textarea"],
+[data-testid="stMainBlockContainer"] [data-baseweb="select"] > div,
+[data-testid="stMainBlockContainer"] [data-testid="stDateInput"] input,
+[data-testid="stMainBlockContainer"] [data-testid="stTimeInput"] input {
+  background: #0e1a2a !important;
+  color: #f1f6fd !important;
+  -webkit-text-fill-color: #f1f6fd !important;
+  border-color: #405670 !important;
+  box-shadow: none !important;
+}
+[data-testid="stMainBlockContainer"] input::placeholder,
+[data-testid="stMainBlockContainer"] textarea::placeholder {
+  color: #91a6bf !important;
+  -webkit-text-fill-color: #91a6bf !important;
+  opacity: 1 !important;
+}
+[data-testid="stMainBlockContainer"] [data-baseweb="select"] span,
+[data-testid="stMainBlockContainer"] [data-baseweb="select"] div,
+[data-testid="stMainBlockContainer"] [data-baseweb="input"] div,
+[data-testid="stMainBlockContainer"] [data-baseweb="textarea"] div {
+  color: #e7eef8 !important;
+}
+[data-testid="stMainBlockContainer"] [data-baseweb="select"] svg,
+[data-testid="stMainBlockContainer"] [data-baseweb="input"] svg {
+  fill: #c3d3e7 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stRadio"] label,
+[data-testid="stMainBlockContainer"] [data-testid="stCheckbox"] label,
+[data-testid="stMainBlockContainer"] [data-testid="stToggle"] label,
+[data-testid="stMainBlockContainer"] [data-testid="stSlider"] label {
+  color: #dce7f5 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stFileUploaderDropzone"],
+[data-testid="stMainBlockContainer"] [data-testid="stCameraInput"] {
+  background: #101e30 !important;
+  color: #dce7f5 !important;
+  border-color: #4b6684 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stFileUploaderDropzone"] *,
+[data-testid="stMainBlockContainer"] [data-testid="stCameraInput"] * {
+  color: #dce7f5 !important;
+}
+[data-testid="stMainBlockContainer"] .stButton > button,
+[data-testid="stMainBlockContainer"] [data-testid="stFormSubmitButton"] > button,
+[data-testid="stMainBlockContainer"] .stDownloadButton > button,
+[data-testid="stMainBlockContainer"] [data-testid="stDownloadButton"] button,
+[data-testid="stMainBlockContainer"] .stLinkButton a,
+[data-testid="stMainBlockContainer"] [data-testid="stPageLink"] a {
+  background: #20334b !important;
+  color: #f1f6fd !important;
+  border: 1px solid #48617e !important;
+  -webkit-text-fill-color: #f1f6fd !important;
+  box-shadow: none !important;
+}
+[data-testid="stMainBlockContainer"] .stButton > button[kind="primary"],
+[data-testid="stMainBlockContainer"] [data-testid="stFormSubmitButton"] > button[kind="primary"] {
+  background: linear-gradient(110deg, #126d77, #2457a7) !important;
+  color: #ffffff !important;
+  border-color: #3b8caa !important;
+}
+[data-testid="stMainBlockContainer"] .stButton > button:disabled,
+[data-testid="stMainBlockContainer"] .stDownloadButton > button:disabled {
+  background: #182638 !important;
+  color: #8396ad !important;
+  border-color: #2d4057 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stDataFrame"],
+[data-testid="stMainBlockContainer"] [data-testid="stDataEditor"],
+[data-testid="stMainBlockContainer"] [data-testid="stTable"] {
+  background: #111e2e !important;
+  border-color: #33465d !important;
+  color: #e7eef8 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stMetricLabel"] p {
+  color: #aebfd3 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stMetricValue"] {
+  color: #f3f7ff !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stAlert"] {
+  background: #152235 !important;
+  color: #e7eef8 !important;
+  border-color: #405670 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stAlert"] * {
+  color: #e7eef8 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stTabs"] [data-baseweb="tab-list"] {
+  background: transparent !important;
+  border-color: #33465d !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stTabs"] [data-baseweb="tab"] {
+  color: #afc0d5 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stTabs"] [aria-selected="true"] {
+  color: #9fc5ff !important;
+  border-bottom-color: #69a4ff !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stExpander"] summary,
+[data-testid="stMainBlockContainer"] [data-testid="stExpander"] summary * {
+  color: #e7eef8 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stExpander"] [data-testid="stMarkdownContainer"] {
+  color: #dce7f5 !important;
+}
+[data-baseweb="popover"],
+[data-baseweb="menu"],
+[role="listbox"],
+[data-baseweb="option"],
+[data-baseweb="calendar"],
+[data-baseweb="calendar"] * {
+  background-color: #152235 !important;
+  color: #e7eef8 !important;
+  border-color: #405670 !important;
+}
+[data-baseweb="option"]:hover,
+[role="option"][aria-selected="true"] {
+  background: #29415f !important;
+  color: #ffffff !important;
+}
+[data-testid="stHeader"] { background: rgba(11,20,33,.98) !important; }
+[data-testid="stToolbar"], [data-testid="stDecoration"] { color: #dce7f5 !important; }
+[data-testid="stMainBlockContainer"] h1,
+[data-testid="stMainBlockContainer"] h2,
+[data-testid="stMainBlockContainer"] h3,
+[data-testid="stMainBlockContainer"] h4,
+[data-testid="stMainBlockContainer"] h5,
+[data-testid="stMainBlockContainer"] [data-testid="stHeading"] * {
+  color: #f4f8ff !important;
+  opacity: 1 !important;
+}
+[data-testid="stMainBlockContainer"] h1 {
+  font-size: clamp(1.8rem, 2.4vw, 2.35rem) !important;
+  font-weight: 800 !important;
+  border-bottom: 2px solid #4269a8 !important;
+  padding-bottom: .45rem !important;
+}
+[data-testid="stMainBlockContainer"] h2 {
+  font-weight: 760 !important;
+  border-left: 4px solid #79aaff !important;
+  padding-left: .65rem !important;
+}
+[data-testid="stMainBlockContainer"] h3 { color: #c5dcff !important; font-weight: 730 !important; }
+[data-testid="stMainBlockContainer"] .resq-title { border: 0 !important; padding: 0 !important; }
+[data-testid="stMainBlockContainer"] .resq-header {
+  background: linear-gradient(120deg, #11253b, #124a53 62%, #183a59) !important;
+  border-color: #31536b !important;
+}
+[data-testid="stMainBlockContainer"] .resq-header * { color: #f4f8ff !important; }
+[data-testid="stMainBlockContainer"] .resq-header .resq-sub { color: #c5d5e8 !important; }
+[data-testid="stMainBlockContainer"] .resq-map-frame {
+  background: #152235 !important; color: #e7eef8 !important; border-color: #405670 !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stVegaLiteChart"],
+[data-testid="stMainBlockContainer"] [data-testid="stPlotlyChart"],
+[data-testid="stMainBlockContainer"] [data-testid="stPyplot"],
+[data-testid="stMainBlockContainer"] [data-testid="stDeckGlJsonChart"] {
+  background: #111e2e !important;
+  border: 1px solid #33465d !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+[data-testid="stMainBlockContainer"] [data-testid="stPlotlyChart"] iframe {
+  color-scheme: dark !important;
+}
+
 </style>
 """
 
