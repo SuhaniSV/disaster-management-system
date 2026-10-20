@@ -94,6 +94,7 @@ def test_empty_resources_does_not_crash():
     result = assign_resources(incidents, [])
     assert result[0]["resource_id"] is None
 
+
 def test_empty_resource_inventory_explains_unassigned_reason():
     incident = {
         "id": "INC-EMPTY",
@@ -135,3 +136,66 @@ def test_all_resources_unavailable_explains_unassigned_reason():
     assert result[0]["resource_id"] is None
     assert "No resource is currently marked Available" in result[0]["reason"]
 
+
+def test_never_assigns_a_suitable_team_thousands_of_kilometres_away():
+    incident = {
+        "id": "INC-FAR",
+        "disaster_type": "Flood",
+        "priority_score": 99,
+        "people_affected": 20,
+        "medical_emergency": False,
+        "status": "Active",
+        "lat": 18.5204,
+        "lon": 73.8567,
+    }
+    far_team = {
+        "id": "R-FAR",
+        "name": "Far-away rescue team",
+        "type": "rescue_team",
+        "lat": 0.0,
+        "lon": 0.0,
+        "capacity": 8,
+        "status": "Available",
+        "capabilities": "flood",
+    }
+    result = assign_resources([incident], [far_team])
+    assert result[0]["resource_id"] is None
+    assert result[0]["distance_km"] is None
+    assert "No suitable available resource is within 100 km" in result[0]["reason"]
+    assert "No distant team was assigned" in result[0]["reason"]
+
+
+def test_nearest_eligible_team_is_preferred_over_farther_team():
+    incident = {
+        "id": "INC-NEAR",
+        "disaster_type": "Flood",
+        "priority_score": 90,
+        "people_affected": 20,
+        "medical_emergency": False,
+        "status": "Active",
+        "lat": 18.5204,
+        "lon": 73.8567,
+    }
+    near = {
+        "id": "R-NEAR",
+        "name": "Nearby rescue team",
+        "type": "rescue_team",
+        "lat": 18.5210,
+        "lon": 73.8570,
+        "capacity": 8,
+        "status": "Available",
+        "capabilities": "flood",
+    }
+    far = {
+        "id": "R-FAR",
+        "name": "Farther rescue team",
+        "type": "rescue_team",
+        "lat": 18.60,
+        "lon": 73.90,
+        "capacity": 8,
+        "status": "Available",
+        "capabilities": "flood",
+    }
+    result = assign_resources([incident], [far, near])
+    assert result[0]["resource_id"] == "R-NEAR"
+    assert result[0]["distance_km"] < 1
