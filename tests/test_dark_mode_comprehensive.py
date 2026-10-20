@@ -4,7 +4,7 @@ from pathlib import Path
 def test_dark_mode_overrides_late_light_form_and_widget_rules():
     source = Path("components/theme.py").read_text(encoding="utf-8")
     dark = source[source.index('DARK_CSS = """'):]
-    assert "data-testid=\"stForm\" input" in dark
+    assert '[data-testid="stForm"] input' in dark
     assert "stDownloadButton" in dark
     assert "stFileUploaderDropzone" in dark
     assert "stPlotlyChart" in dark
