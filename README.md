@@ -4,7 +4,7 @@ AI-assisted emergency **decision-support** prototype for Smart India Hackathon.
 
 One-line pitch: *An AI-assisted emergency decision-support platform that analyzes incoming disaster reports, prioritizes incidents based on severity and human impact, and recommends allocation of limited emergency resources dynamically.*
 
-This is a **hackathon MVP / prototype**. It does **not** replace emergency authorities, does **not** make autonomous life-critical decisions, and uses **simulated incident/resource demo data** (Pune-area coordinates); optional live government weather/disaster alerts are shown separately and require official feed access.
+This is a **hackathon MVP / prototype**. It does **not** replace emergency authorities or make autonomous life-critical decisions. It does not treat the repository's sample CSV files as real operational inventory. Nearby public hospital facility references can be queried by incident coordinates, but that directory does not report live beds, ambulance availability, or medicine stock. Rescue-team allocation requires current operator-verified inventory.
 
 ## Problem
 
@@ -44,7 +44,7 @@ Greedy resource / hospital / shelter recommendation
 Incident operations + scenario recalculation
 ```
 
-Data for the MVP: CSV files + in-memory `CommandCenter` state (session). `core/database.py` is the swap point for PostgreSQL later. `database/schema.sql` is reserved.
+Incident reports and operational inventory use Supabase Postgres when configured; inventory otherwise remains session-only. Public hospital facility references are looked up from the Esri India Hospital Directory layer. These references are not live capacity confirmations.
 
 ## Features
 
