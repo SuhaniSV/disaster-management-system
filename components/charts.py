@@ -6,12 +6,28 @@ from core.state import CommandCenter
 from utils.validation import as_bool, as_int
 
 
-PLOTLY_LAYOUT = dict(
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(18,26,43,0.9)",
-    font=dict(color="#e8eef7"),
-    margin=dict(l=10, r=10, t=40, b=10),
-)
+def _plotly_layout() -> dict:
+    """Return a Plotly layout matching the selected app theme."""
+    dark = False
+    try:
+        import streamlit as st
+        dark = st.session_state.get("resq_theme", "Light") == "Dark"
+    except Exception:
+        pass
+    bg = "#111e2e" if dark else "#ffffff"
+    fg = "#e7eef8" if dark else "#203548"
+    grid = "#34485f" if dark else "#dce5ed"
+    return dict(
+        paper_bgcolor=bg,
+        plot_bgcolor=bg,
+        font=dict(color=fg, family="DM Sans, sans-serif"),
+        title=dict(font=dict(color=fg, size=17)),
+        xaxis=dict(color=fg, gridcolor=grid, zerolinecolor=grid, linecolor=grid),
+        yaxis=dict(color=fg, gridcolor=grid, zerolinecolor=grid, linecolor=grid),
+        legend=dict(font=dict(color=fg), bgcolor="rgba(0,0,0,0)"),
+        margin=dict(l=10, r=10, t=48, b=10),
+    )
+
 
 
 def _incidents_df(center: CommandCenter) -> pd.DataFrame:
@@ -24,7 +40,7 @@ def incidents_by_type(center: CommandCenter):
         return None
     counts = df.groupby("disaster_type").size().reset_index(name="count")
     fig = px.bar(counts, x="disaster_type", y="count", title="Incidents by type")
-    fig.update_layout(**PLOTLY_LAYOUT)
+    fig.update_layout(**_plotly_layout())
     return fig
 
 
