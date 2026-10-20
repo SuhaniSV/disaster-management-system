@@ -6,7 +6,12 @@ import streamlit as st
 from components.session import get_center, persist
 from components.theme import page_setup, render_header, render_sidebar
 from core.official_directory import nearby_public_hospitals
-from core.persistence import is_configured, save_inventory
+from core.persistence import (
+    inventory_admin_configured,
+    inventory_admin_token_matches,
+    is_configured,
+    save_inventory,
+)
 
 page_setup("Scenario Simulator")
 
@@ -82,7 +87,22 @@ st.caption(
     "The allocator uses team status, coordinates, capacity and capabilities. "
     "Never upload example/demo records or private patient information."
 )
-with st.expander("CSV format and inventory upload", expanded=not center.resources):
+if not inventory_admin_configured():
+    st.warning(
+        "Inventory management is locked because INVENTORY_ADMIN_TOKEN is not configured. "
+        "Add this secret in Streamlit Community Cloud settings before enabling uploads."
+    )
+elif not st.session_state.get("inventory_admin_authenticated", False):
+    token_candidate = st.text_input("Inventory operator access token", type="password", key="inventory_admin_token_input")
+    if st.button("Unlock inventory management", key="unlock_inventory_management"):
+        if inventory_admin_token_matches(token_candidate):
+            st.session_state.inventory_admin_authenticated = True
+            st.success("Inventory management unlocked for this session.")
+            st.rerun()
+        else:
+            st.error("The inventory access token is incorrect.")
+if inventory_admin_configured() and st.session_state.get("inventory_admin_authenticated", False):
+    with st.expander("CSV format and inventory upload", expanded=not center.resources):
     st.markdown(
         "**Rescue teams/resources** — id,name,type,lat,lon,status,capacity,capabilities\n\n"
         "Type examples: rescue_team, medical_rescue, ambulance, fire_response. "
