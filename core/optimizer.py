@@ -108,13 +108,28 @@ def greedy_assign(
         shelter = _recommend_shelter(incident, lat_f, lon_f, shelters, roads)
 
         if not best:
+            if not resources:
+                reason = (
+                    "No resource inventory is loaded. Add verified resource records before "
+                    "requesting an allocation recommendation."
+                )
+            elif not remaining:
+                reason = (
+                    "No resource is currently marked Available, Idle, or Standby. "
+                    "Check resource status before recalculating."
+                )
+            else:
+                reason = (
+                    "Available resources exist, but none passed the minimum capacity and "
+                    "valid-coordinate checks. Review each resource's capacity and coordinates."
+                )
             assignments.append(
                 {
                     "incident_id": incident.get("id"),
                     "resource_id": None,
                     "resource_name": None,
                     "distance_km": None,
-                    "reason": "No suitable available resource with matching capability/capacity.",
+                    "reason": reason,
                     "blocked_road_id": None,
                     "hospital_id": hospital[0],
                     "hospital_name": hospital[1],

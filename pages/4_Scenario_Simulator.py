@@ -5,7 +5,6 @@ from copy import deepcopy
 import pandas as pd
 import streamlit as st
 
-from components.charts import assignment_table, priority_distribution
 from components.session import get_center, persist
 from components.theme import page_setup, render_header, render_sidebar
 from core.state import load_demo_disaster
@@ -16,12 +15,12 @@ center = get_center()
 render_sidebar(center)
 render_header(
     center,
-    "Dynamic reassignment · change roads, teams or capacity, then recalculate the recommended plan",
+    "Test operational changes and compare the recommended response before and after recalculation",
 )
 
 st.warning(
-    "This is a prototype what-if tool. Distances are straight-line estimates with a blocked-road detour penalty. "
-    "It is not a guaranteed optimal rescue plan."
+    "Decision-support prototype only. Distances are straight-line estimates with a blocked-road penalty; "
+    "recommendations are not dispatch confirmations or guaranteed travel times."
 )
 
 if "sim_before" not in st.session_state:
@@ -40,115 +39,194 @@ def snapshot():
     }
 
 
+def assignment_rows(rows):
+    """Convert raw allocation records into a compact, readable comparison table."""
+    output = []
+    for row in rows or []:
+        resource_id = row.get("resource_id")
+        distance = row.get("distance_km")
+        output.append(
+            {
+                "Incident": row.get("incident_id") or "Unknown",
+                "Allocation": "Assigned" if resource_id else "Unassigned",
+                "Resource": (
+                    f'{row.get("resource_name") or "Unnamed resource"} ({resource_id})'
+                    if resource_id else "—"
+                ),
+                "Distance": f"{distance:.2f} km" if isinstance(distance, (int, float)) else "—",
+                "Why": row.get("reason") or "No allocation explanation available.",
+                "Hospital": row.get("hospital_name") or row.get("hospital_id") or "—",
+                "Shelter": row.get("shelter_name") or row.get("shelter_id") or "—",
+            }
+        )
+    return output
+
+
+def show_assignment_table(title, rows):
+    st.markdown(f"**{title}**")
+    formatted = assignment_rows(rows)
+    if formatted:
+        st.dataframe(pd.DataFrame(formatted), use_container_width=True, hide_index=True)
+    else:
+        st.info("No active incident assignments to compare.")
+
+
 st.markdown("### What-if scenarios")
+st.caption(
+    "Prepared scenarios use clearly labelled sample data. Use the manual controls below to test "
+    "changes against the records currently loaded in this session."
+)
 a, b, c, d, e = st.columns(5)
 if a.button("A · Normal", use_container_width=True):
     persist(load_demo_disaster())
-    # Reset prepared scenario constraints for a normal baseline
     center = get_center()
     center.set_road_status("R-07", "Open")
     for rid in ("R08", "R10"):
         center.set_resource_status(rid, "Available")
     persist(center)
+    st.session_state.sim_before = None
+    st.session_state.sim_after = None
     st.session_state.sim_label = "Scenario A — Normal situation"
     st.rerun()
 if b.button("B · Road blocked", use_container_width=True):
     st.session_state.sim_before = snapshot()
-    center.set_road_status("R-07", "Blocked")
+    if any(r.get("id") == "R-07" for r in center.roads):
+        center.set_road_status("R-07", "Blocked")
+    else:
+        st.warning("This scenario requires road record R-07. No road was changed.")
     persist(center)
     st.session_state.sim_after = snapshot()
-    st.session_state.sim_label = "Scenario B — Major road R-07 blocked"
+    st.session_state.sim_label = "Scenario B — Road blockage"
     st.rerun()
 if c.button("C · Team unavailable", use_container_width=True):
     st.session_state.sim_before = snapshot()
-    target = "R03"
-    if any(r.get("id") == target for r in center.resources):
-        center.set_resource_status(target, "Unavailable")
+    if any(r.get("id") == "R03" for r in center.resources):
+        center.set_resource_status("R03", "Unavailable")
+    else:
+        st.warning("This scenario requires resource record R03. No resource was changed.")
     persist(center)
     st.session_state.sim_after = snapshot()
-    st.session_state.sim_label = "Scenario C — Rescue Team R03 unavailable"
+    st.session_state.sim_label = "Scenario C — Resource unavailable"
     st.rerun()
 if d.button("D · New emergency", use_container_width=True):
     st.session_state.sim_before = snapshot()
     center.analyze_and_add_incident(
         description=(
-            "Flood water has entered a school. Approximately 70 students are trapped. "
-            "Two require urgent medical assistance. The main road is blocked."
+            "SAMPLE SCENARIO ONLY: Flood water has entered a school. Approximately 70 students "
+            "are trapped. Two require urgent medical assistance. The main road is blocked."
         ),
         people_affected=70,
         lat=18.5164,
         lon=73.8567,
         accessibility="Blocked",
-        reporter="scenario-d",
+        reporter="scenario-sample",
     )
     persist(center)
     st.session_state.sim_after = snapshot()
-    st.session_state.sim_label = "Scenario D — Large new school-flood emergency"
+    st.session_state.sim_label = "Scenario D — Sample school-flood emergency"
     st.rerun()
 if e.button("E · Hospital squeeze", use_container_width=True):
     st.session_state.sim_before = snapshot()
-    center.set_hospital_beds("H01", 1)
-    center.set_hospital_beds("H02", 2)
+    changed = False
+    for hid, beds in (("H01", 1), ("H02", 2)):
+        if any(h.get("id") == hid for h in center.hospitals):
+            center.set_hospital_beds(hid, beds)
+            changed = True
+    if not changed:
+        st.warning("This scenario requires hospital records H01 or H02. No capacity was changed.")
     persist(center)
     st.session_state.sim_after = snapshot()
-    st.session_state.sim_label = "Scenario E — Hospital capacity decreases"
+    st.session_state.sim_label = "Scenario E — Reduced hospital capacity"
     st.rerun()
 
 st.markdown("### Manual controls")
+if not center.resources:
+    st.warning(
+        "No resource inventory is loaded. The simulator cannot assign a rescue team until verified "
+        "resource records (name, type/capability, status, capacity and coordinates) are available. "
+        "It will not invent teams or display a false assignment."
+    )
+if not center.roads:
+    st.info("No road records are loaded, so road-status controls are unavailable.")
+if not center.hospitals:
+    st.info("No hospital records are loaded, so hospital-capacity controls are unavailable.")
+if not center.shelters:
+    st.info("No shelter records are loaded, so shelter-occupancy controls are unavailable.")
+
 c1, c2 = st.columns(2)
 with c1:
-    road_ids = [r.get("id") for r in center.roads]
-    road = st.selectbox("Road", road_ids)
+    road_ids = [r.get("id") for r in center.roads if r.get("id")]
+    road = st.selectbox("Road", road_ids, disabled=not road_ids, placeholder="No road records loaded")
     road_status = st.selectbox("Road status", ["Open", "Blocked"])
-    if st.button("Mark road", use_container_width=True):
+    if st.button("Apply road status", use_container_width=True, disabled=not road_ids):
         st.session_state.sim_before = snapshot()
         center.set_road_status(road, road_status)
         persist(center)
         st.session_state.sim_after = snapshot()
         st.session_state.sim_label = f"Road {road} → {road_status}"
         st.rerun()
-    resource_ids = [r.get("id") for r in center.resources]
-    resource = st.selectbox("Resource", resource_ids)
+
+    resource_ids = [r.get("id") for r in center.resources if r.get("id")]
+    resource = st.selectbox("Resource", resource_ids, disabled=not resource_ids, placeholder="No resource records loaded")
     resource_status = st.selectbox("Resource status", ["Available", "Unavailable"])
-    if st.button("Mark resource", use_container_width=True):
+    if st.button("Apply resource status", use_container_width=True, disabled=not resource_ids):
         st.session_state.sim_before = snapshot()
         center.set_resource_status(resource, resource_status)
         persist(center)
         st.session_state.sim_after = snapshot()
         st.session_state.sim_label = f"Resource {resource} → {resource_status}"
         st.rerun()
+
 with c2:
-    inc_ids = [i.get("id") for i in center.incidents if str(i.get("status")).lower() != "resolved"]
-    if inc_ids:
-        inc = st.selectbox("Incident", inc_ids)
-        current = next(i for i in center.incidents if i.get("id") == inc)
-        people = st.number_input("People affected", min_value=0, value=int(current.get("people_affected") or 0))
-        if st.button("Increase / set people affected", use_container_width=True):
-            st.session_state.sim_before = snapshot()
-            center.bump_people(inc, int(people))
-            persist(center)
-            st.session_state.sim_after = snapshot()
-            st.session_state.sim_label = f"{inc} people affected → {people}"
-            st.rerun()
-    hosp_ids = [h.get("id") for h in center.hospitals]
-    hid = st.selectbox("Hospital", hosp_ids)
-    beds = st.number_input("Available beds", min_value=0, value=0)
-    if st.button("Change hospital capacity", use_container_width=True):
+    inc_ids = [i.get("id") for i in center.incidents if str(i.get("status")).lower() != "resolved" and i.get("id")]
+    inc = st.selectbox("Incident", inc_ids, disabled=not inc_ids, placeholder="No active incidents")
+    current = next((i for i in center.incidents if i.get("id") == inc), {}) if inc else {}
+    people = st.number_input(
+        "People affected",
+        min_value=0,
+        value=int(current.get("people_affected") or 0),
+        disabled=not bool(inc),
+    )
+    if st.button("Update people affected", use_container_width=True, disabled=not bool(inc)):
+        st.session_state.sim_before = snapshot()
+        center.bump_people(inc, int(people))
+        persist(center)
+        st.session_state.sim_after = snapshot()
+        st.session_state.sim_label = f"{inc} · people affected updated"
+        st.rerun()
+
+    hosp_ids = [h.get("id") for h in center.hospitals if h.get("id")]
+    hid = st.selectbox("Hospital", hosp_ids, disabled=not hosp_ids, placeholder="No hospital records loaded")
+    hospital = next((h for h in center.hospitals if h.get("id") == hid), {}) if hid else {}
+    beds = st.number_input(
+        "Available beds",
+        min_value=0,
+        value=int(hospital.get("available_beds") or 0),
+        disabled=not bool(hid),
+    )
+    if st.button("Update hospital capacity", use_container_width=True, disabled=not hosp_ids):
         st.session_state.sim_before = snapshot()
         center.set_hospital_beds(hid, int(beds))
         persist(center)
         st.session_state.sim_after = snapshot()
-        st.session_state.sim_label = f"Hospital {hid} beds → {beds}"
+        st.session_state.sim_label = f"Hospital {hid} · available beds updated"
         st.rerun()
-    shel_ids = [s.get("id") for s in center.shelters]
-    sid = st.selectbox("Shelter", shel_ids)
-    occ = st.number_input("Shelter occupied", min_value=0, value=0)
-    if st.button("Change shelter occupancy", use_container_width=True):
+
+    shelter_ids = [s.get("id") for s in center.shelters if s.get("id")]
+    sid = st.selectbox("Shelter", shelter_ids, disabled=not shelter_ids, placeholder="No shelter records loaded")
+    shelter = next((s for s in center.shelters if s.get("id") == sid), {}) if sid else {}
+    occ = st.number_input(
+        "Shelter occupied",
+        min_value=0,
+        value=int(shelter.get("occupied") or 0),
+        disabled=not bool(sid),
+    )
+    if st.button("Update shelter occupancy", use_container_width=True, disabled=not shelter_ids):
         st.session_state.sim_before = snapshot()
         center.set_shelter_occupied(sid, int(occ))
         persist(center)
         st.session_state.sim_after = snapshot()
-        st.session_state.sim_label = f"Shelter {sid} occupied → {occ}"
+        st.session_state.sim_label = f"Shelter {sid} · occupancy updated"
         st.rerun()
 
 if st.button("RECALCULATE RESPONSE PLAN", type="primary", use_container_width=True):
@@ -157,7 +235,6 @@ if st.button("RECALCULATE RESPONSE PLAN", type="primary", use_container_width=Tr
     persist(center)
     st.session_state.sim_after = snapshot()
     st.session_state.sim_label = "Manual recalculation"
-    st.toast("Response plan recalculated")
     st.rerun()
 
 if st.session_state.sim_label:
@@ -166,43 +243,59 @@ if st.session_state.sim_label:
 before = st.session_state.sim_before
 after = st.session_state.sim_after
 if before and after:
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Active incidents", after["metrics"]["active_incidents"], after["metrics"]["active_incidents"] - before["metrics"]["active_incidents"])
-    m2.metric("Available resources", after["metrics"]["available_resources"], after["metrics"]["available_resources"] - before["metrics"]["available_resources"])
-    m3.metric("Assigned", after["metrics"]["assigned_resources"], after["metrics"]["assigned_resources"] - before["metrics"]["assigned_resources"])
-    m4.metric("People affected", after["metrics"]["people_affected"], after["metrics"]["people_affected"] - before["metrics"]["people_affected"])
+    st.markdown("#### Operational impact")
+    metrics = [
+        ("Active incidents", "active_incidents"),
+        ("Available resources", "available_resources"),
+        ("Assigned resources", "assigned_resources"),
+        ("People affected", "people_affected"),
+    ]
+    metric_cols = st.columns(4)
+    for col, (label, key) in zip(metric_cols, metrics):
+        old_value = before["metrics"].get(key, 0)
+        new_value = after["metrics"].get(key, 0)
+        col.markdown(f"**{label}**")
+        col.markdown(f"<div class='resq-metric-value'>{old_value:,} <span style='color:#64748b'>→</span> {new_value:,}</div>", unsafe_allow_html=True)
 
+    before_assignments = before.get("assignments", [])
+    after_assignments = after.get("assignments", [])
     left, right = st.columns(2)
     with left:
-        st.markdown("**Assignments before**")
-        st.dataframe(pd.DataFrame(before["assignments"]), use_container_width=True, hide_index=True)
+        show_assignment_table("Assignments before", before_assignments)
     with right:
-        st.markdown("**Assignments after**")
-        st.dataframe(pd.DataFrame(after["assignments"]), use_container_width=True, hide_index=True)
+        show_assignment_table("Assignments after", after_assignments)
 
+    before_map = {a.get("incident_id"): a.get("resource_id") for a in before_assignments}
+    after_map = {a.get("incident_id"): a.get("resource_id") for a in after_assignments}
     changes = []
-    before_map = {a.get("incident_id"): a.get("resource_id") for a in before["assignments"]}
-    after_map = {a.get("incident_id"): a.get("resource_id") for a in after["assignments"]}
     for iid in sorted(set(before_map) | set(after_map)):
-        if before_map.get(iid) != after_map.get(iid):
+        old_resource = before_map.get(iid)
+        new_resource = after_map.get(iid)
+        if old_resource != new_resource:
             changes.append(
                 {
                     "Incident": iid,
-                    "Before": before_map.get(iid) or "Unassigned",
-                    "After": after_map.get(iid) or "Unassigned",
+                    "Before": old_resource or "Unassigned",
+                    "After": new_resource or "Unassigned",
                 }
             )
     if changes:
-        st.success("Recommended allocation changed for the incidents below.")
-        st.dataframe(changes, use_container_width=True, hide_index=True)
+        st.success("The recommended allocation changed for these incidents.")
+        st.dataframe(pd.DataFrame(changes), use_container_width=True, hide_index=True)
+    elif not center.resources:
+        st.info(
+            "No allocation changed because no resource records are loaded. Add verified resource "
+            "inventory before interpreting the simulator as a rescue-allocation comparison."
+        )
     else:
-        st.info("No pairing changes for this perturbation (priorities or hospitals may still have moved).")
-
-    fig = priority_distribution(center)
-    if fig is not None:
-        st.plotly_chart(fig, use_container_width=True)
-else:
-    st.caption("Run a scenario or RECALCULATE RESPONSE PLAN to populate before/after.")
+        st.info(
+            "No incident-to-resource pairing changed. Review the reasons in the tables above; "
+            "priority or hospital recommendations can change even when the assigned resource does not."
+        )
 
 st.markdown("### Current recommended plan")
-st.dataframe(assignment_table(center), use_container_width=True, hide_index=True)
+current_rows = assignment_rows(center.assignments)
+if current_rows:
+    st.dataframe(pd.DataFrame(current_rows), use_container_width=True, hide_index=True)
+else:
+    st.info("No active incidents are available for an allocation recommendation.")
