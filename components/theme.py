@@ -1491,10 +1491,26 @@ section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="pa
 
 
 def inject_theme() -> None:
+    # Seed the app's CSS theme from Streamlit's actual active theme on the
+    # first run. Previously the CSS defaulted to Light even when the viewer
+    # selected Streamlit's native Dark theme, leaving brand cards and badges
+    # with their light-mode colors on a dark page.
+    if "resq_theme" not in st.session_state:
+        active_theme = "Light"
+        try:
+            active_theme = (
+                "Dark"
+                if getattr(getattr(st.context, "theme", None), "type", "light") == "dark"
+                else "Light"
+            )
+        except Exception:
+            pass
+        st.session_state["resq_theme"] = active_theme
+
     st.markdown(CSS, unsafe_allow_html=True)
     st.markdown(ENHANCED_CSS, unsafe_allow_html=True)
     st.markdown(POLISH_CSS, unsafe_allow_html=True)
-    if st.session_state.get("resq_theme", "Light") == "Dark":
+    if st.session_state.get("resq_theme") == "Dark":
         st.markdown(DARK_CSS, unsafe_allow_html=True)
 
 
