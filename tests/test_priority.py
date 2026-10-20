@@ -45,3 +45,31 @@ def test_mass_casualty_scale_for_large_reported_impact():
     assert labels["People affected"] == 75
     assert result["urgency"] == "Critical"
     assert result["score"] >= 85
+
+
+
+def test_nearly_one_thousand_affected_gets_high_impact_weight():
+    result = calculate_priority({
+        "severity": 4,
+        "people_affected": 987,
+        "medical_emergency": False,
+        "status": "Active",
+    })
+    labels = {c["label"]: c["points"] for c in result["components"]}
+    assert labels["People affected"] == 46
+    assert result["score"] >= 70
+    assert result["urgency"] == "High"
+
+
+def test_people_impact_points_do_not_drop_at_tier_boundaries():
+    populations = [70, 100, 500, 1_000, 5_000, 10_000, 50_000, 100_000]
+    points = []
+    for people in populations:
+        result = calculate_priority({
+            "severity": 1,
+            "people_affected": people,
+            "medical_emergency": False,
+            "status": "Active",
+        })
+        points.append(next(c["points"] for c in result["components"] if c["label"] == "People affected"))
+    assert points == sorted(points)
