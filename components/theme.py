@@ -1607,7 +1607,6 @@ def render_sidebar(center: CommandCenter) -> None:
         ("pages/7_Live_Government_Alerts.py", "◉", "Live Government Alerts"),
         ("pages/8_Incident_Operations.py", "⇄", "Incident Operations"),
         ("pages/9_Situation_Reports.py", "▤", "Situation Reports"),
-        ("pages/10_Route_Planner.py", "⌖", "Route Planner"),
     ]
     for page_path, glyph, label in nav_items:
         st.sidebar.page_link(page_path, label=f"{glyph}  {label}")
