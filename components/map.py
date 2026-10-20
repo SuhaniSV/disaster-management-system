@@ -152,6 +152,16 @@ def render_map(center: CommandCenter) -> None:
         except (TypeError, ValueError, KeyError):
             continue
 
+    is_dark = st.session_state.get("resq_theme", "Light") == "Dark"
+    if is_dark:
+        for road in road_rows:
+            road["color"] = [255, 111, 128] if any(word in str(road.get("name", "")).lower() for word in ("blocked", "closed")) else [165, 194, 232]
+        for row in resource_rows:
+            row["color"] = _resource_color(row)
+        for row in hospital_rows:
+            row["color"] = [88, 216, 255]
+        for row in shelter_rows:
+            row["color"] = [89, 235, 175]
     layers = []
     if road_rows:
         layers.append(
@@ -162,6 +172,7 @@ def render_map(center: CommandCenter) -> None:
                 get_target_position=["to_lon", "to_lat"],
                 get_color="color",
                 get_width="width",
+                width_min_pixels=3,
                 pickable=True,
             )
         )
@@ -175,15 +186,17 @@ def render_map(center: CommandCenter) -> None:
                 get_position=["lon", "lat"],
                 get_fill_color="color",
                 get_radius="radius",
+                radius_min_pixels=6,
+                radius_max_pixels=24,
                 pickable=True,
-                opacity=0.85,
+                opacity=0.96,
             )
         )
 
     tooltip = {
         "html": "<b>{kind} {id}</b><br/>{type}<br/>Severity: {severity}<br/>Priority: {priority}"
         "<br/>People / capacity: {people}<br/>Medical: {medical}<br/>Status: {status}",
-        "style": {"backgroundColor": "#121a2b", "color": "#e8eef7"},
+        "style": {"backgroundColor": "#101a2b" if is_dark else "#ffffff", "color": "#f3f7ff" if is_dark else "#152238", "border": "1px solid #6b8bb8", "borderRadius": "8px", "padding": "10px", "fontSize": "12px"},
     }
     view = pdk.ViewState(latitude=CITY_LAT, longitude=CITY_LON, zoom=MAP_ZOOM, pitch=35)
     deck = pdk.Deck(
@@ -191,9 +204,9 @@ def render_map(center: CommandCenter) -> None:
         initial_view_state=view,
         tooltip=tooltip,
         map_provider="carto",
-        map_style="dark",
+        map_style="dark" if is_dark else "light",
     )
-    st.pydeck_chart(deck, use_container_width=True)
+    st.pydeck_chart(deck, use_container_width=True, height=560)
     st.caption(
         "🔴 Critical  🟠 High  🟡 Medium  🟢 Resolved  ·  blue teams  ·  pink medical  ·  cyan hospitals  ·  green shelters. "
         + DISTANCE_LABEL
