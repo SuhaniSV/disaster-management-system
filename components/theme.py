@@ -1639,10 +1639,9 @@ def render_header(center: CommandCenter, subtitle: str) -> None:
             help="Switch to light mode" if current_theme == "Dark" else "Switch to dark mode",
             use_container_width=True,
         ):
-            next_theme = "Light" if current_theme == "Dark" else "Dark"
-            st.session_state["resq_theme"] = next_theme
+            st.session_state["resq_theme"] = "Light" if current_theme == "Dark" else "Dark"
             # Persist the choice across refreshes and page navigation.
-            st.query_params["theme"] = next_theme.lower()
+            st.query_params["theme"] = st.session_state["resq_theme"].lower()
             st.rerun()
     st.markdown(
         f"""
