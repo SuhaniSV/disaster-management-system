@@ -798,6 +798,81 @@ section[data-testid="stSidebar"] > div {
   -webkit-text-fill-color: #e2ebf7 !important;
   opacity: 1 !important;
 }
+
+/* Sidebar dark-mode repair: brand card, AI-mode badge, and nav labels. */
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div,
+section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+  background: #0b1726 !important;
+  color: #e8f1fc !important;
+}
+section[data-testid="stSidebar"] .rx-sidebar-brand {
+  background: linear-gradient(135deg, #142b40 0%, #15283c 68%, #102338 100%) !important;
+  border: 1px solid #34516a !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,.22) !important;
+  color: #f0f6ff !important;
+}
+section[data-testid="stSidebar"] .rx-brand-name {
+  color: #f4f8ff !important;
+  -webkit-text-fill-color: #f4f8ff !important;
+  font-weight: 750 !important;
+}
+section[data-testid="stSidebar"] .rx-brand-tag,
+section[data-testid="stSidebar"] .rx-brand-status {
+  color: #b7c9dd !important;
+  -webkit-text-fill-color: #b7c9dd !important;
+  opacity: 1 !important;
+}
+section[data-testid="stSidebar"] .rx-brand-line {
+  background: #314a61 !important;
+}
+section[data-testid="stSidebar"] .rx-brand-mark {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] strong {
+  display: inline-block !important;
+  background: #1b3045 !important;
+  border: 1px solid #3c566f !important;
+  border-radius: 9px !important;
+  color: #e8f2ff !important;
+  -webkit-text-fill-color: #e8f2ff !important;
+  padding: .45rem .65rem !important;
+  font-weight: 650 !important;
+  opacity: 1 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] *,
+section[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] *,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] p {
+  color: #d7e4f3 !important;
+  -webkit-text-fill-color: #d7e4f3 !important;
+  opacity: 1 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a {
+  color: #dce9f8 !important;
+  -webkit-text-fill-color: #dce9f8 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a:hover {
+  background: #1a2c40 !important;
+  border-color: #34516a !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"],
+section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"] * {
+  background: linear-gradient(100deg, #087f9f 0%, #0876b5 100%) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+section[data-testid="stSidebar"] hr {
+  border-color: #30465b !important;
+}
 </style>
 """
 
