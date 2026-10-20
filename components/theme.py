@@ -38,22 +38,13 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {
 [data-testid="stHeader"] {
   background: rgba(245,247,251,.92);
 }
-/* Hide menus/decorations, but keep Streamlit's header alive because it hosts
-   the native collapsed-sidebar reopen control. */
-/* Keep Streamlit's header alive for the native sidebar toggle, but hide
-   the cloud-hosted Fork/GitHub toolbar actions. */
-[data-testid="stToolbar"] {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  background: transparent !important;
-}
+/* Remove Streamlit Cloud's top toolbar/header chrome (including the
+   Fork on GitHub area), while keeping the sidebar toggle independently visible. */
+[data-testid="stToolbar"],
 [data-testid="stToolbarActions"],
-[data-testid="stToolbar"] a[href*="github.com"],
-[data-testid="stToolbar"] a[aria-label*="GitHub"],
-[data-testid="stToolbar"] button[aria-label*="Deploy"],
-[data-testid="stToolbar"] button[aria-label*="GitHub"],
+[data-testid="stAppDeployButton"],
+[data-testid="stHeader"] [data-testid="stToolbar"],
+[data-testid="stHeader"] [data-testid="stAppDeployButton"],
 [data-testid="stDecoration"],
 #MainMenu,
 footer {
@@ -61,15 +52,15 @@ footer {
   visibility: hidden !important;
 }
 
-/* Preserve the real Streamlit sidebar toggle and give it a clear, visible
-   RescueX teal treatment in both expanded and collapsed states. */
+/* Keep the native sidebar toggle fixed outside the hidden cloud toolbar. */
 header[data-testid="stHeader"] {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  height: 3.5rem !important;
-  min-height: 3.5rem !important;
+  display: block !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
   overflow: visible !important;
+  background: transparent !important;
   position: relative !important;
   z-index: 999998 !important;
 }
@@ -87,15 +78,15 @@ button[aria-label*="Expand sidebar"] {
   pointer-events: auto !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 46px !important;
-  min-width: 46px !important;
-  height: 46px !important;
-  min-height: 46px !important;
-  border: 2px solid #0f766e !important;
-  border-radius: 14px !important;
-  background: #0f766e !important;
-  color: #ffffff !important;
-  box-shadow: 0 5px 16px rgba(15,118,110,.32) !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  border: 1px solid #9ca3af !important;
+  border-radius: 10px !important;
+  background: #e5e7eb !important;
+  color: #374151 !important;
+  box-shadow: 0 3px 10px rgba(31,41,55,.18) !important;
   z-index: 1000001 !important;
 }
 [data-testid="collapsedControl"],
@@ -116,7 +107,7 @@ button[aria-label*="Expand sidebar"] svg,
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  color: #ffffff !important;
+  color: #374151 !important;
   fill: currentColor !important;
   stroke: currentColor !important;
 }
@@ -124,9 +115,9 @@ button[aria-label*="Expand sidebar"] svg,
 [data-testid="stSidebarCollapsedControl"] button:hover,
 button[aria-label*="Collapse sidebar"]:hover,
 button[aria-label*="Expand sidebar"]:hover {
-  background: #115e59 !important;
-  border-color: #115e59 !important;
-  box-shadow: 0 7px 20px rgba(15,118,110,.4) !important;
+  background: #d1d5db !important;
+  border-color: #6b7280 !important;
+  box-shadow: 0 4px 12px rgba(31,41,55,.24) !important;
 }
 [data-testid="stAppViewContainer"] {
   padding-top: 0 !important;
