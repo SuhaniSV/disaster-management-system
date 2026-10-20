@@ -1601,10 +1601,10 @@ def render_sidebar(center: CommandCenter) -> None:
     st.sidebar.markdown(f"**{center.ai_mode}**")
     st.sidebar.markdown("#### COMMAND NAVIGATION")
     nav_items = [
+        ("app.py", "⌂", "Command Center"),
         ("pages/2_Report_Incident.py", "＋", "Report Incident"),
         ("pages/4_Scenario_Simulator.py", "◈", "Scenario Simulator"),
         ("pages/5_Analytics.py", "▥", "Analytics"),
-        ("pages/6_ResQ_Assistant.py", "✦", "ResQ Assistant"),
         ("pages/7_Live_Government_Alerts.py", "◉", "Live Government Alerts"),
         ("pages/8_Incident_Operations.py", "⇄", "Incident Operations"),
         ("pages/9_Situation_Reports.py", "▤", "Situation Reports"),
@@ -1631,7 +1631,7 @@ def render_header(center: CommandCenter, subtitle: str) -> None:
             help="Go to the ResQ-AI home dashboard",
             use_container_width=True,
         ):
-            st.switch_page("app.py")
+            st.switch_page("pages/6_ResQ_Assistant.py")
     with theme_slot:
         if st.button(
             "☀" if current_theme == "Dark" else "☾",
