@@ -1579,91 +1579,6 @@ def page_setup(title: str) -> None:
         initial_sidebar_state="expanded",
     )
     inject_theme()
-    render_floating_assistant_widget()
-
-
-def render_floating_assistant_widget() -> None:
-    """Show a waving floating robot; clicking the robot or welcome bubble opens chat."""
-    st.markdown(
-        """
-        <style>
-          /* The widget is fixed to the viewport, independent of the sidebar. */
-          .resq-live-robot {
-            position: fixed; right: 26px; bottom: 24px; z-index: 9997;
-            width: 100px; height: 112px; display:flex; align-items:center; justify-content:center;
-            border-radius: 30px; background:linear-gradient(145deg,#e8f1ff,#d7fff3);
-            border:1px solid rgba(36,87,197,.2); box-shadow:0 14px 34px rgba(20,55,100,.23);
-            animation:resq-robot-enter .8s cubic-bezier(.2,.8,.2,1) both, resq-robot-bob 3s ease-in-out .8s infinite;
-            pointer-events:none;
-          }
-          .resq-live-robot svg { overflow:visible; }
-          .resq-live-wave { transform-box:fill-box; transform-origin:20% 80%; animation:resq-wave 1.25s ease-in-out .45s 3; }
-          .resq-live-bubble {
-            position:fixed; right:139px; bottom:104px; z-index:9997;
-            width:min(290px,calc(100vw - 170px)); box-sizing:border-box;
-            padding:15px 17px; border-radius:19px 19px 5px 19px;
-            background:#fff; color:#17243a; border:1px solid #dbe5f3;
-            box-shadow:0 12px 38px rgba(20,40,75,.2);
-            font:600 14px/1.45 'DM Sans',sans-serif;
-            animation:resq-bubble-lifetime 10s ease-in-out both;
-            pointer-events:none;
-          }
-          .resq-live-bubble:after { content:''; position:absolute; right:-7px; bottom:16px; width:13px; height:13px; background:#fff; border-right:1px solid #dbe5f3; border-bottom:1px solid #dbe5f3; transform:rotate(-45deg); }
-          .resq-live-bubble strong { display:block; margin-bottom:5px; font-size:15px; }
-          .resq-live-bubble span { display:block; color:#52627a; font-weight:500; }
-          /* Make the native Streamlit button an invisible, accessible click target over both items. */
-          div[class*="st-key-resq_floating_chat"] {
-            position:fixed !important; right:18px !important; bottom:18px !important;
-            z-index:10000 !important; width:400px !important; height:205px !important;
-            padding:0 !important; margin:0 !important; background:transparent !important;
-          }
-          div[class*="st-key-resq_floating_chat"] button {
-            width:100% !important; height:100% !important; min-height:0 !important;
-            padding:0 !important; border:0 !important; border-radius:22px !important;
-            background:transparent !important; box-shadow:none !important; color:transparent !important;
-            cursor:pointer !important; outline-offset:4px !important;
-          }
-          div[class*="st-key-resq_floating_chat"] button:hover,
-          div[class*="st-key-resq_floating_chat"] button:focus-visible { background:rgba(36,87,197,.035) !important; }
-          div[class*="st-key-resq_floating_chat"] button p { color:transparent !important; font-size:1px !important; }
-          @keyframes resq-robot-enter { from { opacity:0; transform:translateY(32px) scale(.72) rotate(-7deg); } to { opacity:1; transform:translateY(0) scale(1) rotate(0); } }
-          @keyframes resq-robot-bob { 0%,100% { translate:0 0; } 50% { translate:0 -5px; } }
-          @keyframes resq-wave { 0%,100% { transform:rotate(0); } 20%,55% { transform:rotate(27deg); } 38%,72% { transform:rotate(-10deg); } }
-          @keyframes resq-bubble-lifetime {
-            0% { opacity:0; transform:translateY(12px) scale(.9); transform-origin:bottom right; }
-            8%,78% { opacity:1; transform:translateY(0) scale(1); }
-            100% { opacity:0; transform:translateY(-4px) scale(.98); visibility:hidden; }
-          }
-          @media (max-width:600px) {
-            .resq-live-robot { right:12px; bottom:12px; width:78px; height:88px; }
-            .resq-live-bubble { right:94px; bottom:80px; width:min(255px,calc(100vw - 115px)); padding:12px 13px; font-size:13px; }
-            div[class*="st-key-resq_floating_chat"] { right:7px !important; bottom:7px !important; width:calc(100vw - 14px) !important; height:165px !important; }
-          }
-          @media (prefers-reduced-motion:reduce) {
-            .resq-live-robot,.resq-live-wave,.resq-live-bubble { animation:none !important; }
-            .resq-live-bubble { opacity:1; }
-          }
-        </style>
-        <div class="resq-live-robot" role="img" aria-label="Animated ResQ-AI robot waving hello">
-          <svg width="88" height="96" viewBox="0 0 110 112" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M49 12V22" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/><circle cx="49" cy="10" r="5" fill="#0F766E"/>
-            <rect x="20" y="25" width="60" height="47" rx="15" fill="#fff" stroke="#2457C5" stroke-width="4"/>
-            <rect x="28" y="34" width="44" height="25" rx="9" fill="#152238"/><circle cx="40" cy="46" r="4.5" fill="#5EEAD4"/><circle cx="60" cy="46" r="4.5" fill="#5EEAD4"/>
-            <path d="M42 54Q50 60 58 54" stroke="#8AB4FF" stroke-width="3" stroke-linecap="round"/>
-            <path d="M20 43H12M80 43H88" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/>
-            <rect x="31" y="70" width="38" height="12" rx="6" fill="#2457C5"/><path d="M39 82L34 91M61 82L66 91" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/><circle cx="34" cy="92" r="4" fill="#0F766E"/><circle cx="66" cy="92" r="4" fill="#0F766E"/>
-            <g class="resq-live-wave"><path d="M81 45L89 31" stroke="#2457C5" stroke-width="7" stroke-linecap="round"/><circle cx="92" cy="25" r="5" fill="#0F766E"/><path d="M92 17V13M101 25H105M99 18L102 15" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"/></g>
-          </svg>
-        </div>
-        <div class="resq-live-bubble" role="status" aria-live="polite">
-          <strong>Hey there! 👋 Do you need any help?</strong>
-          <span>Click the robot or this bubble to chat with us.</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    if st.button("Open ResQ-AI chat", key="resq_floating_chat", help="Open the ResQ-AI assistant"):
-        st.switch_page("pages/6_ResQ_Assistant.py")
 
 
 def render_sidebar(center: CommandCenter) -> None:
@@ -1707,7 +1622,15 @@ def render_sidebar(center: CommandCenter) -> None:
 def render_header(center: CommandCenter, subtitle: str) -> None:
     ai_class = "ok" if "Active" in center.ai_mode else "warn"
     current_theme = st.session_state.get("resq_theme", "Light")
-    spacer, theme_slot = st.columns([0.94, 0.06], vertical_alignment="center")
+    spacer, assistant_slot, theme_slot = st.columns([0.88, 0.08, 0.06], vertical_alignment="center")
+    with assistant_slot:
+        if st.button(
+            "🆘 ResQ-AI",
+            key="header_resq_ai_home",
+            help="Open the ResQ-AI assistant",
+            use_container_width=True,
+        ):
+            st.switch_page("pages/6_ResQ_Assistant.py")
     with theme_slot:
         if st.button(
             "☀" if current_theme == "Dark" else "☾",
