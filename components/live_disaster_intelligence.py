@@ -34,22 +34,30 @@ def render_live_disaster_intelligence() -> None:
             format_func=lambda value: f"Past {value} days",
         )
     with refresh_slot:
-        if st.button("Refresh feeds", type="primary", use_container_width=True):
+        force_refresh = st.button("Refresh feeds", type="primary", use_container_width=True)
+        if force_refresh:
             _cached_gdacs.clear()
             _cached_usgs.clear()
-            st.rerun()
 
     source_rows = []
     events = []
     failures = []
     with st.spinner("Retrieving source-reported hazard events…"):
         try:
-            gdacs = _cached_gdacs(lookback)
+            # Bypass Streamlit's cache when the user explicitly requests a refresh.
+            gdacs = fetch_gdacs_events(lookback_days=lookback) if force_refresh else _cached_gdacs(lookback)
+            gdacs_events = gdacs.get("events", [])
+            latest_gdacs_update = max(
+                (str(event.get("updated_at_utc") or event.get("started_at_utc") or "")
+                 for event in gdacs_events),
+                default="",
+            ) or "Not provided"
             source_rows.append({
                 "Source": "GDACS",
                 "Status": "Connected",
-                "Events": gdacs.get("event_count", len(gdacs.get("events", []))),
-                "Retrieved (UTC)": gdacs.get("fetched_at_utc", "Not provided"),
+                "Events": gdacs.get("event_count", len(gdacs_events)),
+                "Retrieved by app (UTC)": gdacs.get("fetched_at_utc", "Not provided"),
+                "Latest event update/start (UTC)": latest_gdacs_update,
                 "Official source": GDACS_SOURCE_URL,
             })
             for event in gdacs.get("events", []):
@@ -68,16 +76,18 @@ def render_live_disaster_intelligence() -> None:
             failures.append(("GDACS", type(exc).__name__, GDACS_SOURCE_URL))
             source_rows.append({
                 "Source": "GDACS", "Status": "Unavailable", "Events": "—",
-                "Retrieved (UTC)": "—", "Official source": GDACS_SOURCE_URL,
+                "Retrieved by app (UTC)": "—", "Latest event update/start (UTC)": "—", "Official source": GDACS_SOURCE_URL,
             })
 
         try:
-            usgs = _cached_usgs()
+            usgs = fetch_usgs_earthquakes() if force_refresh else _cached_usgs()
+            usgs_generated = usgs.get("feed_generated_at_utc", "Not provided")
             source_rows.append({
                 "Source": "USGS Earthquake Hazards Program",
                 "Status": "Connected",
                 "Events": usgs.get("event_count", len(usgs.get("events", []))),
-                "Retrieved (UTC)": usgs.get("fetched_at_utc", "Not provided"),
+                "Retrieved by app (UTC)": usgs.get("fetched_at_utc", "Not provided"),
+                "Source feed generated (UTC)": usgs_generated,
                 "Official source": USGS_ALL_DAY_URL,
             })
             for event in usgs.get("events", []):
@@ -106,20 +116,28 @@ def render_live_disaster_intelligence() -> None:
     c2.metric("Feeds connected", f"{connected} / {len(source_rows)}")
     c3.metric("Monitoring window", f"{lookback} days + USGS past day")
 
-    with st.expander("Data-source health", expanded=bool(failures)):
+    with st.expander("Data-source health", expanded=bool(failures) or force_refresh):
         st.dataframe(
             pd.DataFrame(source_rows), use_container_width=True, hide_index=True,
             column_config={"Official source": st.column_config.LinkColumn("Official source", display_text="Open source")},
         )
         for name, reason, url in failures:
             st.warning(f"{name} is unavailable ({reason}). No example events were substituted. [Open official source]({url})")
+        st.caption(
+            "App retrieval time means when this app received the response; it does not mean every event is new. "
+            "GDACS may continue listing ongoing alerts, while USGS provides a rolling past-day earthquake feed."
+        )
+        if force_refresh:
+            st.success("Refresh requested: both feeds were fetched directly, bypassing the five-minute cache.")
+        else:
+            st.caption("Automatic cache lifetime: up to 5 minutes while the page is being used. No background polling occurs while the app is idle.")
 
     if not events:
         if failures:
             st.error("No hazard records could be retrieved from the connected feeds.")
         else:
             st.info("Connected feeds returned no events for these windows.")
-        st.caption("Feed retrieval is cached for up to five minutes. Use Refresh feeds to request fresh data.")
+        st.caption("Feed retrieval is cached for up to five minutes. Use Refresh feeds to bypass the cache and request fresh data.")
         return
 
     df = pd.DataFrame(events)
