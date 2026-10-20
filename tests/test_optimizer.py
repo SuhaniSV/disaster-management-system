@@ -199,3 +199,55 @@ def test_nearest_eligible_team_is_preferred_over_farther_team():
     result = assign_resources([incident], [far, near])
     assert result[0]["resource_id"] == "R-NEAR"
     assert result[0]["distance_km"] < 1
+
+
+
+def test_public_hospital_directory_is_a_lead_not_fake_available_capacity():
+    incident = {
+        "id": "INC-HOSPITAL-LEAD",
+        "disaster_type": "Earthquake",
+        "priority_score": 90,
+        "people_affected": 30,
+        "medical_emergency": True,
+        "status": "Active",
+        "lat": 28.6139,
+        "lon": 77.2090,
+    }
+    directory_hospital = {
+        "id": "PUBLIC-HOSP-1",
+        "name": "Public directory hospital",
+        "lat": 28.6140,
+        "lon": 77.2091,
+        "available_beds": 0,
+        "source_type": "public_reference_directory",
+        "availability_status": "unknown",
+    }
+    result = assign_resources([incident], [], hospitals=[directory_hospital])
+    assert result[0]["hospital_id"] == "PUBLIC-HOSP-1"
+    assert result[0]["hospital_name"] == "Public directory hospital"
+    assert result[0]["hospital_availability"] == "availability-unknown"
+
+
+def test_verified_hospital_with_reported_beds_is_preferred():
+    incident = {
+        "id": "INC-HOSPITAL-CAPACITY",
+        "disaster_type": "Medical emergency",
+        "priority_score": 80,
+        "people_affected": 1,
+        "medical_emergency": True,
+        "status": "Active",
+        "lat": 28.6139,
+        "lon": 77.2090,
+    }
+    hospital = {
+        "id": "H-1",
+        "name": "Operator reported hospital",
+        "lat": 28.6140,
+        "lon": 77.2091,
+        "available_beds": 5,
+        "emergency_capability": "yes",
+        "source_type": "operator_verified_inventory",
+    }
+    result = assign_resources([incident], [], hospitals=[hospital])
+    assert result[0]["hospital_id"] == "H-1"
+    assert result[0]["hospital_availability"] == "capacity-reported"
