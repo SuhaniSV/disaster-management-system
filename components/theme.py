@@ -40,7 +40,16 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {
 }
 /* Hide menus/decorations, but keep Streamlit's header alive because it hosts
    the native collapsed-sidebar reopen control. */
-[data-testid="stToolbar"],
+/* Do not hide stToolbar: Streamlit may place the collapsed-sidebar
+   reopen control inside this toolbar. Hiding the toolbar makes the arrow flash
+   during initial render and then disappear when the app finishes mounting. */
+[data-testid="stToolbar"] {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  background: transparent !important;
+}
 [data-testid="stDecoration"],
 #MainMenu,
 footer {
