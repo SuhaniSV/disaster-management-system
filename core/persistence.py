@@ -210,3 +210,25 @@ def save_inventory(inventory: dict[str, list[dict[str, Any]]]) -> bool:
                             (record_id, Json(record)),
                         )
     return True
+
+
+
+def inventory_admin_configured() -> bool:
+    """Inventory write access must be protected on a publicly reachable Streamlit app."""
+    try:
+        value = st.secrets.get("INVENTORY_ADMIN_TOKEN")
+    except Exception:
+        value = None
+    return bool(value or os.getenv("INVENTORY_ADMIN_TOKEN"))
+
+
+def inventory_admin_token_matches(candidate: str) -> bool:
+    """Compare the submitted operator token without exposing the stored secret."""
+    import hmac
+
+    try:
+        expected = st.secrets.get("INVENTORY_ADMIN_TOKEN")
+    except Exception:
+        expected = None
+    expected = str(expected or os.getenv("INVENTORY_ADMIN_TOKEN") or "")
+    return bool(expected and candidate and hmac.compare_digest(expected, candidate))
