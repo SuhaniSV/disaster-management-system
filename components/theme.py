@@ -1559,18 +1559,11 @@ def inject_theme() -> None:
     if requested_theme in {"light", "dark"}:
         st.session_state["resq_theme"] = requested_theme.title()
     elif "resq_theme" not in st.session_state:
-        # Fall back to Streamlit's native theme only when no saved preference
-        # is present in the URL (for example, the first-ever visit).
-        active_theme = "Light"
-        try:
-            active_theme = (
-                "Dark"
-                if getattr(getattr(st.context, "theme", None), "type", "light") == "dark"
-                else "Light"
-            )
-        except Exception:
-            pass
-        st.session_state["resq_theme"] = active_theme
+        # Never infer the app theme from Streamlit/browser appearance: that
+        # can override a user's Light selection after a browser refresh.
+        # Light is the stable default; Dark is used only when explicitly saved
+        # in the URL by the app's own theme toggle.
+        st.session_state["resq_theme"] = "Light"
 
     st.markdown(CSS, unsafe_allow_html=True)
     st.markdown(ENHANCED_CSS, unsafe_allow_html=True)
