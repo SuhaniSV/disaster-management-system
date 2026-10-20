@@ -60,6 +60,7 @@ Data for the MVP: CSV files + in-memory `CommandCenter` state (session). `core/d
 - Analytics (Plotly)
 - ResQ Assistant chatbot grounded in the current incident/resource snapshot
 - Read-only MCP server over Streamable HTTP for Alexa+ track (incident listing, priority explanations, resource/shelter status, live government alert adapter)
+- Separate Alexa Skills Kit custom-skill starter with voice intents for earthquake, flood, cyclone, fire, heat, emergency help, and preparedness
 - Optional Amazon Bedrock briefing tool for the AWS Builder mini-challenge\n- Live Government Alerts page for IMD district nowcasts/warnings and an authorized NDMA SACHET/CAP feed
 - Incident Operations workflow, operator notes and audit timeline
 - Situation Reports with Markdown/JSON/CSV exports
@@ -102,9 +103,10 @@ Copy `.env.example` to `.env` (optional). Copy `.streamlit/secrets.toml.example`
 
 Never put real keys in source control.
 
-## Live government data\n\nSee [docs/LIVE_GOVERNMENT_DATA.md](docs/LIVE_GOVERNMENT_DATA.md) for IMD token setup, the authorized NDMA SACHET/CAP feed configuration, source status, and limitations. Live alerts are not automatically promoted to incidents and do not change deterministic scores.\n\n## Alexa+ hackathon integration
+## Live government data\n\nSee [docs/LIVE_GOVERNMENT_DATA.md](docs/LIVE_GOVERNMENT_DATA.md) for IMD token setup, the authorized NDMA SACHET/CAP feed configuration, source status, and limitations. Live alerts are not automatically promoted to incidents and do not change deterministic scores.\n\n## Alexa and Alexa+ integration
 
-See [`docs/ALEXA_PLUS_HACKATHON.md`](docs/ALEXA_PLUS_HACKATHON.md) for MCP setup, the Streamable HTTP endpoint, demo script, optional Amazon Bedrock integration, and the limits required for a safe submission. Start the MCP server with `python -m resq_mcp.server`.
+- **Alexa+ hackathon track:** See [`docs/ALEXA_PLUS_HACKATHON.md`](docs/ALEXA_PLUS_HACKATHON.md) for the existing read-only MCP server, Streamable HTTP setup, demo script, and optional Amazon Bedrock briefing. Start it with `python -m resq_mcp.server`.
+- **Alexa custom skill:** See [`docs/ALEXA_SKILLS_KIT.md`](docs/ALEXA_SKILLS_KIT.md) for the Lambda handler and interaction model in `alexa/`. The skill provides general voice safety guidance and is separate from direct Alexa+ linking. It requires setup and testing in the Amazon Developer Console and AWS Lambda; it is not yet deployed or published.
 
 ## Expanded features and limitations\n\nSee [docs/EXPANDED_PLATFORM.md](docs/EXPANDED_PLATFORM.md) for added operator workflows, export formats, optional routing/email integrations, setup, and production limitations. These additions preserve deterministic priority scoring.\n\n## How to run
 
