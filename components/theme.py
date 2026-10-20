@@ -48,34 +48,52 @@ footer {
   visibility: hidden !important;
 }
 
-/* Keep both native sidebar toggle controls visible and easy to hit. */
-[data-testid="stSidebarCollapseButton"],
-[data-testid="stSidebarCollapsedControl"],
-button[aria-label*="Collapse sidebar"],
-button[aria-label*="Expand sidebar"] {
+/* Streamlit moves the sidebar toggle into its header when the sidebar is
+   collapsed. Keep the header measurable and force either version of the native
+   toggle above the page content; the native button retains its real behavior. */
+header[data-testid="stHeader"] {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
+  height: 3.5rem !important;
+  min-height: 3.5rem !important;
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 999998 !important;
+}
+header[data-testid="stHeader"] button,
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapsedControl"],
+button[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebar"] button[aria-label*="Collapse"],
+button[aria-label*="Collapse sidebar"],
+button[aria-label*="Expand sidebar"] {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
   pointer-events: auto !important;
+  position: relative !important;
   z-index: 1000000 !important;
   align-items: center !important;
   justify-content: center !important;
-  min-width: 42px !important;
-  min-height: 42px !important;
-  width: 42px !important;
-  height: 42px !important;
-  border: 1px solid #1598a8 !important;
-  border-radius: 10px !important;
-  background: #e6f7fa !important;
-  color: #075985 !important;
-  box-shadow: 0 3px 12px rgba(7,89,133,.2) !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  width: 44px !important;
+  height: 44px !important;
+  border: 2px solid #0e7490 !important;
+  border-radius: 12px !important;
+  background: #cffafe !important;
+  color: #164e63 !important;
+  box-shadow: 0 4px 14px rgba(7,89,133,.28) !important;
 }
-[data-testid="stSidebarCollapsedControl"] {
+[data-testid="stSidebarCollapsedControl"],
+button[data-testid="stSidebarCollapsedControl"] {
   position: fixed !important;
   top: 10px !important;
   left: 10px !important;
   z-index: 1000001 !important;
 }
+header[data-testid="stHeader"] button svg,
 [data-testid="stSidebarCollapseButton"] svg,
 [data-testid="stSidebarCollapsedControl"] svg,
 button[aria-label*="Collapse sidebar"] svg,
@@ -83,7 +101,7 @@ button[aria-label*="Expand sidebar"] svg {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  color: #075985 !important;
+  color: #164e63 !important;
   fill: currentColor !important;
   stroke: currentColor !important;
 }
