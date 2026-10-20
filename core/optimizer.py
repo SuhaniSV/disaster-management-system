@@ -149,6 +149,7 @@ def greedy_assign(
                 "hospital_id": hospital[0],
                 "hospital_name": hospital[1],
                 "hospital_km": hospital[2],
+                "hospital_availability": hospital[3],
                 "shelter_id": shelter[0],
                 "shelter_name": shelter[1],
                 "shelter_km": shelter[2],
@@ -175,6 +176,7 @@ def greedy_assign(
             "hospital_id": hospital[0],
             "hospital_name": hospital[1],
             "hospital_km": hospital[2],
+            "hospital_availability": hospital[3],
             "shelter_id": shelter[0],
             "shelter_name": shelter[1],
             "shelter_km": shelter[2],
@@ -185,28 +187,35 @@ def greedy_assign(
 
 
 def _recommend_hospital(incident, lat, lon, hospitals, roads) -> tuple:
+    """Prefer live-verified capacity; otherwise return a nearby public directory entry as unverified."""
     if not hospitals:
-        return None, None, None
+        return None, None, None, None
     medical = _as_bool(incident.get("medical_emergency"))
 
-    def ok(h: dict[str, Any]) -> bool:
+    def has_capacity(h: dict[str, Any]) -> bool:
         beds = _as_int(h.get("available_beds"), 0)
         if beds <= 0:
             return False
-        if medical and str(h.get("emergency_capability") or "").lower() in {"no", "false", "0"}:
+        if medical and str(h.get("emergency_capability") or "").strip().lower() not in {"yes", "true", "1"}:
             return False
         return True
 
-    found, dist, _ = nearest(lat, lon, hospitals, predicate=ok, roads=roads)
-    if not found:
-        found, dist, _ = nearest(
-            lat, lon, hospitals,
-            predicate=lambda h: _as_int(h.get("available_beds"), 0) > 0,
-            roads=roads,
-        )
-    if not found:
-        return None, None, None
-    return found.get("id"), found.get("name"), round(dist, 2)
+    # First choice: operator-verified hospital records with reported available beds.
+    found, dist, _ = nearest(lat, lon, hospitals, predicate=has_capacity, roads=roads)
+    if found:
+        return found.get("id"), found.get("name"), round(dist, 2), "capacity-reported"
+
+    # Second choice: public facility directory. It is a destination lead, not a claim
+    # that beds, emergency services, ambulances, or medicines are currently available.
+    directory = [
+        h for h in hospitals
+        if str(h.get("source_type") or "") == "public_reference_directory"
+    ]
+    found, dist, _ = nearest(lat, lon, directory, roads=roads)
+    if found:
+        return found.get("id"), found.get("name"), round(dist, 2), "availability-unknown"
+
+    return None, None, None, None
 
 
 def _recommend_shelter(incident, lat, lon, shelters, roads) -> tuple:

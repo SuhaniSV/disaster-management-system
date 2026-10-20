@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
 import streamlit as st
 
 from core.llm_client import llm_configured
-from core.persistence import is_configured, load_incidents
+from core.persistence import is_configured, load_incidents, load_inventory
 from core.state import CommandCenter
 
 
@@ -34,7 +34,20 @@ def get_center() -> CommandCenter:
         if st.session_state.incident_store_configured:
             try:
                 center.incidents = load_incidents()
-                center.recalculate(reason="Loaded saved incident reports from Supabase")
+                try:
+                    inventory = load_inventory()
+                    center.resources = inventory.get("resources", [])
+                    center.hospitals = inventory.get("hospitals", [])
+                    center.shelters = inventory.get("shelters", [])
+                    st.session_state.inventory_store_error = None
+                except Exception as inventory_exc:
+                    # Incident persistence may already exist on older deployments.
+                    # Inventory requires migrations/002_operational_inventory.sql.
+                    st.session_state.inventory_store_error = (
+                        f"Operational inventory tables are not ready ({type(inventory_exc).__name__}). "
+                        "Run migrations/002_operational_inventory.sql in Supabase."
+                    )
+                center.recalculate(reason="Loaded saved incidents and available operational inventory")
             except Exception as exc:
                 # Don't silently show an empty queue when the database could not load.
                 st.session_state.incident_store_error = (
