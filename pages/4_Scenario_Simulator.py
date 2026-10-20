@@ -20,6 +20,14 @@ st.caption(
     "unverified assets as real. An assessment is not a dispatch confirmation."
 )
 
+# Make the persistence state visible so operators know whether reports survive a new session.
+if st.session_state.get("incident_store_error"):
+    st.error(str(st.session_state["incident_store_error"]))
+elif st.session_state.get("incident_store_configured"):
+    st.success("Incident database: configured for permanent storage.")
+else:
+    st.warning("Incident database: not connected. Reports may exist only in this browser session.")
+
 active_incidents = [
     incident for incident in center.incidents
     if str(incident.get("status") or "").strip().lower() != "resolved"
@@ -69,7 +77,8 @@ location = (
 )
 
 a, b, c, d = st.columns(4)
-a.metric("Priority score", f'{incident.get("priority_score", "—")}/100')
+score = incident.get("priority_score")
+a.metric("Priority score", f"{score}/100" if score is not None else "Not calculated")
 b.metric("People affected", people_label)
 c.metric("Incident type", incident_type)
 d.metric("Status", str(incident.get("status") or "Active"))
@@ -95,12 +104,13 @@ if is_unclassified:
         "Review or resubmit the report with the hazard and location clearly described."
     )
 
-st.markdown("### Response assessment")
+st.markdown("### General response guidance")
 action = str(incident.get("recommended_action") or "").strip()
 if action:
-    st.info(action)
+    st.info(action.replace("Recommended action:", "Suggested guidance:", 1))
+    st.caption("Guidance only — this does not confirm a dispatch or verify on-scene conditions.")
 else:
-    st.info("No response action has been generated for this report yet.")
+    st.info("No response guidance has been generated for this report yet.")
 
 assignment = center.assignment_for(selected_id)
 if assignment and assignment.get("reason"):
