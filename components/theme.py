@@ -1579,6 +1579,91 @@ def page_setup(title: str) -> None:
         initial_sidebar_state="expanded",
     )
     inject_theme()
+    render_floating_assistant_widget()
+
+
+def render_floating_assistant_widget() -> None:
+    """Render a site-wide floating welcome robot and native assistant link."""
+    st.markdown(
+        """
+        <style>
+          .resq-float-robot {
+            position: fixed; right: 26px; bottom: 24px; z-index: 9998;
+            width: 94px; height: 100px; display: flex; align-items: center;
+            justify-content: center; border-radius: 28px;
+            background: linear-gradient(145deg,#e7f0ff,#d8fbf2);
+            box-shadow: 0 12px 34px rgba(20,55,100,.22);
+            border: 1px solid rgba(36,87,197,.18);
+            animation: resq-robot-hello 1s ease-out both, resq-robot-float 3s ease-in-out 1s infinite;
+            pointer-events: none;
+          }
+          .resq-float-robot svg { overflow: visible; }
+          .resq-robot-wave { transform-origin: 76px 46px; animation: resq-wave 1.2s ease-in-out .45s 2; }
+          .resq-welcome-bubble {
+            position: fixed; right: 130px; bottom: 92px; z-index: 9999;
+            width: min(285px, calc(100vw - 170px)); box-sizing: border-box;
+            padding: 15px 16px 13px; border-radius: 18px 18px 5px 18px;
+            background: #fff; color: #152238; border: 1px solid #dbe5f3;
+            box-shadow: 0 12px 38px rgba(20,40,75,.18);
+            font: 600 14px/1.45 'DM Sans', sans-serif;
+            animation: resq-bubble-pop .55s cubic-bezier(.2,.8,.2,1) both;
+          }
+          .resq-welcome-bubble:after {
+            content: ''; position: absolute; right: -7px; bottom: 16px;
+            width: 13px; height: 13px; background: #fff;
+            border-right: 1px solid #dbe5f3; border-bottom: 1px solid #dbe5f3;
+            transform: rotate(-45deg);
+          }
+          .resq-welcome-bubble strong { display:block; margin-bottom:4px; font-size:15px; }
+          .resq-welcome-bubble p { margin:0; color:#52627a; font-weight:500; }
+          .resq-welcome-bubble .resq-bubble-close {
+            position:absolute; top:6px; right:8px; color:#64748b;
+            font-size:18px; line-height:1; font-weight:400;
+          }
+          a[href*='6_ResQ_Assistant'], a[href*='6-ResQ-Assistant'] {
+            position: fixed !important; right: 130px !important; bottom: 24px !important;
+            z-index: 10000 !important; display: inline-flex !important;
+            align-items:center !important; justify-content:center !important;
+            min-height:42px !important; padding:0 18px !important;
+            border-radius:999px !important; background:#2457c5 !important;
+            color:#fff !important; border:0 !important; text-decoration:none !important;
+            box-shadow:0 8px 24px rgba(36,87,197,.3) !important;
+            font-weight:700 !important; white-space:nowrap !important;
+          }
+          a[href*='6_ResQ_Assistant']:hover, a[href*='6-ResQ-Assistant']:hover { background:#1746a2 !important; }
+          @keyframes resq-robot-hello { from { opacity:0; transform:translateY(26px) scale(.78); } to { opacity:1; transform:translateY(0) scale(1); } }
+          @keyframes resq-robot-float { 0%,100% { translate:0 0; } 50% { translate:0 -5px; } }
+          @keyframes resq-wave { 0%,100% { transform:rotate(0); } 25%,65% { transform:rotate(24deg); } 45%,85% { transform:rotate(-8deg); } }
+          @keyframes resq-bubble-pop { from { opacity:0; transform:translateY(10px) scale(.88); transform-origin:bottom right; } to { opacity:1; transform:translateY(0) scale(1); } }
+          @media (max-width:600px) {
+            .resq-float-robot { right:14px; bottom:14px; width:74px; height:80px; }
+            .resq-welcome-bubble { right:94px; bottom:76px; width:min(250px,calc(100vw - 120px)); }
+            a[href*='6_ResQ_Assistant'], a[href*='6-ResQ-Assistant'] { right:94px !important; bottom:14px !important; min-height:38px !important; padding:0 12px !important; font-size:12px !important; }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .resq-float-robot, .resq-robot-wave, .resq-welcome-bubble { animation:none !important; }
+          }
+        </style>
+        <div class="resq-float-robot" aria-label="ResQ-AI assistant robot">
+          <svg width="82" height="88" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M50 12V22" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="10" r="5" fill="#0F766E"/>
+            <rect x="20" y="25" width="60" height="47" rx="15" fill="#fff" stroke="#2457C5" stroke-width="4"/>
+            <rect x="28" y="34" width="44" height="25" rx="9" fill="#152238"/><circle cx="40" cy="46" r="4.5" fill="#5EEAD4"/><circle cx="60" cy="46" r="4.5" fill="#5EEAD4"/>
+            <path d="M42 54Q50 60 58 54" stroke="#8AB4FF" stroke-width="3" stroke-linecap="round"/>
+            <path d="M20 43H12M80 43H88" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/>
+            <rect x="31" y="70" width="38" height="12" rx="6" fill="#2457C5"/><path d="M39 82L34 91M61 82L66 91" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="34" cy="92" r="4" fill="#0F766E"/><circle cx="66" cy="92" r="4" fill="#0F766E"/>
+            <g class="resq-robot-wave"><path d="M80 42L88 30" stroke="#2457C5" stroke-width="6" stroke-linecap="round"/><circle cx="91" cy="25" r="5" fill="#0F766E"/></g>
+          </svg>
+        </div>
+        <div class="resq-welcome-bubble" role="status" aria-live="polite">
+          <strong>Hey there! 👋 Do you need any help?</strong>
+          <p>Click below and chat with us.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.page_link("pages/6_ResQ_Assistant.py", label="Chat with us", icon="💬")
 
 
 def render_sidebar(center: CommandCenter) -> None:
@@ -1612,79 +1697,6 @@ def render_sidebar(center: CommandCenter) -> None:
         st.sidebar.page_link(page_path, label=f"{glyph}  {label}")
     st.sidebar.divider()
     st.sidebar.caption(DISCLAIMER)
-
-    # Friendly robot entry point for the existing assistant. Keep the visual in the
-    # sidebar so it is discoverable without adding another top-bar button.
-    st.sidebar.markdown(
-        """
-        <style>
-          .resq-robot-card {
-            margin: 1.1rem 0 .55rem;
-            padding: 13px 12px 12px;
-            border: 1px solid var(--resq-border);
-            border-radius: 16px;
-            background: var(--resq-panel);
-            box-shadow: var(--resq-shadow);
-          }
-          .resq-robot-row { display:flex; align-items:center; gap:10px; }
-          .resq-robot-avatar {
-            flex: 0 0 76px; width:76px; height:76px;
-            display:flex; align-items:center; justify-content:center;
-            border-radius: 18px;
-            background: linear-gradient(145deg,#e7f0ff,#d8fbf2);
-            animation: resq-robot-float 3s ease-in-out infinite;
-          }
-          .resq-robot-bubble {
-            position:relative; flex:1; min-width:0;
-            padding:10px 9px; border-radius:12px;
-            background:#eef4ff; color:#18345d;
-            font-size:12px; font-weight:700; line-height:1.45;
-          }
-          .resq-robot-bubble span {
-            display:block; margin-top:4px; color:#64748b;
-            font-size:10px; font-weight:600;
-          }
-          @keyframes resq-robot-float {
-            0%,100% { transform:translateY(0); }
-            50% { transform:translateY(-4px); }
-          }
-          @media (prefers-reduced-motion: reduce) {
-            .resq-robot-avatar { animation:none; }
-          }
-          @media (max-width: 700px) {
-            .resq-robot-avatar { width:64px; height:64px; flex-basis:64px; }
-          }
-        </style>
-        <div class="resq-robot-card">
-          <div class="resq-robot-row">
-            <div class="resq-robot-avatar" role="img" aria-label="ResQ-AI friendly robot assistant">
-              <svg width="68" height="68" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path d="M50 12V22" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/>
-                <circle cx="50" cy="10" r="5" fill="#0F766E"/>
-                <rect x="20" y="25" width="60" height="47" rx="15" fill="#FFFFFF" stroke="#2457C5" stroke-width="4"/>
-                <rect x="28" y="34" width="44" height="25" rx="9" fill="#152238"/>
-                <circle cx="40" cy="46" r="4.5" fill="#5EEAD4"/>
-                <circle cx="60" cy="46" r="4.5" fill="#5EEAD4"/>
-                <path d="M42 54Q50 60 58 54" stroke="#8AB4FF" stroke-width="3" stroke-linecap="round"/>
-                <path d="M20 43H12M80 43H88" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/>
-                <rect x="31" y="70" width="38" height="12" rx="6" fill="#2457C5"/>
-                <path d="M39 82L34 91M61 82L66 91" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/>
-                <circle cx="34" cy="92" r="4" fill="#0F766E"/>
-                <circle cx="66" cy="92" r="4" fill="#0F766E"/>
-                <path d="M26 31L20 25M74 31L80 25" stroke="#0F766E" stroke-width="3" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="resq-robot-bubble">
-              Hey there! 👋<br/>What do you want to ask?
-              <span>I'm your ResQ-AI assistant</span>
-            </div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    if st.sidebar.button("Chat with ResQ-AI", key="sidebar_robot_chat", use_container_width=True):
-        st.switch_page("pages/6_ResQ_Assistant.py")
 
     if llm_configured():
         st.sidebar.caption("AI analysis: model connection configured")
