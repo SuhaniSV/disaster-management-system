@@ -1612,6 +1612,80 @@ def render_sidebar(center: CommandCenter) -> None:
         st.sidebar.page_link(page_path, label=f"{glyph}  {label}")
     st.sidebar.divider()
     st.sidebar.caption(DISCLAIMER)
+
+    # Friendly robot entry point for the existing assistant. Keep the visual in the
+    # sidebar so it is discoverable without adding another top-bar button.
+    st.sidebar.markdown(
+        """
+        <style>
+          .resq-robot-card {
+            margin: 1.1rem 0 .55rem;
+            padding: 13px 12px 12px;
+            border: 1px solid var(--resq-border);
+            border-radius: 16px;
+            background: var(--resq-panel);
+            box-shadow: var(--resq-shadow);
+          }
+          .resq-robot-row { display:flex; align-items:center; gap:10px; }
+          .resq-robot-avatar {
+            flex: 0 0 76px; width:76px; height:76px;
+            display:flex; align-items:center; justify-content:center;
+            border-radius: 18px;
+            background: linear-gradient(145deg,#e7f0ff,#d8fbf2);
+            animation: resq-robot-float 3s ease-in-out infinite;
+          }
+          .resq-robot-bubble {
+            position:relative; flex:1; min-width:0;
+            padding:10px 9px; border-radius:12px;
+            background:#eef4ff; color:#18345d;
+            font-size:12px; font-weight:700; line-height:1.45;
+          }
+          .resq-robot-bubble span {
+            display:block; margin-top:4px; color:#64748b;
+            font-size:10px; font-weight:600;
+          }
+          @keyframes resq-robot-float {
+            0%,100% { transform:translateY(0); }
+            50% { transform:translateY(-4px); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .resq-robot-avatar { animation:none; }
+          }
+          @media (max-width: 700px) {
+            .resq-robot-avatar { width:64px; height:64px; flex-basis:64px; }
+          }
+        </style>
+        <div class="resq-robot-card">
+          <div class="resq-robot-row">
+            <div class="resq-robot-avatar" role="img" aria-label="ResQ-AI friendly robot assistant">
+              <svg width="68" height="68" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M50 12V22" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="50" cy="10" r="5" fill="#0F766E"/>
+                <rect x="20" y="25" width="60" height="47" rx="15" fill="#FFFFFF" stroke="#2457C5" stroke-width="4"/>
+                <rect x="28" y="34" width="44" height="25" rx="9" fill="#152238"/>
+                <circle cx="40" cy="46" r="4.5" fill="#5EEAD4"/>
+                <circle cx="60" cy="46" r="4.5" fill="#5EEAD4"/>
+                <path d="M42 54Q50 60 58 54" stroke="#8AB4FF" stroke-width="3" stroke-linecap="round"/>
+                <path d="M20 43H12M80 43H88" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/>
+                <rect x="31" y="70" width="38" height="12" rx="6" fill="#2457C5"/>
+                <path d="M39 82L34 91M61 82L66 91" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="34" cy="92" r="4" fill="#0F766E"/>
+                <circle cx="66" cy="92" r="4" fill="#0F766E"/>
+                <path d="M26 31L20 25M74 31L80 25" stroke="#0F766E" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="resq-robot-bubble">
+              Hey there! 👋<br/>What do you want to ask?
+              <span>I'm your ResQ-AI assistant</span>
+            </div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.sidebar.button("Chat with ResQ-AI", key="sidebar_robot_chat", use_container_width=True):
+        st.switch_page("pages/6_ResQ_Assistant.py")
+
     if llm_configured():
         st.sidebar.caption("AI analysis: model connection configured")
     else:
@@ -1621,15 +1695,7 @@ def render_sidebar(center: CommandCenter) -> None:
 def render_header(center: CommandCenter, subtitle: str) -> None:
     ai_class = "ok" if "Active" in center.ai_mode else "warn"
     current_theme = st.session_state.get("resq_theme", "Light")
-    spacer, home_slot, theme_slot = st.columns([0.84, 0.10, 0.06], vertical_alignment="center")
-    with home_slot:
-        if st.button(
-            "🆘 ResQ-AI",
-            key="header_resq_ai_home",
-            help="Go to the ResQ-AI home dashboard",
-            use_container_width=True,
-        ):
-            st.switch_page("pages/6_ResQ_Assistant.py")
+    spacer, theme_slot = st.columns([0.94, 0.06], vertical_alignment="center")
     with theme_slot:
         if st.button(
             "☀" if current_theme == "Dark" else "☾",
