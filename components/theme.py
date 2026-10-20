@@ -1604,7 +1604,6 @@ def render_sidebar(center: CommandCenter) -> None:
         ("app.py", "⌂", "Command Center"),
         ("pages/2_Report_Incident.py", "＋", "Report Incident"),
         ("pages/4_Scenario_Simulator.py", "◈", "Scenario Simulator"),
-        ("pages/5_Analytics.py", "▥", "Analytics"),
         ("pages/7_Live_Government_Alerts.py", "◉", "Live Government Alerts"),
         ("pages/8_Incident_Operations.py", "⇄", "Incident Operations"),
         ("pages/9_Situation_Reports.py", "▤", "Situation Reports"),
