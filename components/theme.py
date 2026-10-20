@@ -451,6 +451,7 @@ input::placeholder,textarea::placeholder { color:#91a0b5!important; }
   color:var(--resq-muted)!important;
 }
 hr { border-color:var(--resq-border)!important; }
+
 /* Comprehensive dark-mode overrides. These intentionally out-rank the light-theme
    form/card rules declared by POLISH_CSS earlier in this file. */
 :root {
@@ -668,6 +669,7 @@ hr { border-color:var(--resq-border)!important; }
 [data-testid="stMainBlockContainer"] [data-testid="stPlotlyChart"] iframe {
   color-scheme: dark !important;
 }
+
 
 </style>
 """
