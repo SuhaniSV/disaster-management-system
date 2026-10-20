@@ -38,15 +38,54 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {
 [data-testid="stHeader"] {
   background: rgba(245,247,251,.92);
 }
-/* Hide Streamlit-owned top chrome only; keep RescueX navigation and controls intact. */
-header[data-testid="stHeader"],
+/* Hide menus/decorations, but keep Streamlit's header alive because it hosts
+   the native collapsed-sidebar reopen control. */
 [data-testid="stToolbar"],
 [data-testid="stDecoration"],
 #MainMenu,
 footer {
   display: none !important;
   visibility: hidden !important;
-  height: 0 !important;
+}
+
+/* Keep both native sidebar toggle controls visible and easy to hit. */
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapsedControl"],
+button[aria-label*="Collapse sidebar"],
+button[aria-label*="Expand sidebar"] {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 1000000 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  width: 42px !important;
+  height: 42px !important;
+  border: 1px solid #1598a8 !important;
+  border-radius: 10px !important;
+  background: #e6f7fa !important;
+  color: #075985 !important;
+  box-shadow: 0 3px 12px rgba(7,89,133,.2) !important;
+}
+[data-testid="stSidebarCollapsedControl"] {
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  z-index: 1000001 !important;
+}
+[data-testid="stSidebarCollapseButton"] svg,
+[data-testid="stSidebarCollapsedControl"] svg,
+button[aria-label*="Collapse sidebar"] svg,
+button[aria-label*="Expand sidebar"] svg {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #075985 !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
 }
 [data-testid="stAppViewContainer"] {
   padding-top: 0 !important;
