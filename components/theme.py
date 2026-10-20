@@ -1510,7 +1510,7 @@ def inject_theme() -> None:
     st.markdown(CSS, unsafe_allow_html=True)
     st.markdown(ENHANCED_CSS, unsafe_allow_html=True)
     st.markdown(POLISH_CSS, unsafe_allow_html=True)
-    if st.session_state.get("resq_theme") == "Dark":
+    if st.session_state.get("resq_theme", "Light") == "Dark":
         st.markdown(DARK_CSS, unsafe_allow_html=True)
 
 
