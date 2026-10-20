@@ -87,6 +87,10 @@ st.caption(
     "The allocator uses team status, coordinates, capacity and capabilities. "
     "Never upload example/demo records or private patient information."
 )
+st.markdown(
+    "Hospital location references: [Esri India Hospital Directory](https://livingatlas.esri.in/server/rest/services/LivingAtlas/IND_Hospital_Directory/MapServer/0). "
+    "This is a facility directory, not a live bed or ambulance feed."
+)
 if not inventory_admin_configured():
     st.warning(
         "Inventory management is locked because INVENTORY_ADMIN_TOKEN is not configured. "
