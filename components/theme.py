@@ -1583,87 +1583,87 @@ def page_setup(title: str) -> None:
 
 
 def render_floating_assistant_widget() -> None:
-    """Render a site-wide floating welcome robot and native assistant link."""
+    """Show a waving floating robot; clicking the robot or welcome bubble opens chat."""
     st.markdown(
         """
         <style>
-          .resq-float-robot {
-            position: fixed; right: 26px; bottom: 24px; z-index: 9998;
-            width: 94px; height: 100px; display: flex; align-items: center;
-            justify-content: center; border-radius: 28px;
-            background: linear-gradient(145deg,#e7f0ff,#d8fbf2);
-            box-shadow: 0 12px 34px rgba(20,55,100,.22);
-            border: 1px solid rgba(36,87,197,.18);
-            animation: resq-robot-hello 1s ease-out both, resq-robot-float 3s ease-in-out 1s infinite;
-            pointer-events: none;
+          /* The widget is fixed to the viewport, independent of the sidebar. */
+          .resq-live-robot {
+            position: fixed; right: 26px; bottom: 24px; z-index: 9997;
+            width: 100px; height: 112px; display:flex; align-items:center; justify-content:center;
+            border-radius: 30px; background:linear-gradient(145deg,#e8f1ff,#d7fff3);
+            border:1px solid rgba(36,87,197,.2); box-shadow:0 14px 34px rgba(20,55,100,.23);
+            animation:resq-robot-enter .8s cubic-bezier(.2,.8,.2,1) both, resq-robot-bob 3s ease-in-out .8s infinite;
+            pointer-events:none;
           }
-          .resq-float-robot svg { overflow: visible; }
-          .resq-robot-wave { transform-origin: 76px 46px; animation: resq-wave 1.2s ease-in-out .45s 2; }
-          .resq-welcome-bubble {
-            position: fixed; right: 130px; bottom: 92px; z-index: 9999;
-            width: min(285px, calc(100vw - 170px)); box-sizing: border-box;
-            padding: 15px 16px 13px; border-radius: 18px 18px 5px 18px;
-            background: #fff; color: #152238; border: 1px solid #dbe5f3;
-            box-shadow: 0 12px 38px rgba(20,40,75,.18);
-            font: 600 14px/1.45 'DM Sans', sans-serif;
-            animation: resq-bubble-pop .55s cubic-bezier(.2,.8,.2,1) both;
+          .resq-live-robot svg { overflow:visible; }
+          .resq-live-wave { transform-box:fill-box; transform-origin:20% 80%; animation:resq-wave 1.25s ease-in-out .45s 3; }
+          .resq-live-bubble {
+            position:fixed; right:139px; bottom:104px; z-index:9997;
+            width:min(290px,calc(100vw - 170px)); box-sizing:border-box;
+            padding:15px 17px; border-radius:19px 19px 5px 19px;
+            background:#fff; color:#17243a; border:1px solid #dbe5f3;
+            box-shadow:0 12px 38px rgba(20,40,75,.2);
+            font:600 14px/1.45 'DM Sans',sans-serif;
+            animation:resq-bubble-lifetime 10s ease-in-out both;
+            pointer-events:none;
           }
-          .resq-welcome-bubble:after {
-            content: ''; position: absolute; right: -7px; bottom: 16px;
-            width: 13px; height: 13px; background: #fff;
-            border-right: 1px solid #dbe5f3; border-bottom: 1px solid #dbe5f3;
-            transform: rotate(-45deg);
+          .resq-live-bubble:after { content:''; position:absolute; right:-7px; bottom:16px; width:13px; height:13px; background:#fff; border-right:1px solid #dbe5f3; border-bottom:1px solid #dbe5f3; transform:rotate(-45deg); }
+          .resq-live-bubble strong { display:block; margin-bottom:5px; font-size:15px; }
+          .resq-live-bubble span { display:block; color:#52627a; font-weight:500; }
+          /* Make the native Streamlit button an invisible, accessible click target over both items. */
+          div[class*="st-key-resq_floating_chat"] {
+            position:fixed !important; right:18px !important; bottom:18px !important;
+            z-index:10000 !important; width:400px !important; height:205px !important;
+            padding:0 !important; margin:0 !important; background:transparent !important;
           }
-          .resq-welcome-bubble strong { display:block; margin-bottom:4px; font-size:15px; }
-          .resq-welcome-bubble p { margin:0; color:#52627a; font-weight:500; }
-          .resq-welcome-bubble .resq-bubble-close {
-            position:absolute; top:6px; right:8px; color:#64748b;
-            font-size:18px; line-height:1; font-weight:400;
+          div[class*="st-key-resq_floating_chat"] button {
+            width:100% !important; height:100% !important; min-height:0 !important;
+            padding:0 !important; border:0 !important; border-radius:22px !important;
+            background:transparent !important; box-shadow:none !important; color:transparent !important;
+            cursor:pointer !important; outline-offset:4px !important;
           }
-          a[href*='6_ResQ_Assistant'], a[href*='6-ResQ-Assistant'] {
-            position: fixed !important; right: 130px !important; bottom: 24px !important;
-            z-index: 10000 !important; display: inline-flex !important;
-            align-items:center !important; justify-content:center !important;
-            min-height:42px !important; padding:0 18px !important;
-            border-radius:999px !important; background:#2457c5 !important;
-            color:#fff !important; border:0 !important; text-decoration:none !important;
-            box-shadow:0 8px 24px rgba(36,87,197,.3) !important;
-            font-weight:700 !important; white-space:nowrap !important;
+          div[class*="st-key-resq_floating_chat"] button:hover,
+          div[class*="st-key-resq_floating_chat"] button:focus-visible { background:rgba(36,87,197,.035) !important; }
+          div[class*="st-key-resq_floating_chat"] button p { color:transparent !important; font-size:1px !important; }
+          @keyframes resq-robot-enter { from { opacity:0; transform:translateY(32px) scale(.72) rotate(-7deg); } to { opacity:1; transform:translateY(0) scale(1) rotate(0); } }
+          @keyframes resq-robot-bob { 0%,100% { translate:0 0; } 50% { translate:0 -5px; } }
+          @keyframes resq-wave { 0%,100% { transform:rotate(0); } 20%,55% { transform:rotate(27deg); } 38%,72% { transform:rotate(-10deg); } }
+          @keyframes resq-bubble-lifetime {
+            0% { opacity:0; transform:translateY(12px) scale(.9); transform-origin:bottom right; }
+            8%,78% { opacity:1; transform:translateY(0) scale(1); }
+            100% { opacity:0; transform:translateY(-4px) scale(.98); visibility:hidden; }
           }
-          a[href*='6_ResQ_Assistant']:hover, a[href*='6-ResQ-Assistant']:hover { background:#1746a2 !important; }
-          @keyframes resq-robot-hello { from { opacity:0; transform:translateY(26px) scale(.78); } to { opacity:1; transform:translateY(0) scale(1); } }
-          @keyframes resq-robot-float { 0%,100% { translate:0 0; } 50% { translate:0 -5px; } }
-          @keyframes resq-wave { 0%,100% { transform:rotate(0); } 25%,65% { transform:rotate(24deg); } 45%,85% { transform:rotate(-8deg); } }
-          @keyframes resq-bubble-pop { from { opacity:0; transform:translateY(10px) scale(.88); transform-origin:bottom right; } to { opacity:1; transform:translateY(0) scale(1); } }
           @media (max-width:600px) {
-            .resq-float-robot { right:14px; bottom:14px; width:74px; height:80px; }
-            .resq-welcome-bubble { right:94px; bottom:76px; width:min(250px,calc(100vw - 120px)); }
-            a[href*='6_ResQ_Assistant'], a[href*='6-ResQ-Assistant'] { right:94px !important; bottom:14px !important; min-height:38px !important; padding:0 12px !important; font-size:12px !important; }
+            .resq-live-robot { right:12px; bottom:12px; width:78px; height:88px; }
+            .resq-live-bubble { right:94px; bottom:80px; width:min(255px,calc(100vw - 115px)); padding:12px 13px; font-size:13px; }
+            div[class*="st-key-resq_floating_chat"] { right:7px !important; bottom:7px !important; width:calc(100vw - 14px) !important; height:165px !important; }
           }
-          @media (prefers-reduced-motion: reduce) {
-            .resq-float-robot, .resq-robot-wave, .resq-welcome-bubble { animation:none !important; }
+          @media (prefers-reduced-motion:reduce) {
+            .resq-live-robot,.resq-live-wave,.resq-live-bubble { animation:none !important; }
+            .resq-live-bubble { opacity:1; }
           }
         </style>
-        <div class="resq-float-robot" aria-label="ResQ-AI assistant robot">
-          <svg width="82" height="88" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M50 12V22" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="10" r="5" fill="#0F766E"/>
+        <div class="resq-live-robot" role="img" aria-label="Animated ResQ-AI robot waving hello">
+          <svg width="88" height="96" viewBox="0 0 110 112" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M49 12V22" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/><circle cx="49" cy="10" r="5" fill="#0F766E"/>
             <rect x="20" y="25" width="60" height="47" rx="15" fill="#fff" stroke="#2457C5" stroke-width="4"/>
             <rect x="28" y="34" width="44" height="25" rx="9" fill="#152238"/><circle cx="40" cy="46" r="4.5" fill="#5EEAD4"/><circle cx="60" cy="46" r="4.5" fill="#5EEAD4"/>
             <path d="M42 54Q50 60 58 54" stroke="#8AB4FF" stroke-width="3" stroke-linecap="round"/>
             <path d="M20 43H12M80 43H88" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/>
-            <rect x="31" y="70" width="38" height="12" rx="6" fill="#2457C5"/><path d="M39 82L34 91M61 82L66 91" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/>
-            <circle cx="34" cy="92" r="4" fill="#0F766E"/><circle cx="66" cy="92" r="4" fill="#0F766E"/>
-            <g class="resq-robot-wave"><path d="M80 42L88 30" stroke="#2457C5" stroke-width="6" stroke-linecap="round"/><circle cx="91" cy="25" r="5" fill="#0F766E"/></g>
+            <rect x="31" y="70" width="38" height="12" rx="6" fill="#2457C5"/><path d="M39 82L34 91M61 82L66 91" stroke="#2457C5" stroke-width="5" stroke-linecap="round"/><circle cx="34" cy="92" r="4" fill="#0F766E"/><circle cx="66" cy="92" r="4" fill="#0F766E"/>
+            <g class="resq-live-wave"><path d="M81 45L89 31" stroke="#2457C5" stroke-width="7" stroke-linecap="round"/><circle cx="92" cy="25" r="5" fill="#0F766E"/><path d="M92 17V13M101 25H105M99 18L102 15" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"/></g>
           </svg>
         </div>
-        <div class="resq-welcome-bubble" role="status" aria-live="polite">
+        <div class="resq-live-bubble" role="status" aria-live="polite">
           <strong>Hey there! 👋 Do you need any help?</strong>
-          <p>Click below and chat with us.</p>
+          <span>Click the robot or this bubble to chat with us.</span>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    st.page_link("pages/6_ResQ_Assistant.py", label="Chat with us", icon="💬")
+    if st.button("Open ResQ-AI chat", key="resq_floating_chat", help="Open the ResQ-AI assistant"):
+        st.switch_page("pages/6_ResQ_Assistant.py")
 
 
 def render_sidebar(center: CommandCenter) -> None:
