@@ -32,3 +32,16 @@ def test_not_random_and_monotonic_people():
     low = calculate_priority({"severity": 2, "people_affected": 5, "medical_emergency": False, "status": "Active"})
     high = calculate_priority({"severity": 2, "people_affected": 80, "medical_emergency": False, "status": "Active"})
     assert high["score"] > low["score"]
+
+
+def test_mass_casualty_scale_for_large_reported_impact():
+    result = calculate_priority({
+        "severity": 3,
+        "people_affected": 120_000,
+        "medical_emergency": False,
+        "status": "Active",
+    })
+    labels = {c["label"]: c["points"] for c in result["components"]}
+    assert labels["People affected"] == 75
+    assert result["urgency"] == "Critical"
+    assert result["score"] >= 85
