@@ -251,3 +251,28 @@ def test_verified_hospital_with_reported_beds_is_preferred():
     result = assign_resources([incident], [], hospitals=[hospital])
     assert result[0]["hospital_id"] == "H-1"
     assert result[0]["hospital_availability"] == "capacity-reported"
+
+
+
+def test_medical_incident_does_not_recommend_hospital_with_unknown_emergency_capability():
+    incident = {
+        "id": "INC-MEDICAL-UNKNOWN",
+        "disaster_type": "Medical emergency",
+        "priority_score": 85,
+        "people_affected": 1,
+        "medical_emergency": True,
+        "status": "Active",
+        "lat": 28.6139,
+        "lon": 77.2090,
+    }
+    hospital = {
+        "id": "H-UNKNOWN",
+        "name": "Hospital with unknown emergency capability",
+        "lat": 28.6140,
+        "lon": 77.2091,
+        "available_beds": 5,
+        "emergency_capability": "unknown",
+        "source_type": "operator_verified_inventory",
+    }
+    result = assign_resources([incident], [], hospitals=[hospital])
+    assert result[0]["hospital_id"] is None
