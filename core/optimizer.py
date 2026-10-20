@@ -196,7 +196,7 @@ def _recommend_hospital(incident, lat, lon, hospitals, roads) -> tuple:
         beds = _as_int(h.get("available_beds"), 0)
         if beds <= 0:
             return False
-        if medical and str(h.get("emergency_capability") or "").lower() in {"no", "false", "0"}:
+        if medical and str(h.get("emergency_capability") or "").strip().lower() not in {"yes", "true", "1"}:
             return False
         return True
 
