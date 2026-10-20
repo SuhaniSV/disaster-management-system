@@ -84,15 +84,16 @@ def calculate_priority(
     elif people < 500:
         people_pts = round(25 + (people - 100) * (5 / 400))
     elif people < 1_000:
-        people_pts = round(30 + (people - 500) * (5 / 500))
+        # A report affecting nearly 1,000 people should have a substantial impact weight.
+        people_pts = round(30 + (people - 500) * (16 / 500))
     elif people < 5_000:
-        people_pts = round(35 + (people - 1_000) * (10 / 4_000))
+        people_pts = round(46 + (people - 1_000) * (10 / 4_000))
     elif people < 10_000:
-        people_pts = round(45 + (people - 5_000) * (10 / 5_000))
+        people_pts = round(56 + (people - 5_000) * (8 / 5_000))
     elif people < 50_000:
-        people_pts = round(55 + (people - 10_000) * (10 / 40_000))
+        people_pts = round(64 + (people - 10_000) * (6 / 40_000))
     elif people < 100_000:
-        people_pts = round(65 + (people - 50_000) * (10 / 50_000))
+        people_pts = round(70 + (people - 50_000) * (5 / 50_000))
     else:
         people_pts = 75
     medical_pts = 20 if medical else 0
@@ -141,7 +142,7 @@ def calculate_priority(
             "Priority Score = severity + people + medical + vulnerability "
             "+ accessibility + time + proximity (capped at 100). "
             "People-impact points scale with reported impact: 70 people = 20 points; "
-            "100,000 or more = 75 points."
+            "1,000 people = 46 points; 100,000 or more = 75 points."
         ),
     }
 
