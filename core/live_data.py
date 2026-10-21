@@ -599,6 +599,112 @@ def get_imd_public_cap_alerts() -> dict[str, Any]:
     return result
 
 
+
+
+USGS_EARTHQUAKE_FEED_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson"
+
+
+def get_usgs_india_earthquakes() -> dict[str, Any]:
+    """Fetch recent USGS earthquake events inside an India-region bounding box."""
+    now = time.monotonic()
+    cache_key = "usgs-india-earthquakes:" + USGS_EARTHQUAKE_FEED_URL
+
+    with _lock:
+        cached = _cache.get(cache_key)
+        if cached and now - cached["stored_at"] < _CACHE_SECONDS:
+            return {
+                "source": "USGS Earthquake Hazards Program",
+                "source_url": USGS_EARTHQUAKE_FEED_URL,
+                "ok": cached["ok"],
+                "events": cached["events"],
+                "fetched_at": cached["fetched_at"],
+                "cached": True,
+                "error": cached.get("error"),
+                "records_seen": cached.get("records_seen", 0),
+            }
+
+    try:
+        response = requests.get(
+            USGS_EARTHQUAKE_FEED_URL,
+            headers={
+                "Accept": "application/geo+json, application/json",
+                "User-Agent": "ResQ-AI/1.0 (disaster-awareness dashboard)",
+            },
+            timeout=_TIMEOUT_SECONDS,
+            verify=certifi.where(),
+        )
+        response.raise_for_status()
+        payload = response.json()
+        features = payload.get("features", []) if isinstance(payload, dict) else []
+        events: list[dict[str, Any]] = []
+        records_seen = len(features) if isinstance(features, list) else 0
+
+        # This is a geographic filter, not a claim of complete Indian seismic coverage.
+        for feature in features if isinstance(features, list) else []:
+            if not isinstance(feature, dict):
+                continue
+            props = feature.get("properties", {})
+            geometry = feature.get("geometry", {})
+            coords = geometry.get("coordinates", []) if isinstance(geometry, dict) else []
+            if not isinstance(props, dict) or len(coords) < 2:
+                continue
+            try:
+                longitude, latitude = float(coords[0]), float(coords[1])
+            except (TypeError, ValueError):
+                continue
+            if not (67.0 <= longitude <= 98.0 and 5.0 <= latitude <= 38.0):
+                continue
+            depth = coords[2] if len(coords) > 2 else None
+            try:
+                depth_text = f"{float(depth):.1f} km" if depth is not None else "unknown"
+            except (TypeError, ValueError):
+                depth_text = "unknown"
+            magnitude = props.get("mag")
+            timestamp = props.get("time")
+            try:
+                published = datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc).replace(microsecond=0).isoformat()
+            except (TypeError, ValueError, OverflowError, OSError):
+                published = None
+            events.append({
+                "title": str(props.get("title") or "Earthquake event"),
+                "summary": f"Magnitude {magnitude if magnitude is not None else 'unknown'} · Depth {depth_text}",
+                "place": str(props.get("place") or "Location not supplied"),
+                "magnitude": magnitude,
+                "latitude": latitude,
+                "longitude": longitude,
+                "depth_km": depth,
+                "published": published,
+                "link": str(props.get("url") or ""),
+                "source": "USGS Earthquake Hazards Program",
+            })
+
+        result = {
+            "source": "USGS Earthquake Hazards Program",
+            "source_url": USGS_EARTHQUAKE_FEED_URL,
+            "ok": True,
+            "events": events,
+            "fetched_at": _now(),
+            "cached": False,
+            "error": None,
+            "records_seen": records_seen,
+        }
+    except (requests.RequestException, ValueError, TypeError) as exc:
+        result = {
+            "source": "USGS Earthquake Hazards Program",
+            "source_url": USGS_EARTHQUAKE_FEED_URL,
+            "ok": False,
+            "events": [],
+            "fetched_at": None,
+            "cached": False,
+            "error": f"USGS earthquake feed unavailable: {type(exc).__name__}",
+            "records_seen": 0,
+        }
+
+    with _lock:
+        _cache[cache_key] = {**result, "stored_at": now}
+    return result
+
+
 def get_imd_live_data(
     state: str = "",
     district: str = "",
