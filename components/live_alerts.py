@@ -1,297 +1,665 @@
+
 """UI for read-only official government hazard feeds."""
 from __future__ import annotations
 
 from datetime import datetime
+import time
+
 import streamlit as st
 
 from core.alert_translation import english_record, english_text
-
 from core.live_data import (
-    IMD_API_PORTAL, IMD_REFERENCE, NDMA_FEED_GUIDE, NDMA_PORTAL,
-    get_imd_live_data, get_ndma_cap_alerts,
+    IMD_API_PORTAL,
+    IMD_REFERENCE,
+    NDMA_FEED_GUIDE,
+    NDMA_PORTAL,
+    get_imd_live_data,
+    get_ndma_cap_alerts,
 )
 
 
 def _fmt_time(value: str | None) -> str:
+    """Format a source timestamp for display."""
     if not value:
         return "Not fetched"
+
     try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone().strftime("%d %b %Y, %H:%M:%S %Z")
+        return (
+            datetime.fromisoformat(value.replace("Z", "+00:00"))
+            .astimezone()
+            .strftime("%d %b %Y, %H:%M:%S %Z")
+        )
     except (ValueError, TypeError):
         return value
 
 
-def _value(row: dict, keys: tuple[str, ...], fallback: str = "—") -> str:
+def _value(
+    row: dict,
+    keys: tuple[str, ...],
+    fallback: str = "—",
+) -> str:
+    """Return the first non-empty, English-readable value."""
     for key in keys:
-        if row.get(key) not in (None, ""):
-            # Empty means translation failed; never show a placeholder as an alert title.
-            return english_text(row[key])
+        value = row.get(key)
+
+        if value in (None, ""):
+            continue
+
+        translated = english_text(str(value))
+        if translated and translated.strip():
+            return translated.strip()
+
     return fallback
 
 
 def _matches_area(row: dict, *queries: str) -> bool:
-    """Match every supplied area term against translated source fields, without guessing."""
-    required = [q.strip().casefold() for q in queries if q and q.strip()]
+    """Match every supplied search term against source-provided fields."""
+    required = [
+        query.strip().casefold()
+        for query in queries
+        if query and query.strip()
+    ]
+
     if not required:
         return True
+
     translated = english_record(row)
     terms: list[str] = []
 
-    def collect(value):
+    excluded_keys = {
+        "link",
+        "url",
+        "source_url",
+        "guid",
+        "identifier",
+        "id",
+    }
+
+    def collect(value) -> None:
         if isinstance(value, dict):
             for key, item in value.items():
-                if key.casefold() not in {"link", "url", "source_url", "guid", "identifier", "id"}:
+                if str(key).casefold() not in excluded_keys:
                     terms.append(str(key))
                     collect(item)
-        elif isinstance(value, list):
+        elif isinstance(value, (list, tuple)):
             for item in value:
                 collect(item)
         elif isinstance(value, str):
             terms.append(value)
+        elif isinstance(value, (int, float)):
+            terms.append(str(value))
 
     collect(translated)
     searchable = " ".join(terms).casefold()
+
     return all(query in searchable for query in required)
+
+
+def _has_filters(state: str, district: str, area_query: str) -> bool:
+    """Return whether any user-entered area filter is active."""
+    return any(
+        value.strip()
+        for value in (state, district, area_query)
+    )
+
+
+def _render_alert(
+    row: dict,
+    *,
+    title_keys: tuple[str, ...] = ("title",),
+    default_title: str = "",
+    show_summary: bool = True,
+) -> bool:
+    """Render a source-backed alert. Return False if its title is unreadable."""
+    title = _value(row, title_keys, default_title)
+
+    if not title or title == "—":
+        return False
+
+    with st.container(border=True):
+        st.markdown(f"**{title}**")
+
+        metadata = [
+            _value(row, ("published",), ""),
+            _value(row, ("source",), ""),
+        ]
+        metadata = [item for item in metadata if item and item != "—"]
+
+        if metadata:
+            st.caption(" · ".join(metadata))
+
+        summary = english_text(str(row.get("summary", "")))
+        if show_summary and summary and summary.strip():
+            st.write(summary)
+
+        link = row.get("link", "")
+        if isinstance(link, str) and link.startswith("https://"):
+            st.markdown(f"[Verify alert at source]({link})")
+
+    return True
 
 
 @st.fragment(run_every=300)
 def render_live_alerts() -> None:
-    st.markdown('<div class="resq-kicker">RESQ-AI / OFFICIAL SOURCES</div>', unsafe_allow_html=True)
+    """Display read-only alerts from official government feeds."""
+    st.markdown(
+        '<div class="resq-kicker">RESQ-AI / OFFICIAL SOURCES</div>',
+        unsafe_allow_html=True,
+    )
     st.title("Live Government Alerts")
-    st.caption("Current IMD weather warnings and NDMA SACHET/CAP alerts, with feed health and source traceability.")
+    st.caption(
+        "Current IMD weather warnings and NDMA SACHET/CAP alerts, "
+        "with feed health and source traceability."
+    )
+
     st.warning(
-        "A weather warning is a hazard signal, not a verified rescue incident. These feeds never create incidents, "
-        "change deterministic priority scores, or dispatch resources automatically.",
+        "A weather warning is a hazard signal, not a verified rescue incident. "
+        "These feeds never create incidents, change deterministic priority "
+        "scores, or dispatch resources automatically.",
         icon="⚠️",
     )
 
     with st.expander("Connect official feeds", expanded=False):
         st.markdown(
-            "**If this app is deployed on Streamlit Community Cloud:** open the app's settings/manage page, "
-            "find **Secrets**, add the keys shown below, save, then restart/reload the app. Local .env values "
-            "on your computer are not automatically available to the deployed app.\n\n"
-            "**IMD** — first obtain an API token from the official IMD API portal. The adapter requests the "
-            "district nowcast and district warning endpoints; the token alone does not guarantee endpoint access.\n\n"
-            "**NDMA SACHET / CAP** — use the official guide to obtain the authorized feed URL/identifier. "
-            "Do not use a guessed URL. Never put credentials in GitHub or in the source code."
+            "**If this app is deployed on Streamlit Community Cloud:** "
+            "open the app's settings/manage page, find **Secrets**, add "
+            "the required keys, save, and restart or reload the app. "
+            "Local `.env` values on your computer are not automatically "
+            "available to the deployed app.\n\n"
+            "**IMD** — first obtain an API token from the official IMD API "
+            "portal. The adapter requests district nowcast and district "
+            "warning endpoints; a token alone does not guarantee endpoint "
+            "access.\n\n"
+            "**NDMA SACHET / CAP** — use the official guide to obtain the "
+            "authorized feed URL or identifier. Do not use a guessed URL. "
+            "Never put credentials in GitHub or source code."
         )
+
         st.markdown(
-            f"[IMD API portal]({IMD_API_PORTAL}) · [IMD API reference]({IMD_REFERENCE}) · "
-            f"[SACHET portal]({NDMA_PORTAL}) · [SACHET CAP feed guide]({NDMA_FEED_GUIDE})"
+            f"[IMD API portal]({IMD_API_PORTAL}) · "
+            f"[IMD API reference]({IMD_REFERENCE}) · "
+            f"[SACHET portal]({NDMA_PORTAL}) · "
+            f"[SACHET CAP feed guide]({NDMA_FEED_GUIDE})"
         )
+
         st.code(
             'IMD_API_TOKEN = "YOUR_ISSUED_IMD_API_TOKEN"\n'
             'NDMA_CAP_FEED_URL = "YOUR_AUTHORIZED_SACHET_CAP_FEED_URL"',
             language="toml",
         )
+
         st.caption(
-            "Replace both placeholders with values actually issued/provided by the official services. "
-            "Do not paste secrets into chat, commit them, or use the example values literally."
+            "Replace the placeholders only with values issued or provided "
+            "by the official services. Do not paste secrets into chat, "
+            "commit them, or use the example values literally."
         )
 
     with st.form("live_alert_filters"):
         col1, col2 = st.columns(2)
-        state = col1.text_input("Filter all alerts by state (optional)", placeholder="e.g. Uttar Pradesh")
-        district = col2.text_input("Filter all alerts by district (optional)", placeholder="e.g. Gautam Buddha Nagar")
-        refresh = st.form_submit_button("Fetch latest government data", type="primary")
+
+        state = col1.text_input(
+            "Filter all alerts by state (optional)",
+            placeholder="e.g. Uttar Pradesh",
+        )
+        district = col2.text_input(
+            "Filter all alerts by district (optional)",
+            placeholder="e.g. Gautam Buddha Nagar",
+        )
+
+        refresh = st.form_submit_button(
+            "Fetch latest government data",
+            type="primary",
+        )
 
     area_query = st.text_input(
         "Search alerts by area",
         placeholder="Enter a city, district, or state — e.g. Noida, Pune, Kerala",
-        help="Filters the displayed alerts from all feeds using location and alert text supplied by the source.",
+        help=(
+            "Filters displayed alerts across feeds using location and alert "
+            "text supplied by the source. It does not guess missing locations."
+        ),
     )
-    desired_filters = {"state": state.strip(), "district": district.strip()}
-    if (
-        "resq_live_data" not in st.session_state
+
+    state = state.strip()
+    district = district.strip()
+    area_query = area_query.strip()
+
+    desired_filters = {
+        "state": state,
+        "district": district,
+    }
+
+    cached_data = st.session_state.get("resq_live_data", {})
+    fetched_at = st.session_state.get(
+        "resq_live_data_fetched_monotonic",
+        0,
+    )
+
+    should_fetch = (
+        not cached_data
         or refresh
-        or st.session_state.get("resq_live_data", {}).get("filters") != desired_filters
-        or __import__("time").monotonic() - st.session_state.get("resq_live_data_fetched_monotonic", 0) >= 300
-    ):
+        or cached_data.get("filters") != desired_filters
+        or time.monotonic() - fetched_at >= 300
+    )
+
+    if should_fetch:
         with st.spinner("Requesting official government feeds…"):
+            try:
+                imd = get_imd_live_data(
+                    state=state,
+                    district=district,
+                )
+            except Exception as exc:
+                imd = {
+                    "ok": False,
+                    "configured": False,
+                    "error": f"IMD request failed: {type(exc).__name__}",
+                    "nowcast": {"ok": False, "rows": []},
+                    "warnings": {"ok": False, "rows": []},
+                    "public_alerts": {
+                        "ok": False,
+                        "alerts": [],
+                        "error": "Public IMD feed request failed.",
+                    },
+                }
+
+            try:
+                ndma = get_ndma_cap_alerts()
+            except Exception as exc:
+                ndma = {
+                    "ok": False,
+                    "configured": False,
+                    "error": f"NDMA request failed: {type(exc).__name__}",
+                    "alerts": [],
+                }
+
             st.session_state["resq_live_data"] = {
-                "imd": get_imd_live_data(state=state.strip(), district=district.strip()),
-                "ndma": get_ndma_cap_alerts(),
+                "imd": imd,
+                "ndma": ndma,
                 "filters": desired_filters,
             }
-            st.session_state["resq_live_data_fetched_monotonic"] = __import__("time").monotonic()
-    data = st.session_state["resq_live_data"]
-    imd, ndma = data["imd"], data["ndma"]
+            st.session_state["resq_live_data_fetched_monotonic"] = (
+                time.monotonic()
+            )
 
-    imd_rows = imd.get("nowcast", {}).get("rows", []) + imd.get("warnings", {}).get("rows", [])
-    imd_public_alerts = imd.get("public_alerts", {}).get("alerts", [])
+    data = st.session_state["resq_live_data"]
+    imd = data.get("imd", {})
+    ndma = data.get("ndma", {})
+
+    nowcast_result = imd.get("nowcast", {})
+    warning_result = imd.get("warnings", {})
+    public_result = imd.get("public_alerts", {})
+
+    nowcast_rows = nowcast_result.get("rows", [])
+    warning_rows = warning_result.get("rows", [])
+    imd_public_alerts = public_result.get("alerts", [])
     ndma_rows = ndma.get("alerts", [])
+
     good_sources = int(bool(imd.get("ok"))) + int(bool(ndma.get("ok")))
+
+    successful_times = [
+        value
+        for value in (imd.get("fetched_at"), ndma.get("fetched_at"))
+        if value
+    ]
+
     m1, m2, m3 = st.columns(3)
-    m1.metric("Government alert items", len(imd_rows) + len(imd_public_alerts) + len(ndma_rows))
+    m1.metric(
+        "Government alert items",
+        len(nowcast_rows)
+        + len(warning_rows)
+        + len(imd_public_alerts)
+        + len(ndma_rows),
+    )
     m2.metric("Sources responding", f"{good_sources} / 2")
-    successful_times = [x for x in (imd.get("fetched_at"), ndma.get("fetched_at")) if x]
-    m3.metric("Last successful fetch", _fmt_time(max(successful_times) if successful_times else None))
+    m3.metric(
+        "Last successful fetch",
+        _fmt_time(max(successful_times) if successful_times else None),
+    )
+
     st.caption(
-        "Government feeds automatically recheck every 5 minutes while this page stays open. IMD responses are cached for five minutes; SACHET uses ETag validation when provided. "
-        "State, district, and area search filters apply to displayed alerts from all feeds; IMD state/district inputs also constrain IMD API requests. "
-        "Records whose alert text cannot be translated are omitted rather than shown with a placeholder. Original source links remain available."
+        "Feeds are rechecked every five minutes while this page remains "
+        "open. IMD responses use a five-minute cache; SACHET uses ETag "
+        "validation when provided. State, district, and area filters apply "
+        "to displayed source records. IMD state and district inputs also "
+        "constrain IMD API requests. Records whose titles cannot be "
+        "translated are omitted rather than displayed with placeholders. "
+        "Original source links remain available."
     )
 
     with st.expander("Source status and diagnostics", expanded=True):
         st.markdown("**India Meteorological Department (IMD)**")
-        st.markdown(f"Status: {'🟢 At least one request succeeded' if imd.get('ok') else '🟡 Unavailable'}")
+        st.markdown(
+            "Status: "
+            + (
+                "🟢 At least one request succeeded"
+                if imd.get("ok")
+                else "🟡 Unavailable"
+            )
+        )
+
         if not imd.get("configured"):
             st.warning(
-                "IMD_API_TOKEN is missing. For the deployed app, add it in Streamlit Community Cloud → app settings → "
-                "Secrets. For local runs, add it to your ignored .env file and restart Streamlit."
+                "IMD_API_TOKEN is missing. For the deployed app, add it "
+                "in Streamlit Community Cloud → app settings → Secrets. "
+                "For local runs, add it to your ignored `.env` file and "
+                "restart Streamlit."
             )
-        public_result = imd.get("public_alerts", {})
+
+        if imd.get("error"):
+            st.caption(str(imd["error"]))
+
         if public_result.get("ok"):
-            rss_status = "RSS reachable" if public_result.get("rss_ok") else "RSS unavailable"
-            wis2_status = "WIS2 reachable" if public_result.get("wis2_ok") else "WIS2 fallback failed" if public_result.get("error") else "WIS2 not needed"
+            rss_status = (
+                "RSS reachable"
+                if public_result.get("rss_ok")
+                else "RSS unavailable"
+            )
+
+            if public_result.get("wis2_ok"):
+                wis2_status = "WIS2 reachable"
+            elif public_result.get("error"):
+                wis2_status = "WIS2 fallback failed"
+            else:
+                wis2_status = "WIS2 not needed"
+
             st.markdown(
-                f"- **Public IMD CAP feed:** {rss_status} · {wis2_status} · "
-                f"{len(public_result.get('alerts', []))} active alerts · "
+                f"- **Public IMD CAP feed:** {rss_status} · "
+                f"{wis2_status} · "
+                f"{len(imd_public_alerts)} active alerts · "
                 f"{public_result.get('records_seen', 0)} CAP records parsed · "
                 f"fetched {_fmt_time(public_result.get('fetched_at'))}"
             )
+
             st.caption(
-                "This public CAP feed is linked from IMD's official Mausam website. "
-                "It supplements the authenticated district API; it does not replace district nowcasts/warnings."
+                "This public CAP feed is linked from IMD's official "
+                "Mausam website. It supplements the authenticated district "
+                "API; it does not replace district nowcasts or warnings."
             )
         elif public_result.get("error"):
-            st.warning(f"Public IMD CAP source unavailable: {public_result['error']}")
-        for name in ("nowcast", "warnings"):
-            result = imd.get(name, {})
-            status = "OK" if result.get("ok") else "Unavailable"
-            st.markdown(
-                f"- **District {name}:** {status} · {len(result.get('rows', []))} records · "
-                f"fetched {_fmt_time(result.get('fetched_at'))}"
-            )
-            if result.get("cached"):
-                st.caption(f"{name.title()} response served from the five-minute cache.")
-            if result.get("error"):
-                st.caption(result["error"])
-        st.markdown(f"[Open IMD API reference]({IMD_REFERENCE})")
-        if public_result.get("source_url"):
-            st.markdown(f"[Open active IMD CAP source]({public_result['source_url']})")
-        if public_result.get("error"):
-            st.caption(public_result["error"])
-        st.divider()
-        st.markdown("**NDMA SACHET / India CAP**")
-        st.markdown(f"Status: {'🟢 Request succeeded' if ndma.get('ok') else '🟡 Unavailable'}")
-        if not ndma.get("configured"):
             st.warning(
-                "NDMA_CAP_FEED_URL is missing. Obtain the authorized feed URL from the official SACHET guide, "
-                "then add it under Streamlit Community Cloud Secrets or your local .env file."
-            )
-        if ndma.get("error"):
-            st.caption(ndma["error"])
-        st.caption(f"Records: {len(ndma_rows)} · fetched {_fmt_time(ndma.get('fetched_at'))}")
-        if ndma.get("cached"):
-            st.caption("SACHET returned HTTP 304; the previously fetched feed is being reused.")
-        st.markdown(f"[Open SACHET portal]({NDMA_PORTAL}) · [CAP feed guide]({NDMA_FEED_GUIDE})")
-
-    st.markdown("### IMD public CAP alerts")
-    if not imd_public_alerts:
-        checked = imd.get("public_alerts", {}).get("records_seen", 0)
-        if checked:
-            st.info(
-                f"The official IMD feed was checked ({checked} CAP records), but none had an active, unexpired alert. "
-                "District nowcasts and warnings still require the issued IMD API token."
+                f"Public IMD CAP source unavailable: "
+                f"{public_result['error']}"
             )
         else:
             st.info(
-                "No active public IMD CAP items were retrieved. ResQ-AI checks the public RSS feed and the official IMD WIS2 CAP catalogue. "
-                "District nowcasts and warnings still require the issued IMD API token."
+                "The public IMD CAP feed did not report a successful "
+                "request. Check the feed diagnostics and source availability."
+            )
+
+        for name, result in (
+            ("nowcast", nowcast_result),
+            ("warnings", warning_result),
+        ):
+            status = "OK" if result.get("ok") else "Unavailable"
+
+            st.markdown(
+                f"- **District {name}:** {status} · "
+                f"{len(result.get('rows', []))} records · "
+                f"fetched {_fmt_time(result.get('fetched_at'))}"
+            )
+
+            if result.get("cached"):
+                st.caption(
+                    f"{name.title()} response served from the five-minute cache."
+                )
+
+            if result.get("error"):
+                st.caption(str(result["error"]))
+
+        st.markdown(f"[Open IMD API reference]({IMD_REFERENCE})")
+
+        source_url = public_result.get("source_url")
+        if isinstance(source_url, str) and source_url.startswith("https://"):
+            st.markdown(f"[Open active IMD CAP source]({source_url})")
+
+        st.divider()
+        st.markdown("**NDMA SACHET / India CAP**")
+        st.markdown(
+            "Status: "
+            + (
+                "🟢 Request succeeded"
+                if ndma.get("ok")
+                else "🟡 Unavailable"
+            )
+        )
+
+        if not ndma.get("configured"):
+            st.warning(
+                "NDMA_CAP_FEED_URL is missing. Obtain the authorized feed "
+                "URL from the official SACHET guide, then add it under "
+                "Streamlit Community Cloud Secrets or your local `.env` file."
+            )
+
+        if ndma.get("error"):
+            st.caption(str(ndma["error"]))
+
+        st.caption(
+            f"Records: {len(ndma_rows)} · "
+            f"fetched {_fmt_time(ndma.get('fetched_at'))}"
+        )
+
+        if ndma.get("cached"):
+            st.caption(
+                "SACHET returned HTTP 304; the previously fetched feed is reused."
+            )
+
+        st.markdown(
+            f"[Open SACHET portal]({NDMA_PORTAL}) · "
+            f"[CAP feed guide]({NDMA_FEED_GUIDE})"
+        )
+
+    any_filter = _has_filters(state, district, area_query)
+
+    # Public IMD CAP alerts
+    st.markdown("### IMD public CAP alerts")
+
+    if not imd_public_alerts:
+        checked = public_result.get("records_seen", 0)
+
+        if checked:
+            st.info(
+                f"The official IMD feed was checked ({checked} CAP records), "
+                "but no active alerts were returned. District nowcasts and "
+                "warnings still require the issued IMD API token."
+            )
+        elif public_result.get("error"):
+            st.info(
+                "Public IMD CAP alerts are currently unavailable. "
+                "Check the source diagnostics above."
+            )
+        else:
+            st.info(
+                "No active public IMD CAP items were retrieved. ResQ-AI "
+                "checks the public RSS feed and the official IMD WIS2 CAP "
+                "catalogue when available. District nowcasts and warnings "
+                "still require the issued IMD API token."
             )
     else:
-        matched = [row for row in imd_public_alerts if _matches_area(row, state, district, area_query)]
-        shown = 0
-        for row in matched[:100]:
-            title = _value(row, ("title",), "")
-            if not title:
-                continue
-            with st.container(border=True):
-                st.markdown(f"**{title}**")
-                st.caption(" · ".join(v for v in (_value(row, ("published",), ""), _value(row, ("source",), "IMD public CAP feed")) if v))
-                summary = english_text(row.get("summary", ""))
-                if summary:
-                    st.write(summary)
-                if row.get("link", "").startswith("https://"):
-                    st.markdown(f"[Verify alert at source]({row['link']})")
-            shown += 1
-        if area_query.strip() and shown == 0:
-            st.info("No English-readable IMD public alerts matched this area. Try a broader city, district, or state name.")
+        matched = [
+            row
+            for row in imd_public_alerts
+            if _matches_area(row, state, district, area_query)
+        ]
 
+        shown = 0
+
+        for row in matched[:100]:
+            if _render_alert(
+                row,
+                title_keys=("title", "headline", "event"),
+                default_title="",
+            ):
+                shown += 1
+
+        if any_filter and shown == 0:
+            st.info(
+                "No English-readable public IMD alerts matched these filters. "
+                "Try a broader state, district, or city name."
+            )
+
+    # IMD district nowcasts
     st.markdown("### IMD district nowcasts")
-    if not imd.get("nowcast", {}).get("ok"):
-        st.info("Nowcast data is unavailable. See the IMD status and diagnostic message above.")
-    elif not imd.get("nowcast", {}).get("rows"):
-        st.info("The request succeeded, but no nowcast records matched these filters. This does not establish that no warnings exist.")
+
+    if not nowcast_result.get("ok"):
+        st.info(
+            "Nowcast data is unavailable. See the IMD status and diagnostic "
+            "message above."
+        )
+    elif not nowcast_rows:
+        st.info(
+            "The request succeeded, but no nowcast records were returned "
+            "for these API filters. This does not establish that no warnings exist."
+        )
     else:
         shown = 0
-        for row in imd["nowcast"]["rows"]:
+
+        for row in nowcast_rows:
             if not _matches_area(row, state, district, area_query):
                 continue
-            title = _value(row, ("District", "district", "district_name", "Station", "station", "name"), "")
+
+            title = _value(
+                row,
+                (
+                    "District",
+                    "district",
+                    "district_name",
+                    "Station",
+                    "station",
+                    "name",
+                ),
+                "",
+            )
+
             rendered = english_record(row)
-            if not title or not any(v for v in rendered.values() if v not in (None, "")):
+            has_readable_data = isinstance(rendered, dict) and any(
+                value not in (None, "")
+                for value in rendered.values()
+            )
+
+            if not title or title == "—" or not has_readable_data:
                 continue
+
             with st.container(border=True):
                 st.markdown(f"**{title}**")
                 st.write(rendered)
+
             shown += 1
             if shown >= 50:
                 break
-        if area_query.strip() and shown == 0:
-            st.info("No English-readable nowcast records matched this area. Try a broader city, district, or state name.")
 
+        if any_filter and shown == 0:
+            st.info(
+                "No English-readable nowcast records matched these filters. "
+                "Try a broader state, district, or city name."
+            )
+
+    # IMD district warnings
     st.markdown("### IMD district warnings")
-    if not imd.get("warnings", {}).get("ok"):
-        st.info("Warning data is unavailable. See the IMD status and diagnostic message above.")
-    elif not imd.get("warnings", {}).get("rows"):
-        st.info("The request succeeded, but no warning records matched these filters. This does not establish that no warnings exist.")
+
+    if not warning_result.get("ok"):
+        st.info(
+            "Warning data is unavailable. See the IMD status and diagnostic "
+            "message above."
+        )
+    elif not warning_rows:
+        st.info(
+            "The request succeeded, but no warning records were returned "
+            "for these API filters. This does not establish that no warnings exist."
+        )
     else:
         shown = 0
-        for row in imd["warnings"]["rows"]:
-            if not _matches_area(row, area_query):
+
+        for row in warning_rows:
+            # Apply all three filters consistently.
+            if not _matches_area(row, state, district, area_query):
                 continue
-            title = _value(row, ("District", "district", "district_name", "warning", "Warning", "event"), "")
+
+            title = _value(
+                row,
+                (
+                    "District",
+                    "district",
+                    "district_name",
+                    "warning",
+                    "Warning",
+                    "event",
+                    "title",
+                    "headline",
+                ),
+                "",
+            )
+
             rendered = english_record(row)
-            if not title:
+
+            if not title or title == "—":
                 continue
+
             with st.container(border=True):
                 st.markdown(f"**{title}**")
-                st.write(rendered)
+                if isinstance(rendered, dict):
+                    st.write(rendered)
+                else:
+                    st.write(rendered)
+
+                link = row.get("link", "")
+                if isinstance(link, str) and link.startswith("https://"):
+                    st.markdown(f"[Verify alert at source]({link})")
+
             shown += 1
             if shown >= 50:
                 break
-        if area_query.strip() and shown == 0:
-            st.info("No English-readable district warnings matched this area. Try a broader city, district, or state name.")
 
+        if any_filter and shown == 0:
+            st.info(
+                "No English-readable district warnings matched these filters. "
+                "Try a broader state, district, or city name."
+            )
+
+    # NDMA SACHET / CAP alerts
     st.markdown("### NDMA SACHET / CAP alerts")
+
     if not ndma.get("configured"):
-        st.info("Feed setup is required. Use the official SACHET guide to obtain the authorized feed URL.")
+        st.info(
+            "Feed setup is required. Use the official SACHET guide to obtain "
+            "the authorized feed URL."
+        )
     elif not ndma.get("ok"):
-        st.info(ndma.get("error") or "Feed unavailable. Check the official source and feed access.")
+        st.info(
+            ndma.get("error")
+            or "The feed is unavailable. Check the official source and feed access."
+        )
     elif not ndma_rows:
-        st.info("The feed request succeeded but returned no parseable alert items. Check the feed format and source response.")
+        st.info(
+            "The feed request succeeded but returned no parseable alert items. "
+            "Check the feed format and source response."
+        )
     else:
-        matched = [row for row in ndma_rows if _matches_area(row, state, district, area_query)]
+        matched = [
+            row
+            for row in ndma_rows
+            if _matches_area(row, state, district, area_query)
+        ]
+
         shown = 0
+
         for row in matched[:100]:
-            title = _value(row, ("title",), "")
-            if not title:
-                continue
-            with st.container(border=True):
-                st.markdown(f"**{title}**")
-                st.caption(" · ".join(v for v in (_value(row, ("published",), ""), _value(row, ("source",), "")) if v))
-                summary = english_text(row.get("summary", ""))
-                if summary:
-                    st.write(summary)
-                if row.get("link", "").startswith("https://"):
-                    st.markdown(f"[Verify alert at source]({row['link']})")
-            shown += 1
-        if area_query.strip() and shown == 0:
-            st.info("No English-readable NDMA alerts matched this area. Try a broader city, district, or state name.")
+            if _render_alert(
+                row,
+                title_keys=("title", "headline", "event"),
+                default_title="",
+            ):
+                shown += 1
+
+        if any_filter and shown == 0:
+            st.info(
+                "No English-readable NDMA alerts matched these filters. "
+                "Try a broader state, district, or city name."
+            )
 
     st.caption(
-        "Live-source integration is best-effort and depends on official API permissions, availability, and payload formats. "
-        "Always verify an alert's location, issue/expiry time and on-the-ground impact with authorities."
+        "Live-source integration is best-effort and depends on official API "
+        "permissions, availability, and payload formats. Always verify an "
+        "alert's location, issue and expiry times, and on-the-ground impact "
+        "with the relevant authorities."
     )
