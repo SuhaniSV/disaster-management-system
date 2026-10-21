@@ -27,7 +27,6 @@ def test_english_record_translates_text_and_preserves_source_metadata(monkeypatc
     assert translated["source"] == row["source"]
 
 
-def test_translation_failure_never_returns_regional_text(monkeypatch):
-    monkeypatch.setattr(alert_translation, "_translate_cached", lambda text: alert_translation._ENGLISH_FALLBACK)
-    result = alert_translation.english_text("മഴ")
-    assert result == alert_translation._ENGLISH_FALLBACK
+def test_translation_failure_returns_empty_text_for_ui_to_omit(monkeypatch):
+    monkeypatch.setattr(alert_translation, "_translate_cached", lambda text: "")
+    assert alert_translation.english_text("മഴ") == ""

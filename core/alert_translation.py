@@ -1,8 +1,8 @@
 """Best-effort English rendering for official alert text.
 
 Original records and source links remain unchanged in the data layer. Translation is
-cached, and if translation fails the UI shows an English fallback instead of leaking
-regional-language text into the English-only alert list.
+cached. If translation fails, the display string is empty so the UI can omit that alert
+instead of showing a fake alert headline or leaking regional-language text.
 """
 from __future__ import annotations
 
@@ -19,7 +19,6 @@ _NON_LATIN_LETTERS = re.compile(
     r"\u0F00-\u0FFF\u1000-\u109F\u1780-\u17FF\u3040-\u30FF"
     r"\u3400-\u9FFF]"
 )
-_ENGLISH_FALLBACK = "English translation unavailable. Open the official source to verify this alert."
 _PRESERVE_KEYS = {
     "link", "url", "source_url", "source", "published", "expires", "sent",
     "id", "identifier", "guid", "latitude", "longitude", "lat", "lon",
@@ -29,7 +28,7 @@ _PRESERVE_KEYS = {
 
 @lru_cache(maxsize=2048)
 def _translate_cached(text: str) -> str:
-    """Translate one non-English string; never silently return untranslated text."""
+    """Translate one non-English string; return empty on failure so UI can omit it."""
     try:
         from deep_translator import GoogleTranslator
         translated = GoogleTranslator(source="auto", target="en").translate(text)
@@ -40,11 +39,11 @@ def _translate_cached(text: str) -> str:
                 return result
     except Exception:
         pass
-    return _ENGLISH_FALLBACK
+    return ""
 
 
 def english_text(value: Any) -> str:
-    """Return an English display string, or a clear English fallback on failure."""
+    """Return English text, or an empty string when translation fails."""
     if value is None:
         return ""
     text = str(value).strip()

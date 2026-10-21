@@ -24,10 +24,37 @@ def _fmt_time(value: str | None) -> str:
 def _value(row: dict, keys: tuple[str, ...], fallback: str = "—") -> str:
     for key in keys:
         if row.get(key) not in (None, ""):
+            # Empty means translation failed; never show a placeholder as an alert title.
             return english_text(row[key])
     return fallback
 
 
+def _matches_area(row: dict, *queries: str) -> bool:
+    """Match every supplied area term against translated source fields, without guessing."""
+    required = [q.strip().casefold() for q in queries if q and q.strip()]
+    if not required:
+        return True
+    translated = english_record(row)
+    terms: list[str] = []
+
+    def collect(value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if key.casefold() not in {"link", "url", "source_url", "guid", "identifier", "id"}:
+                    terms.append(str(key))
+                    collect(item)
+        elif isinstance(value, list):
+            for item in value:
+                collect(item)
+        elif isinstance(value, str):
+            terms.append(value)
+
+    collect(translated)
+    searchable = " ".join(terms).casefold()
+    return all(query in searchable for query in required)
+
+
+@st.fragment(run_every=300)
 def render_live_alerts() -> None:
     st.markdown('<div class="resq-kicker">RESQ-AI / OFFICIAL SOURCES</div>', unsafe_allow_html=True)
     st.title("Live Government Alerts")
@@ -64,18 +91,29 @@ def render_live_alerts() -> None:
 
     with st.form("live_alert_filters"):
         col1, col2 = st.columns(2)
-        state = col1.text_input("Filter IMD by state (optional)", placeholder="e.g. Maharashtra")
-        district = col2.text_input("Filter IMD by district (optional)", placeholder="e.g. Pune")
+        state = col1.text_input("Filter all alerts by state (optional)", placeholder="e.g. Uttar Pradesh")
+        district = col2.text_input("Filter all alerts by district (optional)", placeholder="e.g. Gautam Buddha Nagar")
         refresh = st.form_submit_button("Fetch latest government data", type="primary")
 
+    area_query = st.text_input(
+        "Search alerts by area",
+        placeholder="Enter a city, district, or state — e.g. Noida, Pune, Kerala",
+        help="Filters the displayed alerts from all feeds using location and alert text supplied by the source.",
+    )
     desired_filters = {"state": state.strip(), "district": district.strip()}
-    if "resq_live_data" not in st.session_state or refresh or st.session_state.get("resq_live_data", {}).get("filters") != desired_filters:
+    if (
+        "resq_live_data" not in st.session_state
+        or refresh
+        or st.session_state.get("resq_live_data", {}).get("filters") != desired_filters
+        or __import__("time").monotonic() - st.session_state.get("resq_live_data_fetched_monotonic", 0) >= 300
+    ):
         with st.spinner("Requesting official government feeds…"):
             st.session_state["resq_live_data"] = {
                 "imd": get_imd_live_data(state=state.strip(), district=district.strip()),
                 "ndma": get_ndma_cap_alerts(),
                 "filters": desired_filters,
             }
+            st.session_state["resq_live_data_fetched_monotonic"] = __import__("time").monotonic()
     data = st.session_state["resq_live_data"]
     imd, ndma = data["imd"], data["ndma"]
 
@@ -89,8 +127,9 @@ def render_live_alerts() -> None:
     successful_times = [x for x in (imd.get("fetched_at"), ndma.get("fetched_at")) if x]
     m3.metric("Last successful fetch", _fmt_time(max(successful_times) if successful_times else None))
     st.caption(
-        "Requests are on-demand. IMD responses are cached for five minutes; SACHET uses ETag validation when provided. "
-        "State/district filters apply to IMD records. Alert text is translated to English for display; original source links remain available."
+        "Government feeds automatically recheck every 5 minutes while this page stays open. IMD responses are cached for five minutes; SACHET uses ETag validation when provided. "
+        "State, district, and area search filters apply to displayed alerts from all feeds; IMD state/district inputs also constrain IMD API requests. "
+        "Records whose alert text cannot be translated are omitted rather than shown with a placeholder. Original source links remain available."
     )
 
     with st.expander("Source status and diagnostics", expanded=True):
@@ -162,14 +201,23 @@ def render_live_alerts() -> None:
                 "District nowcasts and warnings still require the issued IMD API token."
             )
     else:
-        for row in imd_public_alerts[:100]:
+        matched = [row for row in imd_public_alerts if _matches_area(row, state, district, area_query)]
+        shown = 0
+        for row in matched[:100]:
+            title = _value(row, ("title",), "")
+            if not title:
+                continue
             with st.container(border=True):
-                st.markdown(f"**{_value(row, ('title',), 'IMD weather alert')}**")
+                st.markdown(f"**{title}**")
                 st.caption(" · ".join(v for v in (_value(row, ("published",), ""), _value(row, ("source",), "IMD public CAP feed")) if v))
-                if row.get("summary"):
-                    st.write(english_text(row["summary"]))
+                summary = english_text(row.get("summary", ""))
+                if summary:
+                    st.write(summary)
                 if row.get("link", "").startswith("https://"):
                     st.markdown(f"[Verify alert at source]({row['link']})")
+            shown += 1
+        if area_query.strip() and shown == 0:
+            st.info("No English-readable IMD public alerts matched this area. Try a broader city, district, or state name.")
 
     st.markdown("### IMD district nowcasts")
     if not imd.get("nowcast", {}).get("ok"):
@@ -177,11 +225,22 @@ def render_live_alerts() -> None:
     elif not imd.get("nowcast", {}).get("rows"):
         st.info("The request succeeded, but no nowcast records matched these filters. This does not establish that no warnings exist.")
     else:
-        for row in imd["nowcast"]["rows"][:50]:
-            title = _value(row, ("District", "district", "district_name", "Station", "station", "name"), "District nowcast")
+        shown = 0
+        for row in imd["nowcast"]["rows"]:
+            if not _matches_area(row, state, district, area_query):
+                continue
+            title = _value(row, ("District", "district", "district_name", "Station", "station", "name"), "")
+            rendered = english_record(row)
+            if not title or not any(v for v in rendered.values() if v not in (None, "")):
+                continue
             with st.container(border=True):
                 st.markdown(f"**{title}**")
-                st.write(english_record(row))
+                st.write(rendered)
+            shown += 1
+            if shown >= 50:
+                break
+        if area_query.strip() and shown == 0:
+            st.info("No English-readable nowcast records matched this area. Try a broader city, district, or state name.")
 
     st.markdown("### IMD district warnings")
     if not imd.get("warnings", {}).get("ok"):
@@ -189,11 +248,22 @@ def render_live_alerts() -> None:
     elif not imd.get("warnings", {}).get("rows"):
         st.info("The request succeeded, but no warning records matched these filters. This does not establish that no warnings exist.")
     else:
-        for row in imd["warnings"]["rows"][:50]:
-            title = _value(row, ("District", "district", "district_name", "warning", "Warning", "event"), "District warning")
+        shown = 0
+        for row in imd["warnings"]["rows"]:
+            if not _matches_area(row, area_query):
+                continue
+            title = _value(row, ("District", "district", "district_name", "warning", "Warning", "event"), "")
+            rendered = english_record(row)
+            if not title:
+                continue
             with st.container(border=True):
                 st.markdown(f"**{title}**")
-                st.write(row)
+                st.write(rendered)
+            shown += 1
+            if shown >= 50:
+                break
+        if area_query.strip() and shown == 0:
+            st.info("No English-readable district warnings matched this area. Try a broader city, district, or state name.")
 
     st.markdown("### NDMA SACHET / CAP alerts")
     if not ndma.get("configured"):
@@ -203,14 +273,23 @@ def render_live_alerts() -> None:
     elif not ndma_rows:
         st.info("The feed request succeeded but returned no parseable alert items. Check the feed format and source response.")
     else:
-        for row in ndma_rows[:100]:
+        matched = [row for row in ndma_rows if _matches_area(row, state, district, area_query)]
+        shown = 0
+        for row in matched[:100]:
+            title = _value(row, ("title",), "")
+            if not title:
+                continue
             with st.container(border=True):
-                st.markdown(f"**{_value(row, ('title',), 'Government alert')}**")
+                st.markdown(f"**{title}**")
                 st.caption(" · ".join(v for v in (_value(row, ("published",), ""), _value(row, ("source",), "")) if v))
-                if row.get("summary"):
-                    st.write(row["summary"])
+                summary = english_text(row.get("summary", ""))
+                if summary:
+                    st.write(summary)
                 if row.get("link", "").startswith("https://"):
                     st.markdown(f"[Verify alert at source]({row['link']})")
+            shown += 1
+        if area_query.strip() and shown == 0:
+            st.info("No English-readable NDMA alerts matched this area. Try a broader city, district, or state name.")
 
     st.caption(
         "Live-source integration is best-effort and depends on official API permissions, availability, and payload formats. "
