@@ -253,6 +253,16 @@ def get_ndma_cap_alerts() -> dict[str, Any]:
     except requests.HTTPError as exc:
         status = getattr(exc.response, "status_code", "unknown")
         message = f"NDMA feed request failed (HTTP {status}). Verify the authorized feed URL and access."
+    except requests.exceptions.SSLError as exc:
+        # Preserve certificate verification; include a short, sanitized TLS detail so
+        # deployment diagnostics can distinguish certificate, hostname, and handshake failures.
+        detail = " ".join(str(exc).split())[:240]
+        message = (
+            "NDMA TLS connection failed. SSL verification remains enabled. "
+            f"Underlying error: {detail or type(exc).__name__}. "
+            "If this only occurs on Streamlit Cloud, check the app logs and whether the "
+            "host accepts connections from the Cloud runtime."
+        )
     except requests.RequestException as exc:
         message = f"Could not retrieve NDMA feed: {type(exc).__name__}. Check feed availability and network access."
     return {
