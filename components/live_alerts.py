@@ -54,6 +54,7 @@ def _matches_area(row: dict, *queries: str) -> bool:
     return all(query in searchable for query in required)
 
 
+@st.fragment(run_every=300)
 def render_live_alerts() -> None:
     st.markdown('<div class="resq-kicker">RESQ-AI / OFFICIAL SOURCES</div>', unsafe_allow_html=True)
     st.title("Live Government Alerts")
@@ -90,8 +91,8 @@ def render_live_alerts() -> None:
 
     with st.form("live_alert_filters"):
         col1, col2 = st.columns(2)
-        state = col1.text_input("Filter IMD by state (optional)", placeholder="e.g. Maharashtra")
-        district = col2.text_input("Filter IMD by district (optional)", placeholder="e.g. Pune")
+        state = col1.text_input("Filter all alerts by state (optional)", placeholder="e.g. Uttar Pradesh")
+        district = col2.text_input("Filter all alerts by district (optional)", placeholder="e.g. Gautam Buddha Nagar")
         refresh = st.form_submit_button("Fetch latest government data", type="primary")
 
     area_query = st.text_input(
@@ -126,7 +127,7 @@ def render_live_alerts() -> None:
     successful_times = [x for x in (imd.get("fetched_at"), ndma.get("fetched_at")) if x]
     m3.metric("Last successful fetch", _fmt_time(max(successful_times) if successful_times else None))
     st.caption(
-        "Requests are on-demand. IMD responses are cached for five minutes; SACHET uses ETag validation when provided. "
+        "Government feeds automatically recheck every 5 minutes while this page stays open. IMD responses are cached for five minutes; SACHET uses ETag validation when provided. "
         "State, district, and area search filters apply to displayed alerts from all feeds; IMD state/district inputs also constrain IMD API requests. "
         "Records whose alert text cannot be translated are omitted rather than shown with a placeholder. Original source links remain available."
     )
