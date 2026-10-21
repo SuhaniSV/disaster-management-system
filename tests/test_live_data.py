@@ -394,3 +394,52 @@ def test_wis2_parser_accepts_root_level_metadata_and_nested_items():
     assert len(alerts) == 1
     assert alerts[0]["title"] == "Test CAP alert"
 
+
+
+
+def test_wis2_parser_accepts_literal_xml_when_encoding_is_missing():
+    cap_xml = """<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+      <info><event>Heavy Rain</event><headline>Literal XML warning</headline>
+      <expires>2099-01-01T00:00:00Z</expires></info>
+    </alert>"""
+    payload = {
+        "features": [
+            {
+                "properties": {
+                    "metadata_id": live_data.IMD_CAP_METADATA_ID,
+                    "data_id": "in-imd:cap_alerts/literal-xml",
+                    "content": {"value": cap_xml},
+                }
+            }
+        ]
+    }
+
+    alerts, seen = _parse_wis2_cap_items(payload)
+
+    assert seen == 1
+    assert len(alerts) == 1
+    assert alerts[0]["title"] == "Literal XML warning"
+
+
+def test_wis2_parser_accepts_base64_when_encoding_is_missing():
+    cap_xml = b"""<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+      <info><event>Flood</event><headline>Encoded warning</headline>
+      <expires>2099-01-01T00:00:00Z</expires></info>
+    </alert>"""
+    payload = {
+        "features": [
+            {
+                "properties": {
+                    "metadata_id": live_data.IMD_CAP_METADATA_ID,
+                    "data_id": "in-imd:cap_alerts/base64-no-encoding",
+                    "content": {"value": base64.b64encode(cap_xml).decode("ascii")},
+                }
+            }
+        ]
+    }
+
+    alerts, seen = _parse_wis2_cap_items(payload)
+
+    assert seen == 1
+    assert len(alerts) == 1
+    assert alerts[0]["title"] == "Encoded warning"
