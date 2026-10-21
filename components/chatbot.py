@@ -172,7 +172,7 @@ def _fallback(question: str, center: CommandCenter) -> str:
             "Hello! I'm ResQ Assistant. Ask me a specific question about an incident, reported resources, "
             "hospital beds, shelters, or disaster-safety guidance. I'll answer that question directly."
         )
-    if any(phrase in q for phrase in ("how many active incidents", "active incident count", "incident statistics", "overall situation", "situation summary", "dashboard summary", "how many incidents")):
+    if any(phrase in q for phrase in ("how many active incidents", "active incident count", "incident statistics", "overall situation", "situation summary", "dashboard summary", "how many incidents", "summarize the response snapshot", "summarize the response", "response snapshot summary")):
         return (
             f"**Current demo snapshot**\n\n"
             f"- Active incidents: **{metrics.get('active_incidents', 0)}**\n"
