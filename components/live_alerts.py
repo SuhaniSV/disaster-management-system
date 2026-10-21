@@ -98,6 +98,12 @@ def _matches_area(row: dict, *queries: str) -> bool:
     return all(query in searchable for query in required)
 
 
+def _is_india_gdacs_event(row: dict) -> bool:
+    """Only allow GDACS records explicitly tagged to India."""
+    country = str(row.get("country") or row.get("area") or "").strip().casefold()
+    return country == "india" or country.startswith("india,") or country.endswith(", india")
+
+
 def _has_filters(state: str, district: str, area_query: str) -> bool:
     """Return whether any user-entered area filter is active."""
     return any(
@@ -371,7 +377,7 @@ def render_live_alerts() -> None:
         + len(imd_public_alerts)
         + len(ndma_rows)
         + len(usgs.get("events", []))
-        + len(gdacs.get("events", [])),
+        + len([row for row in gdacs.get("events", []) if _is_india_gdacs_event(row)]),
     )
     good_sources += int(bool(gdacs.get("ok")))
     m2.metric("Sources responding", f"{good_sources} / 4")
@@ -484,13 +490,13 @@ def render_live_alerts() -> None:
         st.markdown(f"[Open USGS earthquake feed]({usgs.get('source_url', 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson')})")
 
         st.divider()
-        st.markdown("**GDACS global disaster feed**")
+        st.markdown("**GDACS feed — India-filtered events**")
         st.markdown(
             "Status: "
             + ("🟢 Request succeeded" if gdacs.get("ok") else "🟡 Unavailable")
         )
         st.caption(
-            f"Events returned: {len(gdacs.get('events', []))} · "
+            f"India events: {len([row for row in gdacs.get('events', []) if _is_india_gdacs_event(row)])} · "
             f"Records checked: {gdacs.get('records_seen', 0)} · "
             f"Fetched {_fmt_time(gdacs.get('fetched_at'))}"
         )
@@ -698,16 +704,18 @@ def render_live_alerts() -> None:
                 "Try a broader state, district, or city name."
             )
 
-    # Official global multi-hazard events from GDACS
-    st.markdown("### Global disaster alerts — GDACS")
+    # GDACS is global, but only records explicitly located in India are shown.
+    st.markdown("### India disaster alerts — GDACS")
     st.caption(
-        "Official global event feed covering earthquakes, floods, tropical "
-        "cyclones, volcanoes, droughts and wildfires. These are hazard alerts, "
-        "not verified local rescue incidents."
+        "Only GDACS records explicitly tagged to India are shown here; events "
+        "from other countries are excluded. GDACS may identify a country but "
+        "not always provide a specific Indian state, so use the source link to verify location. "
+        "These are hazard alerts, not verified local rescue incidents."
     )
     gdacs_events = [
         row for row in gdacs.get("events", [])
-        if _matches_area(row, state, district, area_query)
+        if _is_india_gdacs_event(row)
+        and _matches_area(row, state, district, area_query)
     ]
     if not gdacs.get("ok"):
         st.info(
@@ -716,7 +724,7 @@ def render_live_alerts() -> None:
         )
     elif not gdacs_events:
         st.info(
-            "No recent GDACS events matched the current filters. This is not "
+            "No India-tagged GDACS events matched the current filters. This is not "
             "a guarantee that no local hazards exist."
         )
     else:
