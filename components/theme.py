@@ -134,7 +134,7 @@ button[aria-label*="Expand sidebar"]:hover {
   padding-top: 0 !important;
 }
 [data-testid="stMainBlockContainer"] {
-  padding-top: 1.8rem;
+  padding-top: 0.8rem;
   padding-bottom: 3rem;
   max-width: 1600px;
 }
