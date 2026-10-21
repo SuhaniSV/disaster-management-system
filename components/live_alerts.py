@@ -4,6 +4,8 @@ from __future__ import annotations
 from datetime import datetime
 import streamlit as st
 
+from core.alert_translation import english_record, english_text
+
 from core.live_data import (
     IMD_API_PORTAL, IMD_REFERENCE, NDMA_FEED_GUIDE, NDMA_PORTAL,
     get_imd_live_data, get_ndma_cap_alerts,
@@ -22,7 +24,7 @@ def _fmt_time(value: str | None) -> str:
 def _value(row: dict, keys: tuple[str, ...], fallback: str = "—") -> str:
     for key in keys:
         if row.get(key) not in (None, ""):
-            return str(row[key])
+            return english_text(row[key])
     return fallback
 
 
@@ -88,7 +90,7 @@ def render_live_alerts() -> None:
     m3.metric("Last successful fetch", _fmt_time(max(successful_times) if successful_times else None))
     st.caption(
         "Requests are on-demand. IMD responses are cached for five minutes; SACHET uses ETag validation when provided. "
-        "State/district filters apply to IMD records; the authorized SACHET feed is displayed as supplied by that feed."
+        "State/district filters apply to IMD records. Alert text is translated to English for display; original source links remain available."
     )
 
     with st.expander("Source status and diagnostics", expanded=True):
@@ -165,7 +167,7 @@ def render_live_alerts() -> None:
                 st.markdown(f"**{_value(row, ('title',), 'IMD weather alert')}**")
                 st.caption(" · ".join(v for v in (_value(row, ("published",), ""), _value(row, ("source",), "IMD public CAP feed")) if v))
                 if row.get("summary"):
-                    st.write(row["summary"])
+                    st.write(english_text(row["summary"]))
                 if row.get("link", "").startswith("https://"):
                     st.markdown(f"[Verify alert at source]({row['link']})")
 
@@ -179,7 +181,7 @@ def render_live_alerts() -> None:
             title = _value(row, ("District", "district", "district_name", "Station", "station", "name"), "District nowcast")
             with st.container(border=True):
                 st.markdown(f"**{title}**")
-                st.write(row)
+                st.write(english_record(row))
 
     st.markdown("### IMD district warnings")
     if not imd.get("warnings", {}).get("ok"):
