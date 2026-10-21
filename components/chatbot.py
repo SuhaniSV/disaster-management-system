@@ -102,11 +102,33 @@ def _greeting_response(question: str) -> str | None:
 
 
 
+def _fuzzy_word_match(candidate: str, target: str) -> bool:
+    """Match a word exactly or tolerate a small typo without accepting short-word noise."""
+    return candidate == target or (
+        min(len(candidate), len(target)) >= 4
+        and SequenceMatcher(None, candidate, target).ratio() >= 0.84
+    )
+
+
+def _contains_fuzzy_phrase(question: str, phrases: tuple[str, ...]) -> bool:
+    """Find a phrase in natural input while allowing small spelling errors in its words."""
+    tokens = re.findall(r"[a-z0-9]+", question.casefold())
+    for phrase in phrases:
+        target = re.findall(r"[a-z0-9]+", phrase.casefold())
+        if not target:
+            continue
+        for start in range(len(tokens) - len(target) + 1):
+            if all(_fuzzy_word_match(tokens[start + offset], word)
+                   for offset, word in enumerate(target)):
+                return True
+    return False
+
+
 def _incident_count_answer(question: str, center: CommandCenter) -> str | None:
     """Count matching incident records from the loaded snapshot for explicit count questions."""
-    raw = re.sub(r"[^a-z0-9]+", " ", question.casefold()).strip()
-    padded = f" {raw} "
-    count_intent = any(marker in padded for marker in (" how many ", " number of ", " count of ", " total ", " count "))
+    count_intent = _contains_fuzzy_phrase(
+        question, ("how many", "number of", "count of", "incident count", "total", "count")
+    )
     if not count_intent:
         return None
     aliases = {
@@ -117,7 +139,8 @@ def _incident_count_answer(question: str, center: CommandCenter) -> str | None:
         "landslide": ("landslide", "landslides"),
         "storm": ("storm", "storms"),
     }
-    requested = next((kind for kind, words in aliases.items() if any(f" {word} " in padded for word in words)), None)
+    requested = next((kind for kind, words in aliases.items()
+                      if _contains_fuzzy_phrase(question, words)), None)
     if requested:
         count = 0
         for row in center.incidents:
@@ -131,7 +154,7 @@ def _incident_count_answer(question: str, center: CommandCenter) -> str | None:
             "This counts only records currently loaded in the app. Operational records may be simulated or incomplete; "
             "this is not a verified live or government-wide count."
         )
-    if any(word in padded for word in (" incident ", " incidents ", " disaster ", " disasters ", " reported ", " report ")):
+    if _contains_fuzzy_phrase(question, ("incident", "incidents", "disaster", "disasters", "reported", "report")):
         return (
             f"**{len(center.incidents)} incident records** are currently loaded in ResQ-AI.\n\n"
             "This is a record count, not necessarily a count of unique real-world events. The data may be simulated or incomplete."
