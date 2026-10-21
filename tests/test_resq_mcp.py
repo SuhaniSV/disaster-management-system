@@ -56,3 +56,39 @@ def test_briefing_falls_back_without_aws_model(monkeypatch):
     assert result["mode"] == "deterministic_fallback"
     assert "Active incidents: 1" in result["brief"]
     assert "not dispatch authorization" in result["brief"]
+
+
+def test_incident_list_clamps_limits_and_filters_resolved_status():
+    center = FakeCenter()
+    # The tool should never return an unbounded result set.
+    center.incidents = [
+        {"id": f"INC-{i:03d}", "priority_score": i, "status": "Active"}
+        for i in range(75)
+    ]
+    assert len(list_incidents(center, status="all", limit=0)["incidents"]) == 1
+    assert len(list_incidents(center, status="all", limit=500)["incidents"]) == 50
+
+    center.incidents.append({"id": "INC-RES", "priority_score": 10, "status": "Resolved"})
+    result = list_incidents(center, status="resolved", limit=10)
+    assert result["count"] == 1
+    assert result["incidents"][0]["id"] == "INC-RES"
+
+
+def test_priority_explanation_does_not_mutate_incident_score_or_breakdown():
+    from copy import deepcopy
+
+    center = FakeCenter()
+    original = deepcopy(center.incidents[0])
+    result = explain_priority(center, "INC-001")
+
+    assert result["priority_score"] == original["priority_score"]
+    assert result["breakdown"] == original["priority_breakdown"]
+    assert center.incidents[0] == original
+
+
+def test_shelter_search_clamps_negative_minimum_to_zero():
+    result = find_shelters(FakeCenter(), minimum_spaces=-25)
+
+    assert result["minimum_spaces"] == 0
+    assert result["count"] == 1
+    assert result["shelters"][0]["spaces_available"] == 25
