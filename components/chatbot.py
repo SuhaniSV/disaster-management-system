@@ -172,22 +172,29 @@ def _fallback(question: str, center: CommandCenter) -> str:
             "Hello! I'm ResQ Assistant. Ask me a specific question about an incident, reported resources, "
             "hospital beds, shelters, or disaster-safety guidance. I'll answer that question directly."
         )
-    if any(phrase in q for phrase in ("how many active incidents", "active incident count", "incident statistics", "overall situation", "situation summary", "dashboard summary", "how many incidents")):
+    
+    if any(phrase in q for phrase in (
+        "how many active incidents",
+        "active incident count",
+        "incident statistics",
+        "overall situation",
+        "situation summary",
+        "dashboard summary",
+        "how many incidents",
+        "summarize the response snapshot",
+        "summary of the response snapshot",
+        "summarize response snapshot",
+    )):
         return (
             f"**Current demo snapshot**\n\n"
             f"- Active incidents: **{metrics.get('active_incidents', 0)}**\n"
             f"- Critical incidents: **{metrics.get('critical_incidents', 0)}**\n"
             f"- People affected: **{metrics.get('people_affected', 0)}**\n"
             f"- Resources marked available: **{metrics.get('available_resources', 0)}**\n\n"
-            "These figures describe the currently loaded prototype records, not verified live operations."
+            "These figures come from simulated data in the currently loaded prototype records, "
+            "not verified live operations."
         )
-    return (
-        "I couldn't answer that specific question from the current offline response rules, and I don't want "
-        "to give you unrelated incident statistics. Try asking about a specific incident ID (for example, "
-        "INC-001), priority, available resources, hospital beds, shelter spaces, or disaster-safety guidance. "
-        "For broader questions, configure the optional language-model provider so I can interpret and answer "
-        "open-ended questions. Operational records may be simulated; I won't invent live facts."
-    )
+
 
 
 def answer_question(question: str, center: CommandCenter, history: list[dict[str, str]] | None = None) -> str:
