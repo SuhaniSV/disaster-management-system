@@ -78,10 +78,11 @@ def render_live_alerts() -> None:
     imd, ndma = data["imd"], data["ndma"]
 
     imd_rows = imd.get("nowcast", {}).get("rows", []) + imd.get("warnings", {}).get("rows", [])
+    imd_public_alerts = imd.get("public_alerts", {}).get("alerts", [])
     ndma_rows = ndma.get("alerts", [])
     good_sources = int(bool(imd.get("ok"))) + int(bool(ndma.get("ok")))
     m1, m2, m3 = st.columns(3)
-    m1.metric("Government alert items", len(imd_rows) + len(ndma_rows))
+    m1.metric("Government alert items", len(imd_rows) + len(imd_public_alerts) + len(ndma_rows))
     m2.metric("Sources responding", f"{good_sources} / 2")
     successful_times = [x for x in (imd.get("fetched_at"), ndma.get("fetched_at")) if x]
     m3.metric("Last successful fetch", _fmt_time(max(successful_times) if successful_times else None))
@@ -98,6 +99,18 @@ def render_live_alerts() -> None:
                 "IMD_API_TOKEN is missing. For the deployed app, add it in Streamlit Community Cloud → app settings → "
                 "Secrets. For local runs, add it to your ignored .env file and restart Streamlit."
             )
+        public_result = imd.get("public_alerts", {})
+        if public_result.get("ok"):
+            st.markdown(
+                f"- **Public IMD CAP feed:** OK · {len(public_result.get('alerts', []))} alerts · "
+                f"fetched {_fmt_time(public_result.get('fetched_at'))}"
+            )
+            st.caption(
+                "This public CAP feed is linked from IMD's official Mausam website. "
+                "It supplements the authenticated district API; it does not replace district nowcasts/warnings."
+            )
+        elif public_result.get("error"):
+            st.caption(f"Public IMD CAP fallback: {public_result['error']}")
         for name in ("nowcast", "warnings"):
             result = imd.get(name, {})
             status = "OK" if result.get("ok") else "Unavailable"
@@ -109,7 +122,9 @@ def render_live_alerts() -> None:
                 st.caption(f"{name.title()} response served from the five-minute cache.")
             if result.get("error"):
                 st.caption(result["error"])
-        st.markdown(f"[Open IMD source]({IMD_REFERENCE})")
+        st.markdown(f"[Open IMD API reference]({IMD_REFERENCE})")
+        if public_result.get("source_url"):
+            st.markdown(f"[Open public IMD CAP feed]({public_result['source_url']})")
         st.divider()
         st.markdown("**NDMA SACHET / India CAP**")
         st.markdown(f"Status: {'🟢 Request succeeded' if ndma.get('ok') else '🟡 Unavailable'}")
@@ -124,6 +139,21 @@ def render_live_alerts() -> None:
         if ndma.get("cached"):
             st.caption("SACHET returned HTTP 304; the previously fetched feed is being reused.")
         st.markdown(f"[Open SACHET portal]({NDMA_PORTAL}) · [CAP feed guide]({NDMA_FEED_GUIDE})")
+
+    st.markdown("### IMD public CAP alerts")
+    if not imd_public_alerts:
+        st.info(
+            "No public IMD CAP items were retrieved. District nowcasts and warnings still require the issued IMD API token."
+        )
+    else:
+        for row in imd_public_alerts[:100]:
+            with st.container(border=True):
+                st.markdown(f"**{_value(row, ('title',), 'IMD weather alert')}**")
+                st.caption(" · ".join(v for v in (_value(row, ("published",), ""), _value(row, ("source",), "IMD public CAP feed")) if v))
+                if row.get("summary"):
+                    st.write(row["summary"])
+                if row.get("link", "").startswith("https://"):
+                    st.markdown(f"[Verify alert at source]({row['link']})")
 
     st.markdown("### IMD district nowcasts")
     if not imd.get("nowcast", {}).get("ok"):

@@ -19,6 +19,8 @@ import requests
 IMD_API_BASE = os.getenv("IMD_API_BASE", "https://api.imd.gov.in/api/v1").rstrip("/")
 IMD_API_PORTAL = "https://api.imd.gov.in/public/index.php"
 IMD_REFERENCE = "https://api.imd.gov.in/public/api_reference.html"
+# Public CAP/RSS alerts linked directly from the official IMD Mausam website.
+IMD_PUBLIC_CAP_URL = "https://cap-sources.s3.amazonaws.com/in-imd-en/rss.xml"
 NDMA_PORTAL = "https://sachet.ndma.gov.in/"
 NDMA_FEED_GUIDE = "https://sachet.ndma.gov.in/CapFeed"
 
@@ -143,16 +145,26 @@ def get_imd_live_data(state: str = "", district: str = "") -> dict[str, Any]:
     warnings = _cached_get_json(f"{api_base}/districtwarning", token)
     nowcast["rows"] = _clean_rows(nowcast["rows"], state, district)
     warnings["rows"] = _clean_rows(warnings["rows"], state, district)
+    public_alerts = (
+        {"ok": False, "alerts": [], "fetched_at": None, "cached": False,
+         "error": None, "source_url": IMD_PUBLIC_CAP_URL}
+        if token else get_imd_public_cap_alerts()
+    )
     successful = sum(bool(item["ok"]) for item in (nowcast, warnings))
+    successful_times = [
+        item["fetched_at"] for item in (nowcast, warnings, public_alerts)
+        if item.get("fetched_at")
+    ]
     return {
         "source": "India Meteorological Department (IMD)",
         "source_url": IMD_REFERENCE,
         "portal_url": IMD_API_PORTAL,
         "configured": bool(token),
-        "ok": successful > 0,
-        "fetched_at": max((item["fetched_at"] for item in (nowcast, warnings) if item["fetched_at"]), default=None),
+        "ok": successful > 0 or bool(public_alerts.get("ok")),
+        "fetched_at": max(successful_times, default=None),
         "nowcast": nowcast,
         "warnings": warnings,
+        "public_alerts": public_alerts,
         "state_filter": state,
         "district_filter": district,
         "note": "Official weather warnings are contextual hazard signals. They are not verified rescue incidents and do not alter incident scores.",
@@ -166,7 +178,7 @@ def _xml_text(element: ET.Element, local_name: str) -> str:
     return ""
 
 
-def _parse_cap_xml(content: bytes) -> list[dict[str, Any]]:
+def _parse_cap_xml(content: bytes, source: str = "NDMA SACHET CAP feed") -> list[dict[str, Any]]:
     """Parse RSS item XML or a single CAP alert XML document."""
     try:
         root = ET.fromstring(content)
@@ -180,7 +192,7 @@ def _parse_cap_xml(content: bytes) -> list[dict[str, Any]]:
             "summary": _xml_text(node, "description"),
             "link": _xml_text(node, "link"),
             "published": _xml_text(node, "pubDate"),
-            "source": "NDMA SACHET CAP feed",
+            "source": source,
         }
         if item["title"] or item["summary"]:
             items.append(item)
@@ -193,6 +205,53 @@ def _parse_cap_xml(content: bytes) -> list[dict[str, Any]]:
             "source": "NDMA SACHET CAP feed",
         })
     return items
+
+
+def get_imd_public_cap_alerts() -> dict[str, Any]:
+    """Fetch the public IMD CAP/RSS feed linked from IMD's official website."""
+    now = time.monotonic()
+    cache_key = "imd-public-cap:" + IMD_PUBLIC_CAP_URL
+    with _lock:
+        cached = _cache.get(cache_key)
+        if cached and now - cached["stored_at"] < _CACHE_SECONDS:
+            return {
+                "ok": True, "alerts": cached["alerts"], "fetched_at": cached["fetched_at"],
+                "cached": True, "error": None, "source_url": IMD_PUBLIC_CAP_URL,
+            }
+
+    headers = {
+        "Accept": "application/rss+xml, application/xml, text/xml",
+        "User-Agent": "ResQ-AI/1.0 (government-data dashboard)",
+    }
+    if cached and cached.get("etag"):
+        headers["If-None-Match"] = cached["etag"]
+    try:
+        response = requests.get(IMD_PUBLIC_CAP_URL, headers=headers, timeout=_TIMEOUT_SECONDS)
+        if response.status_code == 304 and cached:
+            with _lock:
+                cached["stored_at"] = now
+            return {
+                "ok": True, "alerts": cached["alerts"], "fetched_at": cached["fetched_at"],
+                "cached": True, "error": None, "source_url": IMD_PUBLIC_CAP_URL,
+            }
+        response.raise_for_status()
+        alerts = _parse_cap_xml(response.content, source="IMD public CAP feed")
+        fetched_at = _now()
+        with _lock:
+            _cache[cache_key] = {
+                "alerts": alerts, "fetched_at": fetched_at, "stored_at": now,
+                "etag": response.headers.get("ETag"),
+            }
+        return {
+            "ok": True, "alerts": alerts, "fetched_at": fetched_at,
+            "cached": False, "error": None, "source_url": IMD_PUBLIC_CAP_URL,
+        }
+    except requests.RequestException as exc:
+        return {
+            "ok": False, "alerts": [], "fetched_at": None, "cached": False,
+            "error": f"Could not retrieve IMD public CAP feed: {type(exc).__name__}.",
+            "source_url": IMD_PUBLIC_CAP_URL,
+        }
 
 
 def get_ndma_cap_alerts() -> dict[str, Any]:

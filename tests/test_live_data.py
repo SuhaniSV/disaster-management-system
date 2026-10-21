@@ -1,3 +1,4 @@
+import core.live_data as live_data
 from core.live_data import _as_rows, _parse_cap_xml, get_ndma_cap_alerts
 
 
@@ -38,3 +39,27 @@ def test_ndma_requires_confirmed_feed_url_and_does_not_guess():
     assert result["configured"] is False
     assert result["ok"] is False
     assert result["alerts"] == []
+
+def test_imd_public_cap_fallback_fetches_official_rss(monkeypatch):
+    live_data._cache.pop("imd-public-cap:" + live_data.IMD_PUBLIC_CAP_URL, None)
+
+    class FakeResponse:
+        status_code = 200
+        headers = {"ETag": '"test-etag"'}
+        content = b"""<rss version="2.0"><channel><item>
+        <title>IMD weather alert</title><description>Official CAP alert</description>
+        <link>https://mausam.imd.gov.in/</link>
+        <pubDate>Wed, 21 Oct 2026 10:00:00 GMT</pubDate>
+        </item></channel></rss>"""
+
+        def raise_for_status(self):
+            return None
+
+    monkeypatch.setattr(live_data.requests, "get", lambda *args, **kwargs: FakeResponse())
+    result = live_data.get_imd_public_cap_alerts()
+
+    assert result["ok"] is True
+    assert result["alerts"][0]["title"] == "IMD weather alert"
+    assert result["alerts"][0]["source"] == "IMD public CAP feed"
+    assert result["source_url"] == live_data.IMD_PUBLIC_CAP_URL
+    live_data._cache.pop("imd-public-cap:" + live_data.IMD_PUBLIC_CAP_URL, None)
