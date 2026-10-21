@@ -399,31 +399,59 @@ def render_live_alerts() -> None:
     with st.expander("Source status and diagnostics", expanded=True):
         st.markdown("**India Meteorological Department (IMD)**")
         st.markdown(
-            "Status: "
+            "Public CAP status: "
             + (
-                "🟢 Public feed reachable"
+                "🟢 Public CAP request succeeded"
                 if public_result.get("ok")
-                else "🟡 Public feed unavailable"
+                else "🟡 Public CAP feed unavailable"
             )
         )
+        st.caption(
+            "The public CAP feed does not require IMD_API_TOKEN. The token "
+            "is only needed for the authenticated district nowcast and "
+            "district-warning endpoints."
+        )
+
+        if not imd.get("configured"):
+            st.warning(
+                "IMD_API_TOKEN is not configured, so authenticated district "
+                "nowcasts and warnings cannot be fetched. Add an issued token "
+                "in Streamlit Community Cloud → App settings → Secrets. "
+                "This does not disable the public IMD CAP feed."
+            )
+
+        if imd.get("error"):
+            st.caption(str(imd["error"]))
 
         if public_result.get("ok"):
+            rss_status = (
+                "RSS reachable"
+                if public_result.get("rss_ok")
+                else "RSS unavailable"
+            )
+            if public_result.get("wis2_ok"):
+                wis2_status = "WIS2 reachable"
+            elif public_result.get("error"):
+                wis2_status = "WIS2 fallback failed"
+            else:
+                wis2_status = "WIS2 not needed"
+
+            st.markdown(
+                f"- **Public IMD CAP feed:** {rss_status} · "
+                f"{wis2_status} · {len(imd_public_alerts)} active alerts · "
+                f"{public_result.get('records_seen', 0)} CAP records matched · "
+                f"fetched {_fmt_time(public_result.get('fetched_at'))}"
+            )
             st.caption(
-                f"Active alerts: {len(imd_public_alerts)} · "
-                f"CAP records: {public_result.get('records_seen', 0)} · "
-                f"Regional outlook warnings: "
-                f"{len(imd_outlook.get('rows', []))} · "
-                f"Fetched {_fmt_time(public_result.get('fetched_at'))}"
+                "Zero active alerts means no active CAP items were returned "
+                "by the checked feeds; it does not mean there are no weather "
+                "risks. District nowcasts and warnings are separate "
+                "authenticated endpoints."
             )
         elif public_result.get("error"):
             st.caption(f"Public feed error: {public_result['error']}")
 
-        if not imd.get("configured"):
-            st.caption(
-                "District nowcast and warnings: Unavailable — "
-                "`IMD_API_TOKEN` not configured."
-            )
-        else:
+        if imd.get("configured"):
             st.caption(
                 f"District nowcast: "
                 f"{'Available' if nowcast_result.get('ok') else 'Unavailable'} "
