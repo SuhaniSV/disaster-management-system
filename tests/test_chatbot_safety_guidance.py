@@ -165,3 +165,50 @@ def test_app_help_is_used_even_when_llm_is_configured(monkeypatch):
     monkeypatch.setattr(chatbot.LLMClient, "complete_json", unexpected_llm_call)
     answer = chatbot.answer_question("How can I report an incident?", _empty_center())
     assert "ANALYZE INCIDENT" in answer
+
+
+def test_app_help_matches_natural_variations_and_typos():
+    from components.chatbot import _app_help
+
+    canonical = _app_help("How do I report an incident?")
+    variations = [
+        "how can i report an incident in this app",
+        "how to repot incident in the application",
+        "pls tell me how to report an incident",
+        "i need to submit incident report",
+    ]
+    assert canonical is not None
+    for question in variations:
+        assert _app_help(question) == canonical
+
+
+def test_greeting_works_with_short_and_misspelled_inputs():
+    from components.chatbot import _greeting_response
+
+    for question in ("hi", "Hello!", "heyy", "hii there", "good morning"):
+        answer = _greeting_response(question)
+        assert answer is not None
+        assert "ResQ Assistant" in answer
+
+
+def test_safety_intent_matching_tolerates_typos_and_extra_words():
+    from components.chatbot import _safety_guidance
+
+    assert _safety_guidance("what should i do in a big floood emergency") == _safety_guidance(
+        "How do I stay safe in a flood?"
+    )
+    assert _safety_guidance("there is an earth quak, what should i do") is not None
+
+
+def test_known_app_help_is_matched_before_llm(monkeypatch):
+    import components.chatbot as chatbot
+
+    monkeypatch.setattr(chatbot, "llm_configured", lambda: True)
+
+    class UnexpectedLLMClient:
+        def complete_json(self, *args, **kwargs):
+            raise AssertionError("Known app-help intents should be handled consistently")
+
+    monkeypatch.setattr(chatbot, "LLMClient", UnexpectedLLMClient)
+    answer = chatbot.answer_question("how can i repot incident in this app", _empty_center())
+    assert "ANALYZE INCIDENT" in answer
