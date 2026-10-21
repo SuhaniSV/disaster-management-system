@@ -406,10 +406,11 @@ def _parse_wis2_cap_items(
             or ""
         )
         normalized_metadata = metadata_id.casefold().replace("_", "-")
+        expected_metadata = IMD_CAP_METADATA_ID.casefold().replace("_", "-")
         normalized_data_id = data_id.casefold()
 
         if (
-            IMD_CAP_METADATA_ID.casefold() not in normalized_metadata
+            expected_metadata not in normalized_metadata
             and "cap_alerts" not in normalized_data_id
             and "cap-alerts" not in normalized_data_id
         ):
