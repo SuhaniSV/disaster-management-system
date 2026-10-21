@@ -101,10 +101,40 @@ def _greeting_response(question: str) -> str | None:
     return None
 
 
+
+def _incident_count_answer(question: str, center: CommandCenter) -> str | None:
+    """Answer explicit incident-count questions from the loaded snapshot, not from guesses."""
+    raw = re.sub(r"[^a-z0-9]+", " ", question.casefold()).strip()
+    count_intent = ("how many" in raw or "number of" in raw or "count of" in raw or "total" in raw or bool(re.search(r"\\bcount\\b", raw)))
+    if not count_intent:
+        return None
+    type_aliases = {
+        "earthquake": ("earthquake", "earthquakes", "earth quake", "tremor", "aftershock"),
+        "flood": ("flood", "floods", "flooding"),
+        "fire": ("fire", "fires", "wildfire", "wildfires"),
+        "cyclone": ("cyclone", "cyclones", "hurricane", "hurricanes", "typhoon", "typhoons"),
+        "landslide": ("landslide", "landslides"),
+        "storm": ("storm", "storms"),
+    }
+    requested_type = next((kind for kind, aliases in type_aliases.items() if any(re.search(rf"\\b{re.escape(alias)}\\b", raw) for alias in aliases)), None)
+    if requested_type:
+        aliases = type_aliases[requested_type]
+        count = sum(1 for row in center.incidents if any(re.search(rf"\\b{re.escape(alias)}\\b", re.sub(r"[^a-z0-9]+", " ", str(row.get("disaster_type") or "").casefold())) for alias in aliases))
+        label = requested_type.capitalize()
+        return (f"**{count} {label.lower()}{'s' if count != 1 else ''} reported in the current incident snapshot.**\\n\\n"
+                "This count is based only on the incident records currently loaded in ResQ-AI. "
+                "The operational dataset may be simulated or incomplete, so this is not a verified live or government-wide count.")
+    if any(word in raw for word in ("incident", "incidents", "disaster", "disasters", "reported", "report")):
+        return (f"**{len(center.incidents)} incident records** are currently listed in the ResQ-AI snapshot.\\n\\n"
+                "This is the count of records loaded in the app, not necessarily the number of unique real-world events. "
+                "The dataset may be simulated or incomplete.")
+    return None
+
+
 def _app_help(question: str) -> str | None:
     """Answer common how-to questions using the repository's actual app workflow."""
     q = question.casefold()
-    if _has_phrase(q, ("report an incident", "report incident", "submit an incident", "file an incident", "create an incident report", "how do i report", "how can i report")):
+    if _has_phrase(q, ("report an incident", "report incident", "submit an incident", "file an incident", "create an incident report", "how do i report an incident", "how can i report an incident")):
         return (
             "**How to report an incident**\n\n"
             "1. Open **Report Incident** from the sidebar.\n"
