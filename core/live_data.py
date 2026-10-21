@@ -321,7 +321,7 @@ def get_imd_public_cap_alerts() -> dict[str, Any]:
         records_seen = len(parsed_rss)
         alerts = _active_cap_alerts(parsed_rss)
     except requests.RequestException as exc:
-        errors.append(f"IMD RSS: {type(exc).__name__}")
+        errors.append(f"IMD RSS: {type(exc).__name__}: {str(exc)[:180]}")
 
     if not alerts:
         source_url = IMD_WIS2_CAP_URL
