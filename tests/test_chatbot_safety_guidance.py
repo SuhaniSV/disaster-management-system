@@ -247,6 +247,40 @@ def test_incident_reporting_how_to_still_matches():
         assert "ANALYZE INCIDENT" in answer
 
 
+
+def test_incident_count_question_tolerates_typos_in_count_phrase_and_disaster_type():
+    from components.chatbot import _incident_count_answer
+
+    center = CommandCenter(bundle={
+        "incidents": [
+            {"id": "EQ-1", "disaster_type": "Earthquake"},
+            {"id": "EQ-2", "disaster_type": "Earthquake"},
+            {"id": "FL-1", "disaster_type": "Flood"},
+        ],
+        "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": [],
+    })
+
+    for question in (
+        "how many earthquaks reported",
+        "how meny earthquakes reported",
+        "whats the number of earthquke incidents",
+    ):
+        answer = _incident_count_answer(question, center)
+        assert answer is not None, question
+        assert "2 earthquakes" in answer, question
+        assert "not a verified live" in answer, question
+
+
+def test_incident_count_does_not_claim_a_count_without_count_intent():
+    from components.chatbot import _incident_count_answer
+
+    center = CommandCenter(bundle={
+        "incidents": [{"id": "EQ-1", "disaster_type": "Earthquake"}],
+        "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": [],
+    })
+
+    assert _incident_count_answer("Tell me about earthquakes", center) is None
+
 def test_count_question_with_no_matching_records_returns_zero():
     from components.chatbot import _incident_count_answer
 
