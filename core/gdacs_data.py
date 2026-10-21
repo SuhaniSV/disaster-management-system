@@ -27,8 +27,8 @@ def get_gdacs_events() -> dict[str, Any]:
 
     today = datetime.now(timezone.utc).date()
     params = {
-        "fromDate": (today - timedelta(days=7)).isoformat(),
-        "toDate": today.isoformat(),
+        "fromdate": (today - timedelta(days=7)).isoformat(),
+        "todate": today.isoformat(),
         "eventlist": "DR,EQ,FL,TC,VO,WF",
         "alertlevel": "Green;Orange;Red",
         "pagesize": 100,
@@ -93,7 +93,7 @@ def get_gdacs_events() -> dict[str, Any]:
                 "expires": end,
                 "latitude": latitude,
                 "longitude": longitude,
-                "link": _event_link(props),
+                "link": _source_link(props),
                 "source": "GDACS",
             })
         result.update({
@@ -110,8 +110,11 @@ def get_gdacs_events() -> dict[str, Any]:
     return result
 
 
-def _event_link(props: dict[str, Any]) -> str:
-    """Build a source link only from a numeric GDACS event identifier."""
+def _source_link(props: dict[str, Any]) -> str:
+    """Prefer an official source URL; otherwise build a grounded event link."""
+    url = props.get("url") or props.get("link")
+    if isinstance(url, str) and url.startswith("https://www.gdacs.org/"):
+        return url
     event_id = props.get("eventid")
     event_type = str(props.get("eventtype") or "").strip()
     if event_id is None or not str(event_id).isdigit() or not event_type:
