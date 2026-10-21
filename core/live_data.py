@@ -5,6 +5,7 @@ change deterministic incident scores or dispatch resources.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import os
 import threading
@@ -21,6 +22,8 @@ IMD_API_PORTAL = "https://api.imd.gov.in/public/index.php"
 IMD_REFERENCE = "https://api.imd.gov.in/public/api_reference.html"
 # Public CAP/RSS alerts linked directly from the official IMD Mausam website.
 IMD_PUBLIC_CAP_URL = "https://cap-sources.s3.amazonaws.com/in-imd-en/rss.xml"
+IMD_WIS2_CAP_URL = "https://wis2box.imd.gov.in/oapi/collections/messages/items"
+IMD_CAP_METADATA_ID = "urn:wmo:md:in-imd:cap_alerts"
 NDMA_PORTAL = "https://sachet.ndma.gov.in/"
 NDMA_FEED_GUIDE = "https://sachet.ndma.gov.in/CapFeed"
 
@@ -192,6 +195,9 @@ def _parse_cap_xml(content: bytes, source: str = "NDMA SACHET CAP feed") -> list
             "summary": _xml_text(node, "description"),
             "link": _xml_text(node, "link"),
             "published": _xml_text(node, "pubDate"),
+            "expires": _xml_text(node, "expires"),
+            "severity": _xml_text(node, "severity"),
+            "area": _xml_text(node, "areaDesc"),
             "source": source,
         }
         if item["title"] or item["summary"]:
@@ -202,56 +208,142 @@ def _parse_cap_xml(content: bytes, source: str = "NDMA SACHET CAP feed") -> list
             "summary": _xml_text(root, "description") or _xml_text(root, "instruction"),
             "link": _xml_text(root, "web"),
             "published": _xml_text(root, "sent"),
-            "source": "NDMA SACHET CAP feed",
+            "expires": _xml_text(root, "expires"),
+            "severity": _xml_text(root, "severity"),
+            "area": _xml_text(root, "areaDesc"),
+            "source": source,
         })
     return items
 
 
+def _active_cap_alerts(alerts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Exclude CAP alerts whose explicit expiry time is in the past."""
+    now = datetime.now(timezone.utc)
+    active = []
+    for alert in alerts:
+        expiry = str(alert.get("expires") or "").strip()
+        if expiry:
+            try:
+                parsed = datetime.fromisoformat(expiry.replace("Z", "+00:00"))
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=timezone.utc)
+                if parsed.astimezone(timezone.utc) < now:
+                    continue
+            except ValueError:
+                pass
+        active.append(alert)
+    return active
+
+
+def _parse_wis2_cap_items(payload: Any) -> tuple[list[dict[str, Any]], int]:
+    """Extract IMD CAP XML from WIS2 notification records."""
+    if not isinstance(payload, dict):
+        return [], 0
+    features = payload.get("features", payload.get("items", []))
+    if not isinstance(features, list):
+        return [], 0
+    alerts: list[dict[str, Any]] = []
+    seen = 0
+    for feature in features:
+        if not isinstance(feature, dict):
+            continue
+        props = feature.get("properties", feature)
+        if not isinstance(props, dict):
+            continue
+        metadata_id = str(props.get("metadata_id") or props.get("metadataId") or "")
+        data_id = str(props.get("data_id") or props.get("dataId") or "")
+        if metadata_id != IMD_CAP_METADATA_ID and "cap_alerts" not in data_id:
+            continue
+        seen += 1
+        content = props.get("content")
+        encoded = content.get("value") if isinstance(content, dict) else None
+        if isinstance(encoded, str) and encoded:
+            try:
+                xml_content = base64.b64decode(encoded).decode("utf-8", errors="replace").encode("utf-8")
+                alerts.extend(_parse_cap_xml(xml_content, source="IMD WIS2 CAP feed"))
+                continue
+            except (ValueError, TypeError):
+                pass
+        links = props.get("links", feature.get("links", []))
+        if isinstance(links, list):
+            for link in links:
+                if not isinstance(link, dict):
+                    continue
+                href = str(link.get("href") or "")
+                if not href.startswith("https://wis2box.imd.gov.in/"):
+                    continue
+                try:
+                    response = requests.get(href, timeout=_TIMEOUT_SECONDS)
+                    response.raise_for_status()
+                    parsed = _parse_cap_xml(response.content, source="IMD WIS2 CAP feed")
+                    if parsed:
+                        alerts.extend(parsed)
+                        break
+                except requests.RequestException:
+                    continue
+    return _active_cap_alerts(alerts), seen
+
+
 def get_imd_public_cap_alerts() -> dict[str, Any]:
-    """Fetch the public IMD CAP/RSS feed linked from IMD's official website."""
+    """Use the public IMD RSS feed, then the official IMD WIS2 CAP catalogue if RSS is empty."""
     now = time.monotonic()
     cache_key = "imd-public-cap:" + IMD_PUBLIC_CAP_URL
     with _lock:
         cached = _cache.get(cache_key)
         if cached and now - cached["stored_at"] < _CACHE_SECONDS:
             return {
-                "ok": True, "alerts": cached["alerts"], "fetched_at": cached["fetched_at"],
-                "cached": True, "error": None, "source_url": IMD_PUBLIC_CAP_URL,
+                "ok": True, "alerts": cached["alerts"], "records_seen": cached.get("records_seen", len(cached["alerts"])),
+                "fetched_at": cached["fetched_at"], "cached": True, "error": cached.get("error"),
+                "source_url": cached.get("source_url", IMD_PUBLIC_CAP_URL),
             }
 
-    headers = {
-        "Accept": "application/rss+xml, application/xml, text/xml",
-        "User-Agent": "ResQ-AI/1.0 (government-data dashboard)",
-    }
-    if cached and cached.get("etag"):
-        headers["If-None-Match"] = cached["etag"]
+    errors: list[str] = []
+    alerts: list[dict[str, Any]] = []
+    records_seen = 0
+    etag = None
+    source_url = IMD_PUBLIC_CAP_URL
     try:
-        response = requests.get(IMD_PUBLIC_CAP_URL, headers=headers, timeout=_TIMEOUT_SECONDS)
-        if response.status_code == 304 and cached:
-            with _lock:
-                cached["stored_at"] = now
-            return {
-                "ok": True, "alerts": cached["alerts"], "fetched_at": cached["fetched_at"],
-                "cached": True, "error": None, "source_url": IMD_PUBLIC_CAP_URL,
-            }
+        response = requests.get(
+            IMD_PUBLIC_CAP_URL,
+            headers={"Accept": "application/rss+xml, application/xml, text/xml",
+                     "User-Agent": "ResQ-AI/1.0 (government-data dashboard)"},
+            timeout=_TIMEOUT_SECONDS,
+        )
         response.raise_for_status()
-        alerts = _parse_cap_xml(response.content, source="IMD public CAP feed")
-        fetched_at = _now()
-        with _lock:
-            _cache[cache_key] = {
-                "alerts": alerts, "fetched_at": fetched_at, "stored_at": now,
-                "etag": response.headers.get("ETag"),
-            }
-        return {
-            "ok": True, "alerts": alerts, "fetched_at": fetched_at,
-            "cached": False, "error": None, "source_url": IMD_PUBLIC_CAP_URL,
-        }
+        etag = response.headers.get("ETag")
+        alerts = _active_cap_alerts(_parse_cap_xml(response.content, source="IMD public CAP feed"))
+        records_seen = len(alerts)
     except requests.RequestException as exc:
-        return {
-            "ok": False, "alerts": [], "fetched_at": None, "cached": False,
-            "error": f"Could not retrieve IMD public CAP feed: {type(exc).__name__}.",
-            "source_url": IMD_PUBLIC_CAP_URL,
+        errors.append(f"IMD RSS: {type(exc).__name__}")
+
+    if not alerts:
+        source_url = IMD_WIS2_CAP_URL
+        try:
+            response = requests.get(
+                IMD_WIS2_CAP_URL,
+                params={"limit": 100, "f": "json"},
+                headers={"Accept": "application/geo+json, application/json",
+                         "User-Agent": "ResQ-AI/1.0 (government-data dashboard)"},
+                timeout=_TIMEOUT_SECONDS,
+            )
+            response.raise_for_status()
+            alerts, records_seen = _parse_wis2_cap_items(response.json())
+        except (requests.RequestException, ValueError) as exc:
+            errors.append(f"IMD WIS2 CAP: {type(exc).__name__}")
+
+    fetched_at = _now()
+    error = None if alerts else ("No active alerts parsed. " + "; ".join(errors) if errors else None)
+    result = {
+        "ok": True, "alerts": alerts, "records_seen": records_seen,
+        "fetched_at": fetched_at, "cached": False, "error": error,
+        "source_url": source_url,
+    }
+    with _lock:
+        _cache[cache_key] = {
+            "alerts": alerts, "records_seen": records_seen, "fetched_at": fetched_at,
+            "stored_at": now, "etag": etag, "error": error, "source_url": source_url,
         }
+    return result
 
 
 def get_ndma_cap_alerts() -> dict[str, Any]:

@@ -63,3 +63,23 @@ def test_imd_public_cap_fallback_fetches_official_rss(monkeypatch):
     assert result["alerts"][0]["source"] == "IMD public CAP feed"
     assert result["source_url"] == live_data.IMD_PUBLIC_CAP_URL
     live_data._cache.pop("imd-public-cap:" + live_data.IMD_PUBLIC_CAP_URL, None)
+
+
+
+def test_wis2_parser_extracts_active_imd_cap_record():
+    payload = {
+        "features": [{
+            "properties": {
+                "metadata_id": live_data.IMD_CAP_METADATA_ID,
+                "data_id": "in-imd:cap_alerts/test-alert",
+                "content": {"encoding": "base64", "value": "PGNhcDphbGVydCB4bWxuczpjYXA9InVybjpvYXNpczpuYW1lczp0YzplbWVyZ2VuY3k6Y2FwOjEuMiI+PGNhcDppbmZvPjxjYXA6ZXZlbnQ+SGVhdnkgUmFpbjwvY2FwOmV2ZW50PjxjYXA6aGVhZGxpbmU+SGVhdnkgcmFpbiB3YXJuaW5nPC9jYXA6aGVhZGxpbmU+PGNhcDpkZXNjcmlwdGlvbj5PZmZpY2lhbCB3YXJuaW5nPC9jYXA6ZGVzY3JpcHRpb24+PGNhcDpzZXZlcml0eT5TZXZlcmU8L2NhcDpzZXZlcml0eT48Y2FwOmFyZWE+PGNhcDphcmVhRGVzYz5FeGFtcGxlIGRpc3RyaWN0PC9jYXA6YXJlYURlc2M+PC9jYXA6YXJlYT48L2NhcDppbmZvPjxjYXA6c2VudD4yMDI2LTEwLTIxVDEwOjAwOjAwKzA1OjMwPC9jYXA6c2VudD48Y2FwOmV4cGlyZXM+MjAyNi0xMC0yMlQxMDowMDowMCswNTozMDwvY2FwOmV4cGlyZXM+PC9jYXA6YWxlcnQ+"},
+            }
+        }]
+    }
+    alerts, seen = live_data._parse_wis2_cap_items(payload)
+    assert seen == 1
+    assert len(alerts) == 1
+    assert alerts[0]["title"] == "Heavy rain warning"
+    assert alerts[0]["severity"] == "Severe"
+    assert alerts[0]["area"] == "Example district"
+    assert alerts[0]["source"] == "IMD WIS2 CAP feed"

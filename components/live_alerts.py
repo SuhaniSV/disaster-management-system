@@ -102,7 +102,8 @@ def render_live_alerts() -> None:
         public_result = imd.get("public_alerts", {})
         if public_result.get("ok"):
             st.markdown(
-                f"- **Public IMD CAP feed:** OK · {len(public_result.get('alerts', []))} alerts · "
+                f"- **Public IMD CAP feed:** OK · {len(public_result.get('alerts', []))} active alerts · "
+                f"{public_result.get('records_seen', len(public_result.get('alerts', [])))} CAP records checked · "
                 f"fetched {_fmt_time(public_result.get('fetched_at'))}"
             )
             st.caption(
@@ -124,7 +125,9 @@ def render_live_alerts() -> None:
                 st.caption(result["error"])
         st.markdown(f"[Open IMD API reference]({IMD_REFERENCE})")
         if public_result.get("source_url"):
-            st.markdown(f"[Open public IMD CAP feed]({public_result['source_url']})")
+            st.markdown(f"[Open active IMD CAP source]({public_result['source_url']})")
+        if public_result.get("error"):
+            st.caption(public_result["error"])
         st.divider()
         st.markdown("**NDMA SACHET / India CAP**")
         st.markdown(f"Status: {'🟢 Request succeeded' if ndma.get('ok') else '🟡 Unavailable'}")
@@ -142,9 +145,17 @@ def render_live_alerts() -> None:
 
     st.markdown("### IMD public CAP alerts")
     if not imd_public_alerts:
-        st.info(
-            "No public IMD CAP items were retrieved. District nowcasts and warnings still require the issued IMD API token."
-        )
+        checked = imd.get("public_alerts", {}).get("records_seen", 0)
+        if checked:
+            st.info(
+                f"The official IMD feed was checked ({checked} CAP records), but none had an active, unexpired alert. "
+                "District nowcasts and warnings still require the issued IMD API token."
+            )
+        else:
+            st.info(
+                "No active public IMD CAP items were retrieved. ResQ-AI checks the public RSS feed and the official IMD WIS2 CAP catalogue. "
+                "District nowcasts and warnings still require the issued IMD API token."
+            )
     else:
         for row in imd_public_alerts[:100]:
             with st.container(border=True):
