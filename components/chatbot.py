@@ -93,7 +93,12 @@ def _safety_guidance(question: str) -> str | None:
             "[India Meteorological Department](https://mausam.imd.gov.in/)\n\n"
             "This is general preparedness guidance, not a diagnosis or a current local heat alert."
         )
-    if any(word in q for word in ("emergency number", "call emergency", "immediate danger", "urgent help")):
+    if any(phrase in q for phrase in (
+        "emergency number", "call emergency", "immediate danger", "urgent help",
+        "call an ambulance", "need an ambulance", "send an ambulance",
+        "someone is injured", "person is injured", "medical emergency",
+        "call the police", "call police", "call fire brigade", "need emergency help",
+    )):
         return (
             "**If someone is in immediate danger**\n\n"
             "- Contact local emergency services and give the exact location, hazard, injuries, and any immediate access risks.\n"
