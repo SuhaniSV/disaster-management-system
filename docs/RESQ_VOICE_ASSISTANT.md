@@ -1,21 +1,27 @@
-# ResQ Assistant browser voice mode
+# ResQ Voice — Alexa+ track web simulation
 
-The ResQ Assistant page includes an optional browser voice interface. It uses the browser's Web Speech API to recognize spoken questions and to read answers aloud. The recognized text is passed into the same `answer_question` logic as typed chat, so the assistant continues to use the current command-center snapshot and its existing deterministic fallback.
+ResQ Voice is the voice-first web demo surface for the Alexa+ hackathon track. Start a conversation once, speak questions, hear answers automatically, continue with follow-ups, and use **Interrupt / ask now** to stop the current spoken answer.
 
-## Try it
+## Run it
 
-1. Deploy the repository through Streamlit Community Cloud, or run it locally with `streamlit run app.py`.
-2. Open **ResQ Assistant** from the app navigation.
-3. In **Talk to ResQ Assistant**, choose **Start speaking** and allow microphone access.
-4. Ask a supported question, for example “Which incident is most urgent?” or “Which shelters have space?”
-5. Read the response in the chat. To hear it aloud, press **Speak answer**.
+1. Install dependencies and launch the app: `pip install -r requirements.txt`, then `streamlit run app.py`.
+2. Open **ResQ Assistant** in the Streamlit navigation.
+3. Use a recent Chrome or Edge browser, allow microphone access, and click **Start conversation**.
+4. Ask a general question such as "What should I do during an earthquake?" or an operational question such as "Which incident is most urgent?" or "Which shelters have space?".
+5. Keep speaking after each answer; click **Interrupt / ask now** to stop speech and ask a follow-up. Click **End conversation** when finished.
 
-Use a current browser that supports the Web Speech API (typically Chrome or Edge). Browser support and microphone permissions vary. If speech recognition is unavailable, the regular text chat remains available.
+## How it works
 
-## Scope and safety
+- Browser speech recognition turns spoken input into text.
+- The transcript goes through the existing ResQ Assistant response pipeline.
+- Deterministic safety guidance and the existing LLM client (when configured) answer general questions and questions grounded in the current command-center snapshot. A deterministic fallback remains available without an LLM key.
+- Answers are spoken automatically using browser speech synthesis. Voice options depend on the browser and operating system.
+- The separate self-hosted MCP server remains the Alexa+ track's tool surface. Run it separately with `python -m resq_mcp.server` to demonstrate the read-only incident, priority, resource, shelter, briefing, and configured government-alert tools over Streamable HTTP.
 
-- This is a browser-based voice demo for the Alexa-related hackathon work; it is **not** an official Amazon Alexa device connection or direct Alexa+ account link.
-- Speech recognition runs through the browser's Web Speech API. Browser implementation and privacy behavior may vary by browser.
-- Voice questions use the same ResQ Assistant logic and do not call the separate MCP server directly.
-- Incident/resource records may be simulated or incomplete. The assistant cannot call emergency services, dispatch responders, verify capacity, or authorize operational actions.
-- For direct Alexa+ MCP testing, follow [ALEXA_PLUS_HACKATHON.md](ALEXA_PLUS_HACKATHON.md). A public Alexa+ connection still requires an eligible endpoint, HTTPS, and the required authentication/account-linking configuration.
+## Important distinction
+
+This is a **simulated Alexa+-style web experience** for the hackathon, not Amazon's actual Alexa voice engine, an Echo-device integration, or an authenticated Alexa+ account link. It provides hands-free turn-taking and a manual interruption control; browser speech recognition/synthesis is not full-duplex streaming speech-to-speech.
+
+## Safety and data integrity
+
+Operational answers use the app's current command-center records. Those records can be simulated or incomplete and may differ from the separate MCP server's demo snapshot. The voice UI is read-only: it does not dispatch responders, call emergency services, or change incident priorities. For immediate danger, contact local emergency services and follow official instructions. Never commit API keys or AWS credentials.
