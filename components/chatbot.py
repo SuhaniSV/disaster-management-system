@@ -53,7 +53,7 @@ def _app_help(question: str) -> str | None:
             "The priority score is calculated by deterministic rules; a coordinator must verify recommendations. "
             "A report may be session-only if database storage is not configured or saving fails. Check the result message—do not assume it was saved permanently."
         )
-    if any(term in q for term in ("command center", "dashboard", "main screen", "overview page", "where do i see incidents")):
+    if any(term in q for term in ("command center", "main screen", "overview page", "where do i see incidents")):
         return (
             "**Command Center**\n\n"
             "Open **Command Center** in the sidebar for the main operational overview and incident snapshot. "
