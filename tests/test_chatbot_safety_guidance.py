@@ -191,6 +191,20 @@ def test_greeting_works_with_short_and_misspelled_inputs():
         assert "ResQ Assistant" in answer
 
 
+def test_answer_question_handles_greetings_deterministically_when_llm_is_configured(monkeypatch):
+    import components.chatbot as chatbot
+
+    monkeypatch.setattr(chatbot, "llm_configured", lambda: True)
+
+    def unexpected_llm_call(*args, **kwargs):
+        raise AssertionError("Greetings should not require an LLM")
+
+    monkeypatch.setattr(chatbot.LLMClient, "complete_json", unexpected_llm_call)
+    for question in ("hi", "Hello!", "heyy", "hii there", "good morning"):
+        answer = chatbot.answer_question(question, _empty_center())
+        assert "ResQ Assistant" in answer
+
+
 def test_safety_intent_matching_tolerates_typos_and_extra_words():
     from components.chatbot import _safety_guidance
 
