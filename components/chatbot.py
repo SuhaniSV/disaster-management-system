@@ -101,10 +101,59 @@ def _greeting_response(question: str) -> str | None:
     return None
 
 
+
+def _incident_count_answer(question: str, center: CommandCenter) -> str | None:
+    """Count matching incident records from the loaded snapshot for explicit count questions."""
+    raw = re.sub(r"[^a-z0-9]+", " ", question.casefold()).strip()
+    padded = f" {raw} "
+    count_intent = any(marker in padded for marker in (" how many ", " number of ", " count of ", " total ", " count "))
+    if not count_intent:
+        return None
+    aliases = {
+        "earthquake": ("earthquake", "earthquakes", "earth quake", "tremor", "aftershock"),
+        "flood": ("flood", "floods", "flooding"),
+        "fire": ("fire", "fires", "wildfire", "wildfires"),
+        "cyclone": ("cyclone", "cyclones", "hurricane", "hurricanes", "typhoon", "typhoons"),
+        "landslide": ("landslide", "landslides"),
+        "storm": ("storm", "storms"),
+    }
+    requested = next((kind for kind, words in aliases.items() if any(f" {word} " in padded for word in words)), None)
+    if requested:
+        count = 0
+        for row in center.incidents:
+            kind = " " + re.sub(r"[^a-z0-9]+", " ", str(row.get("disaster_type") or "").casefold()).strip() + " "
+            if any(f" {word} " in kind for word in aliases[requested]):
+                count += 1
+        label = requested.lower()
+        plural = "" if count == 1 else "s"
+        return (
+            f"**{count} {label}{plural} in the current ResQ-AI incident records.**\n\n"
+            "This counts only records currently loaded in the app. Operational records may be simulated or incomplete; "
+            "this is not a verified live or government-wide count."
+        )
+    if any(word in padded for word in (" incident ", " incidents ", " disaster ", " disasters ", " reported ", " report ")):
+        return (
+            f"**{len(center.incidents)} incident records** are currently loaded in ResQ-AI.\n\n"
+            "This is a record count, not necessarily a count of unique real-world events. The data may be simulated or incomplete."
+        )
+    return None
+
 def _app_help(question: str) -> str | None:
     """Answer common how-to questions using the repository's actual app workflow."""
     q = question.casefold()
-    if _has_phrase(q, ("report an incident", "report incident", "submit an incident", "file an incident", "create an incident report", "how do i report", "how can i report")):
+    tokens = _intent_tokens(q)
+    report_verbs = ("report", "reporting", "submit", "submitting", "file", "filing", "create", "creating")
+    incident_terms = {"incident", "incidents", "emergency", "emergencies", "disaster", "disasters"}
+    # Accept common typos (e.g. "repot") without turning "how many ... reported?"
+    # into a how-to request: count intent is handled earlier in answer_question.
+    has_report_action = any(
+        token == verb or (
+            min(len(token), len(verb)) >= 4
+            and SequenceMatcher(None, token, verb).ratio() >= 0.78
+        )
+        for token in tokens for verb in report_verbs
+    )
+    if has_report_action and incident_terms.intersection(tokens):
         return (
             "**How to report an incident**\n\n"
             "1. Open **Report Incident** from the sidebar.\n"
@@ -362,9 +411,19 @@ def _fallback(question: str, center: CommandCenter) -> str:
             "not verified live operations."
         )
 
+    return (
+        "I am not sure I understood that question. Try asking about incident counts, reporting an incident, "
+        "incident priorities, resources, shelters, app navigation, or disaster-safety guidance. "
+        "For immediate danger, contact local emergency services."
+    )
+
 
 
 def answer_question(question: str, center: CommandCenter, history: list[dict[str, str]] | None = None) -> str:
+    count_answer = _incident_count_answer(question, center)
+    if count_answer:
+        return count_answer
+
     # App how-to answers are grounded in known UI workflows and should not depend on LLM availability.
     app_help = _app_help(question)
     if app_help:

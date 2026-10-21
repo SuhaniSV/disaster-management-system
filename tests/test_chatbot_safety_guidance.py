@@ -212,3 +212,48 @@ def test_known_app_help_is_matched_before_llm(monkeypatch):
     monkeypatch.setattr(chatbot, "LLMClient", UnexpectedLLMClient)
     answer = chatbot.answer_question("how can i repot incident in this app", _empty_center())
     assert "ANALYZE INCIDENT" in answer
+
+
+def test_earthquake_count_question_returns_count_not_reporting_instructions():
+    from components.chatbot import _app_help, _incident_count_answer
+
+    center = CommandCenter(bundle={
+        "incidents": [
+            {"id": "EQ-1", "disaster_type": "Earthquake"},
+            {"id": "EQ-2", "disaster_type": "Earthquake"},
+            {"id": "FL-1", "disaster_type": "Flood"},
+        ],
+        "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": [],
+    })
+    question = "how many earthquakes reported"
+    answer = _incident_count_answer(question, center)
+    assert answer is not None
+    assert "2 earthquakes" in answer
+    assert "simulated or incomplete" in answer
+    assert _app_help(question) is None
+
+
+def test_incident_reporting_how_to_still_matches():
+    from components.chatbot import _app_help
+
+    for question in (
+        "How do I report an incident?",
+        "How do I report an incident in this app?",
+        "how i report incident",
+    ):
+        answer = _app_help(question)
+        assert answer is not None
+        assert "Report Incident" in answer
+        assert "ANALYZE INCIDENT" in answer
+
+
+def test_count_question_with_no_matching_records_returns_zero():
+    from components.chatbot import _incident_count_answer
+
+    center = CommandCenter(bundle={
+        "incidents": [{"id": "FL-1", "disaster_type": "Flood"}],
+        "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": [],
+    })
+    answer = _incident_count_answer("how many earthquakes reported", center)
+    assert answer is not None
+    assert "0 earthquakes" in answer
