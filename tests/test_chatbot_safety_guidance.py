@@ -71,3 +71,35 @@ def test_answer_question_uses_llm_for_non_guidance_when_configured(monkeypatch):
     monkeypatch.setattr(chatbot, "LLMClient", FakeLLMClient)
     answer = chatbot.answer_question("Summarize the response snapshot", _empty_center())
     assert answer == "Snapshot-based response"
+
+
+def test_answer_question_falls_back_when_llm_request_fails(monkeypatch):
+    import components.chatbot as chatbot
+
+    monkeypatch.setattr(chatbot, "llm_configured", lambda: True)
+
+    class FailingLLMClient:
+        def complete_json(self, system, prompt, timeout):
+            raise RuntimeError("provider unavailable")
+
+    monkeypatch.setattr(chatbot, "LLMClient", FailingLLMClient)
+    answer = chatbot.answer_question("Summarize the response snapshot", _empty_center())
+
+    assert "active incidents" in answer
+    assert "simulated data" in answer
+
+
+def test_answer_question_falls_back_when_llm_returns_invalid_json(monkeypatch):
+    import components.chatbot as chatbot
+
+    monkeypatch.setattr(chatbot, "llm_configured", lambda: True)
+
+    class InvalidJSONLLMClient:
+        def complete_json(self, system, prompt, timeout):
+            return "not valid JSON"
+
+    monkeypatch.setattr(chatbot, "LLMClient", InvalidJSONLLMClient)
+    answer = chatbot.answer_question("Summarize the response snapshot", _empty_center())
+
+    assert "active incidents" in answer
+    assert "simulated data" in answer
