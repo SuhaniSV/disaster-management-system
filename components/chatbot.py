@@ -85,7 +85,7 @@ def _has_phrase(question: str, phrases: tuple[str, ...]) -> bool:
 
 def _greeting_response(question: str) -> str | None:
     tokens = _intent_tokens(question)
-    greeting_words = {"hi", "hello", "hey", "hiya", "howdy", "morning", "afternoon", "evening"}
+    greeting_words = {"hi", "hii", "hiii", "hello", "helo", "helloo", "hey", "heyy", "heyyy", "hiya", "howdy", "yo", "morning", "afternoon", "evening"}
     if tokens and len(tokens) <= 5 and any(
         token in greeting_words or (
             len(token) >= 4 and any(SequenceMatcher(None, token, greeting).ratio() >= 0.82
