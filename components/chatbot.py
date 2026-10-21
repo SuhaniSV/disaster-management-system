@@ -106,7 +106,7 @@ def _fuzzy_word_match(candidate: str, target: str) -> bool:
     """Match a word exactly or tolerate a small typo without accepting short-word noise."""
     return candidate == target or (
         min(len(candidate), len(target)) >= 4
-        and SequenceMatcher(None, candidate, target).ratio() >= 0.84
+        and SequenceMatcher(None, candidate, target).ratio() >= 0.75
     )
 
 
