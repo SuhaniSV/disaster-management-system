@@ -245,6 +245,7 @@ def render_live_alerts() -> None:
         not cached_data
         or refresh
         or cached_data.get("filters") != desired_filters
+        or "usgs" not in cached_data
         or time.monotonic() - fetched_at >= 300
     )
 
@@ -332,7 +333,7 @@ def render_live_alerts() -> None:
 
     m1, m2, m3 = st.columns(3)
     m1.metric(
-        "Government alert items",
+        "Live alert / event items",
         len(nowcast_rows)
         + len(warning_rows)
         + len(imd_public_alerts)
