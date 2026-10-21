@@ -134,9 +134,9 @@ button[aria-label*="Expand sidebar"]:hover {
   padding-top: 0 !important;
 }
 [data-testid="stMainBlockContainer"] {
-  padding-top: 1.8rem;
-  padding-bottom: 3rem;
-  max-width: 1600px;
+    padding-top: 0.8rem;   /* pehle 1.8rem tha */
+    padding-bottom: 3rem;
+    max-width: 1600px;
 }
 section[data-testid="stSidebar"] {
   background: #ffffff;
