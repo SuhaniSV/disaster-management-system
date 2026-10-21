@@ -8,6 +8,7 @@ import time
 import streamlit as st
 
 from core.alert_translation import english_record, english_text
+from core.gdacs_data import get_gdacs_events
 from core.live_data import (
     IMD_API_PORTAL,
     IMD_REFERENCE,
@@ -247,6 +248,7 @@ def render_live_alerts() -> None:
         or refresh
         or cached_data.get("filters") != desired_filters
         or "usgs" not in cached_data
+        or "gdacs" not in cached_data
         or "imd_outlook" not in cached_data
         or time.monotonic() - fetched_at >= 300
     )
@@ -304,10 +306,23 @@ def render_live_alerts() -> None:
                     "records_seen": 0,
                 }
 
+            try:
+                gdacs = get_gdacs_events()
+            except Exception as exc:
+                gdacs = {
+                    "ok": False,
+                    "events": [],
+                    "error": f"GDACS request failed: {type(exc).__name__}",
+                    "fetched_at": None,
+                    "records_seen": 0,
+                    "source_url": "https://www.gdacs.org/",
+                }
+
             st.session_state["resq_live_data"] = {
                 "imd": imd,
                 "ndma": ndma,
                 "usgs": usgs,
+                "gdacs": gdacs,
                 "imd_outlook": imd_outlook,
                 "filters": desired_filters,
             }
@@ -319,6 +334,7 @@ def render_live_alerts() -> None:
     imd = data.get("imd", {})
     ndma = data.get("ndma", {})
     usgs = data.get("usgs", {})
+    gdacs = data.get("gdacs", {"ok": False, "events": []})
     imd_outlook = data.get("imd_outlook", {"ok": False, "rows": []})
 
     nowcast_result = imd.get("nowcast", {})
@@ -342,6 +358,7 @@ def render_live_alerts() -> None:
             imd.get("fetched_at"),
             ndma.get("fetched_at"),
             usgs.get("fetched_at"),
+            gdacs.get("fetched_at"),
         )
         if value
     ]
@@ -353,9 +370,11 @@ def render_live_alerts() -> None:
         + len(warning_rows)
         + len(imd_public_alerts)
         + len(ndma_rows)
-        + len(usgs.get("events", [])),
+        + len(usgs.get("events", []))
+        + len(gdacs.get("events", [])),
     )
-    m2.metric("Sources responding", f"{good_sources} / 3")
+    good_sources += int(bool(gdacs.get("ok")))
+    m2.metric("Sources responding", f"{good_sources} / 4")
     m3.metric(
         "Last successful fetch",
         _fmt_time(max(successful_times) if successful_times else None),
@@ -463,6 +482,21 @@ def render_live_alerts() -> None:
         if usgs.get("error"):
             st.caption(str(usgs["error"]))
         st.markdown(f"[Open USGS earthquake feed]({usgs.get('source_url', 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson')})")
+
+        st.divider()
+        st.markdown("**GDACS global disaster feed**")
+        st.markdown(
+            "Status: "
+            + ("🟢 Request succeeded" if gdacs.get("ok") else "🟡 Unavailable")
+        )
+        st.caption(
+            f"Events returned: {len(gdacs.get('events', []))} · "
+            f"Records checked: {gdacs.get('records_seen', 0)} · "
+            f"Fetched {_fmt_time(gdacs.get('fetched_at'))}"
+        )
+        if gdacs.get("error"):
+            st.caption(str(gdacs["error"]))
+        st.markdown(f"[Open official GDACS feed]({gdacs.get('source_url', 'https://www.gdacs.org/')})")
 
     any_filter = _has_filters(state, district, area_query)
 
@@ -662,6 +696,35 @@ def render_live_alerts() -> None:
             st.info(
                 "No English-readable district warnings matched these filters. "
                 "Try a broader state, district, or city name."
+            )
+
+    # Official global multi-hazard events from GDACS
+    st.markdown("### Global disaster alerts — GDACS")
+    st.caption(
+        "Official global event feed covering earthquakes, floods, tropical "
+        "cyclones, volcanoes, droughts and wildfires. These are hazard alerts, "
+        "not verified local rescue incidents."
+    )
+    gdacs_events = [
+        row for row in gdacs.get("events", [])
+        if _matches_area(row, state, district, area_query)
+    ]
+    if not gdacs.get("ok"):
+        st.info(
+            gdacs.get("error")
+            or "The official GDACS feed is unavailable; check source status above."
+        )
+    elif not gdacs_events:
+        st.info(
+            "No recent GDACS events matched the current filters. This is not "
+            "a guarantee that no local hazards exist."
+        )
+    else:
+        for row in gdacs_events[:50]:
+            _render_alert(
+                row,
+                title_keys=("title",),
+                default_title="GDACS disaster event",
             )
 
     # Recent earthquakes within the India-region bounding box
