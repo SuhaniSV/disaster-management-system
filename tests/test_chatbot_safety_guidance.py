@@ -291,3 +291,43 @@ def test_count_question_with_no_matching_records_returns_zero():
     answer = _incident_count_answer("how many earthquakes reported", center)
     assert answer is not None
     assert "0 earthquakes" in answer
+
+
+
+def test_chatbot_intent_collisions_route_to_the_right_answer(monkeypatch):
+    import components.chatbot as chatbot
+
+    center = CommandCenter(bundle={
+        "incidents": [
+            {"id": "EQ-1", "disaster_type": "Earthquake"},
+            {"id": "FL-1", "disaster_type": "Flood"},
+        ],
+        "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": [],
+    })
+    monkeypatch.setattr(chatbot, "llm_configured", lambda: False)
+
+    # Count wording must not be mistaken for a how-to request.
+    count_answer = chatbot.answer_question("How many incidents were reported?", center)
+    assert "2 incident records" in count_answer
+    assert "Report Incident" not in count_answer
+
+    # Reporting a named hazard is still an app-workflow question, not safety advice.
+    report_answer = chatbot.answer_question("How do I report an earthquake?", center)
+    assert "Report Incident" in report_answer
+    assert "ANALYZE INCIDENT" in report_answer
+    assert "Drop, Cover, and Hold On" not in report_answer
+
+    # A general hazard prompt should remain safety guidance, not a count.
+    safety_answer = chatbot.answer_question("Earthquake help", center)
+    assert "Drop, Cover, and Hold On" in safety_answer
+    assert "incident records" not in safety_answer
+
+    # Do not imply the assistant can dispatch emergency resources.
+    ambulance_answer = chatbot.answer_question("Can you send an ambulance?", center)
+    assert "cannot call responders or dispatch resources" in ambulance_answer
+    assert "local emergency services" in ambulance_answer
+
+    # Live-alert navigation should distinguish the alert page from the operational snapshot.
+    alerts_answer = chatbot.answer_question("Are these live government alerts?", center)
+    assert "Live Government Alerts" in alerts_answer
+    assert "not itself a live government-alert feed" in alerts_answer
