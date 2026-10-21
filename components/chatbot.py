@@ -142,10 +142,18 @@ def _app_help(question: str) -> str | None:
     """Answer common how-to questions using the repository's actual app workflow."""
     q = question.casefold()
     tokens = _intent_tokens(q)
-    report_verbs = {"report", "reporting", "submit", "submitting", "file", "filing", "create", "creating"}
+    report_verbs = ("report", "reporting", "submit", "submitting", "file", "filing", "create", "creating")
     incident_terms = {"incident", "incidents", "emergency", "emergencies", "disaster", "disasters"}
-    # Require both a reporting action and an incident concept; count questions are not how-to questions.
-    if report_verbs.intersection(tokens) and incident_terms.intersection(tokens):
+    # Accept common typos (e.g. "repot") without turning "how many ... reported?"
+    # into a how-to request: count intent is handled earlier in answer_question.
+    has_report_action = any(
+        token == verb or (
+            min(len(token), len(verb)) >= 4
+            and SequenceMatcher(None, token, verb).ratio() >= 0.78
+        )
+        for token in tokens for verb in report_verbs
+    )
+    if has_report_action and incident_terms.intersection(tokens):
         return (
             "**How to report an incident**\n\n"
             "1. Open **Report Incident** from the sidebar.\n"
