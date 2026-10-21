@@ -103,3 +103,21 @@ def test_answer_question_falls_back_when_llm_returns_invalid_json(monkeypatch):
 
     assert "active incidents" in answer
     assert "simulated data" in answer
+
+def test_ambulance_request_gets_emergency_guidance_without_llm(monkeypatch):
+    import components.chatbot as chatbot
+
+    monkeypatch.setattr(chatbot, "llm_configured", lambda: False)
+    answer = chatbot.answer_question("I need an ambulance", _empty_center())
+
+    assert "local emergency services" in answer
+    assert "cannot call responders" in answer
+    assert "active incidents" not in answer
+
+
+def test_resource_availability_question_about_ambulances_stays_operational():
+    answer = _fallback("Which ambulance resources are available?", _empty_center())
+
+    assert "resources" in answer
+    assert "local emergency services" not in answer
+
