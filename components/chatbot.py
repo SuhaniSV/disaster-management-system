@@ -403,6 +403,12 @@ def _fallback(question: str, center: CommandCenter) -> str:
             "not verified live operations."
         )
 
+    return (
+        "I am not sure I understood that question. Try asking about incident counts, reporting an incident, "
+        "incident priorities, resources, shelters, app navigation, or disaster-safety guidance. "
+        "For immediate danger, contact local emergency services."
+    )
+
 
 
 def answer_question(question: str, center: CommandCenter, history: list[dict[str, str]] | None = None) -> str:
