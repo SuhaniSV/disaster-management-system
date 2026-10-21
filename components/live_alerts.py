@@ -29,9 +29,10 @@ def _value(row: dict, keys: tuple[str, ...], fallback: str = "—") -> str:
     return fallback
 
 
-def _matches_area(row: dict, query: str) -> bool:
-    """Match a user-entered area against translated alert fields without guessing location."""
-    if not query.strip():
+def _matches_area(row: dict, *queries: str) -> bool:
+    """Match every supplied area term against translated source fields, without guessing."""
+    required = [q.strip().casefold() for q in queries if q and q.strip()]
+    if not required:
         return True
     translated = english_record(row)
     terms: list[str] = []
@@ -50,7 +51,7 @@ def _matches_area(row: dict, query: str) -> bool:
 
     collect(translated)
     searchable = " ".join(terms).casefold()
-    return query.strip().casefold() in searchable
+    return all(query in searchable for query in required)
 
 
 def render_live_alerts() -> None:
@@ -99,13 +100,19 @@ def render_live_alerts() -> None:
         help="Filters the displayed alerts from all feeds using location and alert text supplied by the source.",
     )
     desired_filters = {"state": state.strip(), "district": district.strip()}
-    if "resq_live_data" not in st.session_state or refresh or st.session_state.get("resq_live_data", {}).get("filters") != desired_filters:
+    if (
+        "resq_live_data" not in st.session_state
+        or refresh
+        or st.session_state.get("resq_live_data", {}).get("filters") != desired_filters
+        or __import__("time").monotonic() - st.session_state.get("resq_live_data_fetched_monotonic", 0) >= 300
+    ):
         with st.spinner("Requesting official government feeds…"):
             st.session_state["resq_live_data"] = {
                 "imd": get_imd_live_data(state=state.strip(), district=district.strip()),
                 "ndma": get_ndma_cap_alerts(),
                 "filters": desired_filters,
             }
+            st.session_state["resq_live_data_fetched_monotonic"] = __import__("time").monotonic()
     data = st.session_state["resq_live_data"]
     imd, ndma = data["imd"], data["ndma"]
 
@@ -120,7 +127,7 @@ def render_live_alerts() -> None:
     m3.metric("Last successful fetch", _fmt_time(max(successful_times) if successful_times else None))
     st.caption(
         "Requests are on-demand. IMD responses are cached for five minutes; SACHET uses ETag validation when provided. "
-        "The area search filters displayed alerts from all feeds; IMD state/district inputs also constrain IMD API requests. "
+        "State, district, and area search filters apply to displayed alerts from all feeds; IMD state/district inputs also constrain IMD API requests. "
         "Records whose alert text cannot be translated are omitted rather than shown with a placeholder. Original source links remain available."
     )
 
@@ -193,7 +200,7 @@ def render_live_alerts() -> None:
                 "District nowcasts and warnings still require the issued IMD API token."
             )
     else:
-        matched = [row for row in imd_public_alerts if _matches_area(row, area_query)]
+        matched = [row for row in imd_public_alerts if _matches_area(row, state, district, area_query)]
         shown = 0
         for row in matched[:100]:
             title = _value(row, ("title",), "")
@@ -219,7 +226,7 @@ def render_live_alerts() -> None:
     else:
         shown = 0
         for row in imd["nowcast"]["rows"]:
-            if not _matches_area(row, area_query):
+            if not _matches_area(row, state, district, area_query):
                 continue
             title = _value(row, ("District", "district", "district_name", "Station", "station", "name"), "")
             rendered = english_record(row)
@@ -265,7 +272,7 @@ def render_live_alerts() -> None:
     elif not ndma_rows:
         st.info("The feed request succeeded but returned no parseable alert items. Check the feed format and source response.")
     else:
-        matched = [row for row in ndma_rows if _matches_area(row, area_query)]
+        matched = [row for row in ndma_rows if _matches_area(row, state, district, area_query)]
         shown = 0
         for row in matched[:100]:
             title = _value(row, ("title",), "")
