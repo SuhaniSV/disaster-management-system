@@ -321,3 +321,52 @@ def test_imd_public_cap_cache_returns_cached_result(monkeypatch):
         assert calls["count"] == 1
     finally:
         live_data._cache.pop(cache_key, None)
+
+
+def test_usgs_india_earthquake_feed_filters_by_coordinates(monkeypatch):
+    cache_key = "usgs-india-earthquakes:" + live_data.USGS_EARTHQUAKE_FEED_URL
+    live_data._cache.pop(cache_key, None)
+
+    class FakeResponse:
+        status_code = 200
+        headers = {}
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "features": [
+                    {
+                        "properties": {
+                            "title": "M 4.2 - 20 km north of Delhi, India",
+                            "place": "20 km north of Delhi, India",
+                            "mag": 4.2,
+                            "time": 1792576800000,
+                            "url": "https://earthquake.usgs.gov/example",
+                        },
+                        "geometry": {"coordinates": [77.2, 28.6, 10.0]},
+                    },
+                    {
+                        "properties": {"title": "Outside India-region bounds", "mag": 5.0},
+                        "geometry": {"coordinates": [-118.2, 34.0, 8.0]},
+                    },
+                ]
+            }
+
+    def fake_get(url, *args, **kwargs):
+        assert url == live_data.USGS_EARTHQUAKE_FEED_URL
+        return FakeResponse()
+
+    monkeypatch.setattr(live_data.requests, "get", fake_get)
+
+    try:
+        result = live_data.get_usgs_india_earthquakes()
+        assert result["ok"] is True
+        assert result["records_seen"] == 2
+        assert len(result["events"]) == 1
+        assert result["events"][0]["magnitude"] == 4.2
+        assert result["events"][0]["latitude"] == 28.6
+    finally:
+        live_data._cache.pop(cache_key, None)
+
