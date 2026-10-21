@@ -290,16 +290,6 @@ button[kind="secondary"]:hover {
   font-size: 12px;
   margin-top: 10px;
 }
-.resq-helper-card {
-  margin-top: 12px;
-  padding: 13px 14px;
-  border: 1px solid #b8d8dc;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #edf8f8, #f7fbff);
-  box-shadow: 0 5px 16px rgba(31,75,89,.07);
-}
-.resq-helper-title { color: #17394b; font-weight: 750; font-size: 14px; }
-.resq-helper-copy { color: #496477; font-size: 12px; margin-top: 4px; }
 
 div[data-testid="stMetric"] {
   background: #fff;
@@ -1605,7 +1595,7 @@ def render_sidebar(center: CommandCenter) -> None:
             </div>
           </div>
           <div class="rx-brand-line"></div>
-          <div class="rx-brand-status"><span class="rx-status-dot"></span> AI-ASSISTED DECISION SUPPORT</div>
+          <div class="rx-brand-status"><span class="rx-status-dot"></span> COMMAND SYSTEM · ONLINE</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1624,38 +1614,6 @@ def render_sidebar(center: CommandCenter) -> None:
         st.sidebar.page_link(page_path, label=f"{glyph}  {label}")
     st.sidebar.divider()
     st.sidebar.caption(DISCLAIMER)
-
-    # Friendly in-app helper; Chat with us opens the existing ResQ assistant.
-    if "resq_helper_visible" not in st.session_state:
-        st.session_state["resq_helper_visible"] = True
-
-    if st.session_state["resq_helper_visible"]:
-        st.sidebar.markdown(
-            """
-            <div class="resq-helper-card">
-              <div class="resq-helper-title">🤖 Hey there! 👋</div>
-              <div class="resq-helper-copy">Need help with something?</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        helper_chat, helper_close = st.sidebar.columns([3, 1])
-        with helper_chat:
-            if st.button(
-                "Chat with us",
-                key="resq_helper_chat",
-                use_container_width=True,
-                type="primary",
-            ):
-                st.switch_page("pages/6_ResQ_Assistant.py")
-        with helper_close:
-            if st.button("×", key="resq_helper_close", help="Close helper"):
-                st.session_state["resq_helper_visible"] = False
-                st.rerun()
-    else:
-        if st.sidebar.button("🤖 Chat with us", key="resq_helper_reopen", use_container_width=True):
-            st.session_state["resq_helper_visible"] = True
-            st.rerun()
 
     if llm_configured():
         st.sidebar.caption("AI analysis: model connection configured")
@@ -1690,7 +1648,7 @@ def render_header(center: CommandCenter, subtitle: str) -> None:
         f"""
         <div class="resq-header">
           <div>
-            <div class="resq-kicker">RESQ-AI · LIVE INTELLIGENCE</div>
+            <div class="resq-kicker">RESCUEX · LIVE INTELLIGENCE</div>
             <h1 class="resq-title">INTELLIGENT DISASTER COMMAND CENTER</h1>
             <div class="resq-sub">{subtitle}</div>
           </div>
