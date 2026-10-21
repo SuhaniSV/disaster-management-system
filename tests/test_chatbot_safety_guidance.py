@@ -191,6 +191,20 @@ def test_greeting_works_with_short_and_misspelled_inputs():
         assert "ResQ Assistant" in answer
 
 
+def test_answer_question_handles_greetings_deterministically_when_llm_is_configured(monkeypatch):
+    import components.chatbot as chatbot
+
+    monkeypatch.setattr(chatbot, "llm_configured", lambda: True)
+
+    def unexpected_llm_call(*args, **kwargs):
+        raise AssertionError("Greetings should not require an LLM")
+
+    monkeypatch.setattr(chatbot.LLMClient, "complete_json", unexpected_llm_call)
+    for question in ("hi", "Hello!", "heyy", "hii there", "good morning"):
+        answer = chatbot.answer_question(question, _empty_center())
+        assert "ResQ Assistant" in answer
+
+
 def test_safety_intent_matching_tolerates_typos_and_extra_words():
     from components.chatbot import _safety_guidance
 
@@ -247,6 +261,40 @@ def test_incident_reporting_how_to_still_matches():
         assert "ANALYZE INCIDENT" in answer
 
 
+
+def test_incident_count_question_tolerates_typos_in_count_phrase_and_disaster_type():
+    from components.chatbot import _incident_count_answer
+
+    center = CommandCenter(bundle={
+        "incidents": [
+            {"id": "EQ-1", "disaster_type": "Earthquake"},
+            {"id": "EQ-2", "disaster_type": "Earthquake"},
+            {"id": "FL-1", "disaster_type": "Flood"},
+        ],
+        "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": [],
+    })
+
+    for question in (
+        "how many earthquaks reported",
+        "how meny earthquakes reported",
+        "whats the number of earthquke incidents",
+    ):
+        answer = _incident_count_answer(question, center)
+        assert answer is not None, question
+        assert "2 earthquakes" in answer, question
+        assert "not a verified live" in answer, question
+
+
+def test_incident_count_does_not_claim_a_count_without_count_intent():
+    from components.chatbot import _incident_count_answer
+
+    center = CommandCenter(bundle={
+        "incidents": [{"id": "EQ-1", "disaster_type": "Earthquake"}],
+        "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": [],
+    })
+
+    assert _incident_count_answer("Tell me about earthquakes", center) is None
+
 def test_count_question_with_no_matching_records_returns_zero():
     from components.chatbot import _incident_count_answer
 
@@ -257,3 +305,43 @@ def test_count_question_with_no_matching_records_returns_zero():
     answer = _incident_count_answer("how many earthquakes reported", center)
     assert answer is not None
     assert "0 earthquakes" in answer
+
+
+
+def test_chatbot_intent_collisions_route_to_the_right_answer(monkeypatch):
+    import components.chatbot as chatbot
+
+    center = CommandCenter(bundle={
+        "incidents": [
+            {"id": "EQ-1", "disaster_type": "Earthquake"},
+            {"id": "FL-1", "disaster_type": "Flood"},
+        ],
+        "resources": [], "hospitals": [], "shelters": [], "roads": [], "events": [],
+    })
+    monkeypatch.setattr(chatbot, "llm_configured", lambda: False)
+
+    # Count wording must not be mistaken for a how-to request.
+    count_answer = chatbot.answer_question("How many incidents were reported?", center)
+    assert "2 incident records" in count_answer
+    assert "Report Incident" not in count_answer
+
+    # Reporting a named hazard is still an app-workflow question, not safety advice.
+    report_answer = chatbot.answer_question("How do I report an earthquake?", center)
+    assert "Report Incident" in report_answer
+    assert "ANALYZE INCIDENT" in report_answer
+    assert "Drop, Cover, and Hold On" not in report_answer
+
+    # A general hazard prompt should remain safety guidance, not a count.
+    safety_answer = chatbot.answer_question("Earthquake help", center)
+    assert "Drop, Cover, and Hold On" in safety_answer
+    assert "incident records" not in safety_answer
+
+    # Do not imply the assistant can dispatch emergency resources.
+    ambulance_answer = chatbot.answer_question("Can you send an ambulance?", center)
+    assert "cannot call responders or dispatch resources" in ambulance_answer
+    assert "local emergency services" in ambulance_answer
+
+    # Live-alert navigation should distinguish the alert page from the operational snapshot.
+    alerts_answer = chatbot.answer_question("Are these live government alerts?", center)
+    assert "Live Government Alerts" in alerts_answer
+    assert "not itself a live government-alert feed" in alerts_answer

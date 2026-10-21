@@ -7,6 +7,8 @@ import streamlit as st
 
 from core.gdacs_feed import GDACS_SOURCE_URL, fetch_gdacs_events
 from core.live_feeds import USGS_ALL_DAY_URL, fetch_usgs_earthquakes
+from core.live_data import IMD_PUBLIC_CAP_URL, get_imd_live_data, get_ndma_cap_alerts
+from core.alert_translation import english_text
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -19,11 +21,12 @@ def _cached_usgs() -> dict:
     return fetch_usgs_earthquakes()
 
 
+@st.fragment(run_every=300)
 def render_live_disaster_intelligence() -> None:
     st.markdown('<div class="resq-kicker">RESQ-AI / GLOBAL MONITORING</div>', unsafe_allow_html=True)
     st.title("Live Disaster Intelligence")
     st.caption(
-        "A map-first view of source-reported global hazards from GDACS and USGS. "
+        "A map-first view of source-reported global hazards from GDACS and USGS, alongside India government alerts from IMD and NDMA SACHET when their feeds are available. "
         "These public feeds do not confirm local damage, casualties, or dispatch requirements."
     )
 
@@ -110,6 +113,80 @@ def render_live_disaster_intelligence() -> None:
                 "Events": "—", "Retrieved by app (UTC)": "—", "Source feed generated (UTC)": "—", "Official source": USGS_ALL_DAY_URL,
             })
 
+    # Include India-specific official feeds alongside global hazard feeds. Never invent
+    # missing alerts; only display records actually returned by the connected source.
+    try:
+        imd_india = get_imd_live_data()
+        public_result = imd_india.get("public_alerts", {})
+        imd_alerts = public_result.get("alerts", [])
+        source_rows.append({
+            "Source": "India Meteorological Department — public CAP",
+            "Status": "Connected" if public_result.get("ok") else "Unavailable",
+            "Events": len(imd_alerts),
+            "Retrieved by app (UTC)": public_result.get("fetched_at") or "Not provided",
+            "Latest event update/start (UTC)": "Not provided",
+            "Official source": public_result.get("source_url") or IMD_PUBLIC_CAP_URL,
+        })
+        for row in imd_alerts:
+            title = english_text(row.get("title", ""))
+            if not title:
+                continue
+            summary = english_text(row.get("summary", ""))
+            area = english_text(row.get("area", ""))
+            events.append({
+                "Hazard": english_text(row.get("severity", "")) or "Government alert",
+                "Event": title,
+                "Area": area or "Location not provided",
+                "Alert / magnitude": summary or "See official alert",
+                "Event time (UTC)": row.get("published") or "Not provided",
+                "Source": "IMD public CAP",
+                "Record": row.get("link") or public_result.get("source_url") or IMD_PUBLIC_CAP_URL,
+                "Latitude": None,
+                "Longitude": None,
+            })
+    except (requests.RequestException, ValueError, TypeError):
+        source_rows.append({
+            "Source": "India Meteorological Department — public CAP",
+            "Status": "Unavailable", "Events": "—",
+            "Retrieved by app (UTC)": "—", "Latest event update/start (UTC)": "—",
+            "Official source": IMD_PUBLIC_CAP_URL,
+        })
+
+    try:
+        ndma = get_ndma_cap_alerts()
+        ndma_alerts = ndma.get("alerts", [])
+        source_rows.append({
+            "Source": "NDMA SACHET / CAP",
+            "Status": "Connected" if ndma.get("ok") else "Unavailable",
+            "Events": len(ndma_alerts),
+            "Retrieved by app (UTC)": ndma.get("fetched_at") or "Not provided",
+            "Latest event update/start (UTC)": "Not provided",
+            "Official source": ndma.get("source_url") or "https://sachet.ndma.gov.in/",
+        })
+        for row in ndma_alerts:
+            title = english_text(row.get("title", ""))
+            if not title:
+                continue
+            summary = english_text(row.get("summary", ""))
+            area = english_text(row.get("area", ""))
+            events.append({
+                "Hazard": english_text(row.get("severity", "")) or "Government alert",
+                "Event": title,
+                "Area": area or "Location not provided",
+                "Alert / magnitude": summary or "See official alert",
+                "Event time (UTC)": row.get("published") or "Not provided",
+                "Source": "NDMA SACHET / CAP",
+                "Record": row.get("link") or ndma.get("source_url") or "https://sachet.ndma.gov.in/",
+                "Latitude": None,
+                "Longitude": None,
+            })
+    except (requests.RequestException, ValueError, TypeError):
+        source_rows.append({
+            "Source": "NDMA SACHET / CAP", "Status": "Unavailable", "Events": "—",
+            "Retrieved by app (UTC)": "—", "Latest event update/start (UTC)": "—",
+            "Official source": "https://sachet.ndma.gov.in/",
+        })
+
     connected = sum(row["Status"] == "Connected" for row in source_rows)
     c1, c2, c3 = st.columns(3)
     c1.metric("Source-reported records", len(events))
@@ -130,7 +207,7 @@ def render_live_disaster_intelligence() -> None:
         if force_refresh:
             st.success("Refresh requested: both feeds were fetched directly, bypassing the five-minute cache.")
         else:
-            st.caption("Automatic cache lifetime: up to 5 minutes while the page is being used. No background polling occurs while the app is idle.")
+            st.caption("This view automatically rechecks connected feeds every 5 minutes while the page remains open. Source adapters may cache responses for up to 5 minutes; no polling occurs when the app is closed.")
 
     if not events:
         if failures:
