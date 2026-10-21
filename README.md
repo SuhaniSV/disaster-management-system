@@ -59,7 +59,7 @@ Incident reports and operational inventory use Supabase Postgres when configured
 - Scenario Simulator (road blocked, team unavailable, new emergency, hospital squeeze)
 - Analytics (Plotly)
 - ResQ Assistant chatbot grounded in the current incident/resource snapshot
-- Browser-based voice mode for ResQ Assistant (speech-to-text and spoken answers; see `docs/RESQ_VOICE_ASSISTANT.md`)
+- Hands-free Alexa+-style web voice simulation for ResQ Assistant: automatic spoken replies, continuous turn-taking, follow-ups, and a manual interruption control (browser speech APIs; see `docs/RESQ_VOICE_ASSISTANT.md`)
 - Read-only MCP server over Streamable HTTP for Alexa+ track (incident listing, priority explanations, resource/shelter status, live government alert adapter)
 - Separate Alexa Skills Kit custom-skill starter with voice intents for earthquake, flood, cyclone, fire, heat, emergency help, and preparedness
 - Optional Amazon Bedrock briefing tool for the AWS Builder mini-challenge\n- Live Government Alerts page for IMD district nowcasts/warnings and an authorized NDMA SACHET/CAP feed
