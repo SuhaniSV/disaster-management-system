@@ -185,7 +185,8 @@ def render_live_alerts() -> None:
 
         st.code(
             'IMD_API_TOKEN = "YOUR_ISSUED_IMD_API_TOKEN"\n'
-            'NDMA_CAP_FEED_URL = "YOUR_AUTHORIZED_SACHET_CAP_FEED_URL"',
+            'NDMA_CAP_FEED_URL = ""\n'
+            'NDMA_CAP_IDENTIFIER = "YOUR_SACHET_ISSUED_IDENTIFIER"',
             language="toml",
         )
 
