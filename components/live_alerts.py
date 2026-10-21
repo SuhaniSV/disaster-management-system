@@ -247,6 +247,7 @@ def render_live_alerts() -> None:
         or refresh
         or cached_data.get("filters") != desired_filters
         or "usgs" not in cached_data
+        or "imd_outlook" not in cached_data
         or time.monotonic() - fetched_at >= 300
     )
 
@@ -417,6 +418,7 @@ def render_live_alerts() -> None:
                 f"{wis2_status} · "
                 f"{len(imd_public_alerts)} active alerts · "
                 f"{public_result.get('records_seen', 0)} CAP records matched · "
+                f"{len(imd_outlook.get('rows', []))} public regional outlook warning entries · "
                 f"fetched {_fmt_time(public_result.get('fetched_at'))}"
             )
 
