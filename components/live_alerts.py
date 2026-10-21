@@ -15,6 +15,7 @@ from core.live_data import (
     NDMA_PORTAL,
     get_imd_live_data,
     get_ndma_cap_alerts,
+    get_usgs_india_earthquakes,
 )
 
 
@@ -170,9 +171,13 @@ def render_live_alerts() -> None:
             "portal. The adapter requests district nowcast and district "
             "warning endpoints; a token alone does not guarantee endpoint "
             "access.\n\n"
-            "**NDMA SACHET / CAP** — use the official guide to obtain the "
-            "authorized feed URL or identifier. Do not use a guessed URL. "
-            "Never put credentials in GitHub or source code."
+            "**NDMA SACHET / CAP** — the official integration guide documents "
+            "the CAP XML endpoint. Add either an authorized feed URL or the "
+            "identifier issued by SACHET. The identifier is not public or "
+            "guessable; do not invent one. This integrated CAP channel may "
+            "carry alerts from IMD, CWC, INCOIS, DGRE, GSI and FSI, depending "
+            "on the identifier and what each agency publishes. Never put "
+            "credentials in GitHub or source code."
         )
 
         st.markdown(
@@ -184,7 +189,8 @@ def render_live_alerts() -> None:
 
         st.code(
             'IMD_API_TOKEN = "YOUR_ISSUED_IMD_API_TOKEN"\n'
-            'NDMA_CAP_FEED_URL = "YOUR_AUTHORIZED_SACHET_CAP_FEED_URL"',
+            'NDMA_CAP_FEED_URL = ""\n'
+            'NDMA_CAP_IDENTIFIER = "YOUR_SACHET_ISSUED_IDENTIFIER"',
             language="toml",
         )
 
@@ -239,6 +245,7 @@ def render_live_alerts() -> None:
         not cached_data
         or refresh
         or cached_data.get("filters") != desired_filters
+        or "usgs" not in cached_data
         or time.monotonic() - fetched_at >= 300
     )
 
@@ -273,9 +280,21 @@ def render_live_alerts() -> None:
                     "alerts": [],
                 }
 
+            try:
+                usgs = get_usgs_india_earthquakes()
+            except Exception as exc:
+                usgs = {
+                    "ok": False,
+                    "events": [],
+                    "error": f"USGS request failed: {type(exc).__name__}",
+                    "fetched_at": None,
+                    "records_seen": 0,
+                }
+
             st.session_state["resq_live_data"] = {
                 "imd": imd,
                 "ndma": ndma,
+                "usgs": usgs,
                 "filters": desired_filters,
             }
             st.session_state["resq_live_data_fetched_monotonic"] = (
@@ -285,6 +304,7 @@ def render_live_alerts() -> None:
     data = st.session_state["resq_live_data"]
     imd = data.get("imd", {})
     ndma = data.get("ndma", {})
+    usgs = data.get("usgs", {})
 
     nowcast_result = imd.get("nowcast", {})
     warning_result = imd.get("warnings", {})
@@ -295,23 +315,32 @@ def render_live_alerts() -> None:
     imd_public_alerts = public_result.get("alerts", [])
     ndma_rows = ndma.get("alerts", [])
 
-    good_sources = int(bool(imd.get("ok"))) + int(bool(ndma.get("ok")))
+    good_sources = (
+        int(bool(imd.get("ok")))
+        + int(bool(ndma.get("ok")))
+        + int(bool(usgs.get("ok")))
+    )
 
     successful_times = [
         value
-        for value in (imd.get("fetched_at"), ndma.get("fetched_at"))
+        for value in (
+            imd.get("fetched_at"),
+            ndma.get("fetched_at"),
+            usgs.get("fetched_at"),
+        )
         if value
     ]
 
     m1, m2, m3 = st.columns(3)
     m1.metric(
-        "Government alert items",
+        "Live alert / event items",
         len(nowcast_rows)
         + len(warning_rows)
         + len(imd_public_alerts)
-        + len(ndma_rows),
+        + len(ndma_rows)
+        + len(usgs.get("events", [])),
     )
-    m2.metric("Sources responding", f"{good_sources} / 2")
+    m2.metric("Sources responding", f"{good_sources} / 3")
     m3.metric(
         "Last successful fetch",
         _fmt_time(max(successful_times) if successful_times else None),
@@ -448,6 +477,21 @@ def render_live_alerts() -> None:
             f"[Open SACHET portal]({NDMA_PORTAL}) · "
             f"[CAP feed guide]({NDMA_FEED_GUIDE})"
         )
+
+        st.divider()
+        st.markdown("**USGS earthquake feed — India region**")
+        st.markdown(
+            "Status: "
+            + ("🟢 Request succeeded" if usgs.get("ok") else "🟡 Unavailable")
+        )
+        st.caption(
+            f"India-region events: {len(usgs.get('events', []))} · "
+            f"USGS records checked: {usgs.get('records_seen', 0)} · "
+            f"fetched {_fmt_time(usgs.get('fetched_at'))}"
+        )
+        if usgs.get("error"):
+            st.caption(str(usgs["error"]))
+        st.markdown(f"[Open USGS earthquake feed]({usgs.get('source_url', 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson')})")
 
     any_filter = _has_filters(state, district, area_query)
 
@@ -615,6 +659,32 @@ def render_live_alerts() -> None:
                 "No English-readable district warnings matched these filters. "
                 "Try a broader state, district, or city name."
             )
+
+    # Recent earthquakes within the India-region bounding box
+    st.markdown("### Recent earthquakes — India region")
+    earthquake_events = [
+        row for row in usgs.get("events", [])
+        if _matches_area(row, state, district, area_query)
+    ]
+    if not usgs.get("ok"):
+        st.info(usgs.get("error") or "USGS earthquake data is unavailable.")
+    elif not earthquake_events:
+        st.info(
+            "No events from the USGS past-day feed matched the India-region "
+            "bounds and current filters. This does not mean all Indian seismic "
+            "activity has been ruled out."
+        )
+    else:
+        for row in earthquake_events[:50]:
+            with st.container(border=True):
+                st.markdown(f"**{row.get('title', 'Earthquake event')}**")
+                st.caption(
+                    f"{row.get('published') or 'Time not supplied'} · "
+                    f"{row.get('source', 'USGS')}"
+                )
+                st.write(row.get("summary", ""))
+                if row.get("link", "").startswith("https://"):
+                    st.markdown(f"[Verify event at USGS]({row['link']})")
 
     # NDMA SACHET / CAP alerts
     st.markdown("### NDMA SACHET / CAP alerts")
