@@ -370,3 +370,27 @@ def test_usgs_india_earthquake_feed_filters_by_coordinates(monkeypatch):
     finally:
         live_data._cache.pop(cache_key, None)
 
+def test_wis2_parser_accepts_root_level_metadata_and_nested_items():
+    cap_xml = b"""<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+      <info><event>Heavy Rain</event><headline>Test CAP alert</headline>
+      <expires>2099-01-01T00:00:00Z</expires></info>
+    </alert>"""
+    encoded = base64.b64encode(cap_xml).decode("ascii")
+    payload = {
+        "items": {
+            "features": [
+                {
+                    "metadataId": live_data.IMD_CAP_METADATA_ID,
+                    "dataId": "in-imd:cap_alerts/test-root-level",
+                    "content": {"encoding": "base64", "value": encoded},
+                }
+            ]
+        }
+    }
+
+    alerts, seen = _parse_wis2_cap_items(payload)
+
+    assert seen == 1
+    assert len(alerts) == 1
+    assert alerts[0]["title"] == "Test CAP alert"
+
