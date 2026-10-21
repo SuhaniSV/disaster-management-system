@@ -14,6 +14,7 @@ from core.live_data import (
     NDMA_FEED_GUIDE,
     NDMA_PORTAL,
     get_imd_live_data,
+    get_imd_public_warning_outlook,
     get_ndma_cap_alerts,
     get_usgs_india_earthquakes,
 )
@@ -271,6 +272,17 @@ def render_live_alerts() -> None:
                 }
 
             try:
+                imd_outlook = get_imd_public_warning_outlook()
+            except Exception as exc:
+                imd_outlook = {
+                    "ok": False,
+                    "rows": [],
+                    "error": f"IMD public warning outlook failed: {type(exc).__name__}",
+                    "fetched_at": None,
+                    "source_url": "https://mausam.imd.gov.in/imd_latest/contents/subdivisionwise-warning_mc.php?id=25",
+                }
+
+            try:
                 ndma = get_ndma_cap_alerts()
             except Exception as exc:
                 ndma = {
@@ -295,6 +307,7 @@ def render_live_alerts() -> None:
                 "imd": imd,
                 "ndma": ndma,
                 "usgs": usgs,
+                "imd_outlook": imd_outlook,
                 "filters": desired_filters,
             }
             st.session_state["resq_live_data_fetched_monotonic"] = (
@@ -305,6 +318,7 @@ def render_live_alerts() -> None:
     imd = data.get("imd", {})
     ndma = data.get("ndma", {})
     usgs = data.get("usgs", {})
+    imd_outlook = data.get("imd_outlook", {"ok": False, "rows": []})
 
     nowcast_result = imd.get("nowcast", {})
     warning_result = imd.get("warnings", {})
@@ -404,6 +418,25 @@ def render_live_alerts() -> None:
                 f"{len(imd_public_alerts)} active alerts · "
                 f"{public_result.get('records_seen', 0)} CAP records matched · "
                 f"fetched {_fmt_time(public_result.get('fetched_at'))}"
+            )
+
+            outlook_rows = imd_outlook.get("rows", [])
+            outlook_status = (
+                f"{len(outlook_rows)} non-No-warning forecast entries"
+                if imd_outlook.get("ok")
+                else "unavailable"
+            )
+            st.markdown(
+                f"- **IMD public subdivision outlook:** {outlook_status} · "
+                f"issued {_fmt_time(imd_outlook.get('fetched_at'))}"
+            )
+            if imd_outlook.get("error"):
+                st.caption(str(imd_outlook["error"]))
+
+            st.caption(
+                "The CAP catalogue and current forecast outlook are different sources. "
+                "CAP records can be expired while IMD's public warning outlook "
+                "still contains future forecast entries."
             )
 
             st.caption(
@@ -549,6 +582,39 @@ def render_live_alerts() -> None:
                 "No English-readable public IMD alerts matched these filters. "
                 "Try a broader state, district, or city name."
             )
+
+    # Current public IMD subdivision outlook (separate from CAP events)
+    st.markdown("### IMD public warning outlook")
+    st.caption(
+        "Official public forecast warnings from IMD RMC New Delhi. "
+        "This is a regional 7-day outlook, not a CAP incident feed."
+    )
+    if not imd_outlook.get("ok"):
+        st.info(
+            "The public IMD subdivision outlook could not be retrieved. "
+            "Use the official source link below to verify current warnings."
+        )
+    else:
+        outlook_rows = imd_outlook.get("rows", [])
+        if not outlook_rows:
+            st.success(
+                "The fetched IMD regional outlook contains no non-No-warning "
+                "entries for the displayed forecast days."
+            )
+        else:
+            st.caption(
+                f"{len(outlook_rows)} official forecast warning entries · "
+                f"issued {_fmt_time(imd_outlook.get('fetched_at'))}"
+            )
+            for row in outlook_rows[:50]:
+                _render_alert(
+                    row,
+                    title_keys=("title",),
+                    default_title="IMD forecast warning",
+                )
+    outlook_url = imd_outlook.get("source_url")
+    if isinstance(outlook_url, str) and outlook_url.startswith("https://"):
+        st.markdown(f"[Open current IMD public warning outlook]({outlook_url})")
 
     # IMD district nowcasts
     st.markdown("### IMD district nowcasts")
