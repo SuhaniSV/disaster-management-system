@@ -1,149 +1,59 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    :root { color-scheme: light dark; font-family: Inter, system-ui, -apple-system, sans-serif; }
-    body { margin: 0; background: transparent; color: var(--text, #e8edf7); }
-    .panel { border: 1px solid rgba(125,145,180,.28); border-radius: 16px; padding: 16px; background: rgba(35,48,72,.18); }
-    .eyebrow { font-size: 11px; letter-spacing: .14em; font-weight: 750; color: #8ba7ff; }
-    .title { font-size: 18px; font-weight: 750; margin: 6px 0; }
-    .sub { font-size: 12px; opacity: .76; line-height: 1.5; }
-    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 8px; }
-    button { border: 1px solid rgba(135,158,205,.42); border-radius: 11px; padding: 10px 14px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; color: inherit; background: rgba(91,116,180,.17); }
-    button.primary { background: #5278ef; border-color: #5278ef; color: white; }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    .status { font-size: 12px; min-height: 18px; margin-top: 8px; color: #a9c1ff; }
-    .transcript { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(125,145,180,.12); font-size: 13px; line-height: 1.5; min-height: 18px; overflow-wrap: anywhere; }
-    .response { display: none; margin-top: 12px; border-top: 1px solid rgba(125,145,180,.25); padding-top: 12px; }
-    .response-label { font-size: 11px; font-weight: 750; letter-spacing: .1em; opacity: .7; margin-bottom: 6px; }
-    .response-text { font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 180px; overflow: auto; }
-    .note { font-size: 11px; opacity: .65; margin-top: 12px; line-height: 1.45; }
-  </style>
-</head>
-<body>
-  <div class="panel">
-    <div class="eyebrow">RESQ-AI · VOICE MODE</div>
-    <div class="title">Talk to ResQ Assistant</div>
-    <div class="sub">Ask about incident priority, shelter capacity, available resources, or disaster safety.</div>
-    <div class="controls">
-      <button id="listen" class="primary" type="button">🎙 Start speaking</button>
-      <button id="stop" type="button" disabled>Stop listening</button>
-      <button id="speak" type="button" disabled>🔊 Speak answer</button>
-    </div>
-    <div id="status" class="status" aria-live="polite">Press “Start speaking” and allow microphone access.</div>
-    <div id="transcript" class="transcript">Your recognized question will appear here.</div>
-    <div id="response" class="response">
-      <div class="response-label">RESQ RESPONSE</div>
-      <div id="responseText" class="response-text"></div>
-    </div>
-    <div class="note">Browser voice support required. Speech recognition may be unavailable in some browsers. This is a RescueX voice demo, not a direct connection to an Amazon Alexa device. Data may be simulated; no dispatch is performed.</div>
-  </div>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:transparent;color:#edf3ff}
+.panel{overflow:hidden;border:1px solid #34466d;border-radius:22px;padding:22px;background:radial-gradient(ellipse at 50% 0%,#263b6b77,transparent 56%),linear-gradient(145deg,#101827,#0a101b)}
+.top{display:flex;align-items:center;gap:12px}.brand{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#6a8dff,#8a5cff);box-shadow:0 0 30px #6485ff55;font-size:20px}
+.eyebrow{font-size:10px;letter-spacing:.19em;font-weight:800;color:#9bb3ff}.title{font-size:19px;font-weight:760;margin-top:4px}.sub{margin-top:16px;font-size:12px;line-height:1.6;color:#a9b7cf}
+.stage{display:grid;place-items:center;padding:25px 0 17px}.orb{width:104px;height:104px;border-radius:50%;position:relative;display:grid;place-items:center;background:radial-gradient(circle at 35% 28%,#d7e6ff,#9db7ff 10%,#5a76ec 31%,#273d91 58%,#111b3c 72%);box-shadow:0 0 0 1px #a9c3ff77,0 0 35px #5278ef66,inset 0 0 22px #d7e6ff44}.orb:before,.orb:after{content:"";position:absolute;inset:-9px;border:1px solid #7292ff66;border-radius:50%;animation:pulse 2.8s ease-out infinite}.orb:after{animation-delay:1.4s}.orb.active{animation:glow 1.8s ease-in-out infinite}.orb.active:before,.orb.active:after{border-color:#92aaffaa;animation-duration:1.5s}.orb span{font-size:27px}
+@keyframes pulse{0%{transform:scale(.82);opacity:.9}100%{transform:scale(1.48);opacity:0}}@keyframes glow{0%,100%{box-shadow:0 0 0 1px #a9c3ff77,0 0 28px #5278ef66}50%{box-shadow:0 0 0 1px #d6e1ffbb,0 0 45px #5278efaa}}
+.status{font-size:12px;color:#b8c9ed;text-align:center;min-height:18px}.controls{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin:18px 0 12px}
+button{border:1px solid #455574;border-radius:12px;padding:10px 14px;cursor:pointer;font:inherit;font-size:12px;font-weight:750;color:#eaf0ff;background:#18243a}button.primary{background:linear-gradient(135deg,#5578f2,#775ce6);border-color:transparent}button.stop{background:#321d2a;border-color:#704153}button:disabled{opacity:.45;cursor:not-allowed}
+.conversation{display:grid;gap:10px;margin-top:10px}.bubble{padding:12px 14px;border:1px solid #25344e;background:#111b2b;border-radius:14px;font-size:12px;line-height:1.6;overflow-wrap:anywhere}.label{font-size:9px;letter-spacing:.14em;font-weight:850;color:#8ea8ff;margin-bottom:5px}.answer{background:linear-gradient(135deg,#17223b,#111a2a);border-color:#35446c}.note{border-top:1px solid #243047;margin-top:16px;padding-top:12px;font-size:10px;line-height:1.55;color:#7f8da5}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style></head>
+<body><div class="panel">
+<div class="top"><div class="brand">✦</div><div><div class="eyebrow">RESQ-AI · ALEXA+ TRACK DEMO</div><div class="title">ResQ Voice</div></div></div>
+<div class="sub">Talk naturally about disaster safety or ask the assistant to inspect incident priorities, reported resources, and shelter status. Start once, then keep speaking between replies.</div>
+<div class="stage"><div id="orb" class="orb"><span>✧</span></div></div>
+<div id="status" class="status" aria-live="polite">Ready when you are. Start a voice conversation.</div>
+<div class="controls"><button id="start" class="primary">🎙 Start conversation</button><button id="interrupt" disabled>Interrupt / ask now</button><button id="stop" class="stop" disabled>End conversation</button></div>
+<div class="conversation"><div class="bubble"><div class="label">YOU SAID</div><div id="transcript">Your question will appear here.</div></div><div class="bubble answer"><div class="label">RESQ VOICE RESPONSE</div><div id="response">Your assistant's answer will appear here.</div></div></div>
+<div class="note">Hackathon web simulation, not a direct Alexa device/account connection. Voice uses browser speech capabilities; support varies. Operational answers use the app's current records, which may be simulated or incomplete. No dispatch or emergency call is made.</div>
+</div>
 <script>
 (() => {
-  const send = (type, data) => window.parent.postMessage({ isStreamlitMessage: true, type, ...data }, "*");
-  const listenBtn = document.getElementById("listen");
-  const stopBtn = document.getElementById("stop");
-  const speakBtn = document.getElementById("speak");
-  const status = document.getElementById("status");
-  const transcriptBox = document.getElementById("transcript");
-  const responseBox = document.getElementById("response");
-  const responseText = document.getElementById("responseText");
-  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let recognition = null;
-  let finalText = "";
-  let currentResponse = "";
-  let lastResponseId = null;
-
-  send("streamlit:componentReady", { apiVersion: 1 });
-  send("streamlit:setFrameHeight", { height: 310 });
-
-  if (!Recognition) {
-    listenBtn.disabled = true;
-    status.textContent = "Speech recognition is not supported in this browser. Try the latest Chrome or Edge, or type your question in the chat below.";
-  } else {
-    recognition = new Recognition();
-    recognition.lang = "en-IN";
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.onstart = () => {
-      finalText = "";
-      listenBtn.disabled = true;
-      stopBtn.disabled = false;
-      status.textContent = "Listening… speak your question now.";
-      transcriptBox.textContent = "Listening for your question…";
-    };
-    recognition.onresult = (event) => {
-      let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const part = event.results[i][0].transcript;
-        if (event.results[i].isFinal) finalText += part;
-        else interim += part;
-      }
-      transcriptBox.textContent = (finalText + " " + interim).trim() || "Listening…";
-    };
-    recognition.onerror = (event) => {
-      status.textContent = event.error === "not-allowed"
-        ? "Microphone permission was denied. Allow microphone access in your browser settings."
-        : "Could not recognize speech (" + event.error + "). Please try again or type below.";
-    };
-    recognition.onend = () => {
-      listenBtn.disabled = false;
-      stopBtn.disabled = true;
-      const text = finalText.trim();
-      if (text) {
-        status.textContent = "Question captured. ResQ Assistant is preparing an answer…";
-        send("streamlit:setComponentValue", { value: { text, id: Date.now() } });
-      } else if (!status.textContent.startsWith("Could not") && !status.textContent.startsWith("Microphone")) {
-        status.textContent = "No speech detected. Try again or type your question below.";
-      }
-    };
-  }
-
-  listenBtn.addEventListener("click", () => {
-    if (!recognition) return;
-    try { recognition.start(); } catch (_) { status.textContent = "Microphone is busy. Please try again in a moment."; }
-  });
-  stopBtn.addEventListener("click", () => { if (recognition) recognition.stop(); });
-
-  speakBtn.addEventListener("click", () => {
-    if (!currentResponse) return;
-    if (!("speechSynthesis" in window)) {
-      status.textContent = "Text-to-speech is not supported in this browser.";
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(currentResponse);
-    utterance.lang = "en-IN";
-    utterance.rate = 1;
-    utterance.onstart = () => { status.textContent = "Speaking the ResQ response…"; };
-    utterance.onend = () => { status.textContent = "Answer spoken. You can ask another question."; };
-    utterance.onerror = () => { status.textContent = "Could not speak the answer. You can read it on screen."; };
-    window.speechSynthesis.speak(utterance);
-  });
-
-  window.addEventListener("message", (event) => {
-    const data = event.data;
-    if (!data || data.type !== "streamlit:render" || !data.args) return;
-    const args = data.args;
-    const text = String(args.response_text || "");
-    currentResponse = text;
-    if (text) {
-      responseBox.style.display = "block";
-      responseText.textContent = text;
-      speakBtn.disabled = false;
-    } else {
-      responseBox.style.display = "none";
-      speakBtn.disabled = true;
-    }
-    if (args.response_id !== undefined && args.response_id !== lastResponseId) {
-      lastResponseId = args.response_id;
-      if (text) status.textContent = "Answer ready. Press “Speak answer” to hear it.";
-    }
-    send("streamlit:setFrameHeight", { height: document.body.scrollHeight + 4 });
-  });
+const send=(type,data)=>window.parent.postMessage({isStreamlitMessage:true,type,...data},"*");
+const startBtn=document.getElementById("start"),interruptBtn=document.getElementById("interrupt"),stopBtn=document.getElementById("stop");
+const status=document.getElementById("status"),transcriptBox=document.getElementById("transcript"),responseBox=document.getElementById("response"),orb=document.getElementById("orb");
+const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+let recognition=null,finalText="",active=false,listening=false,speaking=false,lastResponseId=null,restartPending=false;
+send("streamlit:componentReady",{apiVersion:1});send("streamlit:setFrameHeight",{height:540});
+function setStatus(t){status.textContent=t}
+function setActive(v){active=v;startBtn.disabled=v;stopBtn.disabled=!v;interruptBtn.disabled=!v;orb.classList.toggle("active",v)}
+function listen(){if(!active||!recognition||listening||speaking)return;finalText="";try{recognition.start()}catch(_){restartPending=true}}
+function speak(text){
+ if(!text||!("speechSynthesis"in window)){if(active){setStatus("Answer ready. Keep talking when ready.");listen()}return}
+ window.speechSynthesis.cancel();const clean=text.replaceAll("**","").replaceAll("*","").replaceAll("_","");
+ const u=new SpeechSynthesisUtterance(clean);u.lang="en-IN";u.rate=1;u.pitch=1;
+ u.onstart=()=>{speaking=true;setStatus("Speaking… tap Interrupt / ask now to cut in.")};
+ u.onend=()=>{speaking=false;if(active){setStatus("Listening for your next question…");listen()}else setStatus("Response complete.")};
+ u.onerror=()=>{speaking=false;if(active){setStatus("Answer is shown. Ask your next question.");listen()}};
+ window.speechSynthesis.speak(u)
+}
+if(!Recognition){startBtn.disabled=true;setStatus("Speech recognition is unavailable. Open this page in a recent Chrome or Edge browser.")}
+else{
+ recognition=new Recognition();recognition.lang="en-IN";recognition.continuous=false;recognition.interimResults=true;
+ recognition.onstart=()=>{listening=true;restartPending=false;setStatus("Listening… ask your question.")};
+ recognition.onresult=e=>{let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const part=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=part;else interim+=part}transcriptBox.textContent=(finalText+" "+interim).trim()||"Listening…"};
+ recognition.onerror=e=>{listening=false;if(e.error==="not-allowed"){setStatus("Microphone permission denied. Allow access in browser settings.");setActive(false)}else if(e.error!=="no-speech"&&e.error!=="aborted")setStatus("Speech recognition error: "+e.error+". Try again.")};
+ recognition.onend=()=>{listening=false;const t=finalText.trim();if(t&&active){setStatus("Thinking… checking your question.");send("streamlit:setComponentValue",{value:{text:t,id:Date.now()}})}else if(active&&!speaking&&restartPending)listen()}
+}
+startBtn.addEventListener("click",()=>{if(!recognition)return;setActive(true);setStatus("Starting voice conversation…");listen()});
+stopBtn.addEventListener("click",()=>{setActive(false);restartPending=false;if(recognition&&listening)recognition.stop();if("speechSynthesis"in window)window.speechSynthesis.cancel();speaking=false;setStatus("Voice conversation ended.")});
+interruptBtn.addEventListener("click",()=>{if(!active||!recognition)return;if("speechSynthesis"in window)window.speechSynthesis.cancel();speaking=false;if(listening){try{recognition.stop()}catch(_){}}setStatus("Interrupted. Listening to you now…");window.setTimeout(listen,150)});
+window.addEventListener("message",event=>{const d=event.data;if(!d||d.type!=="streamlit:render"||!d.args)return;const a=d.args,t=String(a.response_text||"");if(t)responseBox.textContent=t;if(a.response_id!==undefined&&a.response_id!==lastResponseId){lastResponseId=a.response_id;if(t)speak(t)}send("streamlit:setFrameHeight",{height:document.body.scrollHeight+4})});
 })();
-</script>
-</body>
-</html>
+</script></body></html>
