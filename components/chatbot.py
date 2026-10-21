@@ -38,6 +38,108 @@ def _snapshot(center: CommandCenter) -> dict[str, Any]:
     }
 
 
+
+def _app_help(question: str) -> str | None:
+    """Answer common how-to questions using the repository's actual app workflow."""
+    q = question.casefold()
+    if any(term in q for term in ("report an incident", "report incident", "submit an incident", "file an incident", "create an incident report", "how do i report", "how can i report")):
+        return (
+            "**How to report an incident**\n\n"
+            "1. Open **Report Incident** from the sidebar.\n"
+            "2. Describe what happened, the exact location, hazards, and people affected.\n"
+            "3. Enter the estimated number of people affected and the latitude/longitude. "
+            "Choose the observed access condition; reporter name and an image are optional.\n"
+            "4. Select **ANALYZE INCIDENT** and review the assessment, priority explanation, and resource recommendation.\n\n"
+            "The priority score is calculated by deterministic rules; a coordinator must verify recommendations. "
+            "A report may be session-only if database storage is not configured or saving fails. Check the result message—do not assume it was saved permanently."
+        )
+    if any(term in q for term in ("command center", "main screen", "overview page", "where do i see incidents")):
+        return (
+            "**Command Center**\n\n"
+            "Open **Command Center** in the sidebar for the main operational overview and incident snapshot. "
+            "Use **Incident Operations** for operational incident review, and **Report Incident** to submit a new report. "
+            "Some prototype operational records may be simulated rather than live."
+        )
+    if any(term in q for term in ("priority score", "why is this incident", "incident priority", "how is priority", "how are incidents ranked", "most urgent incident")):
+        return (
+            "**Understanding incident priority**\n\n"
+            "Open an incident in the Command Center or Incident Operations, then review its priority score, urgency, "
+            "and the listed factors where available. The app's deterministic rules calculate the score; the assistant can explain "
+            "the displayed result but must not change it. A score is decision support, not dispatch authorization."
+        )
+    if any(term in q for term in ("scenario simulator", "simulate a disaster", "run a simulation", "test a scenario")):
+        return (
+            "**Scenario Simulator**\n\n"
+            "Open **Scenario Simulator** from the sidebar, choose the available scenario/settings, and run the simulation to inspect its modeled outcomes. "
+            "Treat these as simulated planning results, not verified live incidents or a real dispatch."
+        )
+    if any(term in q for term in ("government alert", "live alert", "weather alert", "current warning", "official warning", "live warning")):
+        return (
+            "**Live Government Alerts**\n\n"
+            "Open **Live Government Alerts** in the sidebar to review the public alert feeds supported by the app. "
+            "Check each item’s source and timestamp and confirm urgent instructions with the relevant official agency. "
+            "The ResQ Assistant's operational snapshot is not itself a live government-alert feed, and it cannot verify every local warning."
+        )
+    if any(term in q for term in ("resource status", "available resources", "rescue vehicle", "rescue team", "resource availability", "hospital bed", "shelter capacity", "shelter space", "find a shelter")):
+        return (
+            "**Checking resources, hospitals, and shelters**\n\n"
+            "Use **Command Center** or **Incident Operations** to review available operational records; ask ResQ Assistant "
+            "which resources are available, which hospitals have beds, or which shelters have space. "
+            "Availability shown in the prototype can be incomplete or simulated. Confirm it with an authorized coordinator before relying on it."
+        )
+    if any(term in q for term in ("route planner", "plan a route", "find a route", "road route", "route to shelter")):
+        return (
+            "**Route Planner**\n\n"
+            "Open **Route Planner** from the sidebar and enter the route details requested by the page to inspect its route output. "
+            "Do not treat a planned route as proof that roads are currently safe or open; verify road closures and evacuation directions with local authorities."
+        )
+    if any(term in q for term in ("situation report", "generate a report", "export report", "incident brief", "download report")):
+        return (
+            "**Situation Reports**\n\n"
+            "Open **Situation Reports** in the sidebar to review the report-generation options available in this version. "
+            "Review the report for completeness and remember that prototype records may be simulated or incomplete before sharing it as an operational update."
+        )
+    if any(term in q for term in ("dark mode", "change theme", "light mode", "appearance", "theme setting")):
+        return (
+            "**Changing the app theme**\n\n"
+            "Use the theme toggle in the app sidebar to switch between the available light and dark appearances. "
+            "If the appearance does not update, refresh the page and check the toggle again."
+        )
+    if any(term in q for term in ("upload an image", "attach a photo", "incident photo", "image upload", "photo evidence")):
+        return (
+            "**Adding an image to an incident report**\n\n"
+            "On **Report Incident**, use the optional image uploader to attach a PNG or JPG/JPEG image, then submit the report. "
+            "In this prototype, the image is stored for operator review only; it is not analyzed by computer vision."
+        )
+    if any(term in q for term in ("voice assistant", "talk to resq", "microphone", "speak to the assistant", "voice mode")):
+        return (
+            "**Using ResQ Voice**\n\n"
+            "Open **ResQ Assistant**, select **Start conversation**, allow microphone access if your browser asks, and speak after the status says it is listening. "
+            "The assistant may speak its reply; use **Interrupt / ask now** to cut in and **End conversation** to stop. "
+            "Browser speech support varies. This is a web voice simulation, not a direct Alexa device/account connection, and it cannot place emergency calls or dispatch teams."
+        )
+    if any(term in q for term in ("database", "save permanently", "saved permanently", "where is my report saved", "report disappeared", "persistence")):
+        return (
+            "**Is my incident report saved?**\n\n"
+            "After submitting a report, read the success or error message. The app distinguishes a permanent database save from a session-only report. "
+            "If storage is not configured or saving fails, the report may disappear when the session ends; do not assume persistence without a success confirmation."
+        )
+    if any(term in q for term in ("what can this app do", "app features", "what features", "how do i use this app", "how can i use resq", "help me use the app", "app help", "what pages are there")):
+        return (
+            "**ResQ-AI app guide**\n\n"
+            "- **Command Center:** main operational overview.\n"
+            "- **Report Incident:** submit and analyze a new incident.\n"
+            "- **Scenario Simulator:** explore modeled disaster scenarios.\n"
+            "- **ResQ Assistant:** ask about incident records, resources, and disaster-safety guidance.\n"
+            "- **Live Government Alerts:** review supported public alert feeds.\n"
+            "- **Incident Operations:** review operational incident records.\n"
+            "- **Situation Reports:** review report-generation tools.\n"
+            "- **Route Planner:** inspect route-planning outputs.\n\n"
+            "Choose the matching page in the sidebar. Operational data and route outputs may be simulated or incomplete; this app does not automatically contact responders or authorize dispatch."
+        )
+    return None
+
+
 def _safety_guidance(question: str) -> str | None:
     """Conservative general safety guidance with links to official public sources."""
     q = question.casefold()
@@ -121,6 +223,9 @@ def _safety_guidance(question: str) -> str | None:
 
 def _fallback(question: str, center: CommandCenter) -> str:
     q = question.lower()
+    app_help = _app_help(question)
+    if app_help:
+        return app_help
     guidance = _safety_guidance(question)
     if guidance:
         return guidance
@@ -198,6 +303,11 @@ def _fallback(question: str, center: CommandCenter) -> str:
 
 
 def answer_question(question: str, center: CommandCenter, history: list[dict[str, str]] | None = None) -> str:
+    # App how-to answers are grounded in known UI workflows and should not depend on LLM availability.
+    app_help = _app_help(question)
+    if app_help:
+        return app_help
+
     # Safety-critical, well-defined guidance must not depend on LLM availability or output.
     # Keep these known hazard answers deterministic even when an AI provider is configured.
     guidance = _safety_guidance(question)

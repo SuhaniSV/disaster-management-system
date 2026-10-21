@@ -121,3 +121,47 @@ def test_resource_availability_question_about_ambulances_stays_operational():
     assert "resources" in answer
     assert "local emergency services" not in answer
 
+
+
+def test_app_help_explains_incident_reporting_steps():
+    from components.chatbot import _app_help
+
+    answer = _app_help("How do I report an incident?")
+    assert answer is not None
+    assert "Report Incident" in answer
+    assert "ANALYZE INCIDENT" in answer
+    assert "session-only" in answer
+
+
+def test_app_help_explains_voice_controls_and_limitations():
+    from components.chatbot import _app_help
+
+    answer = _app_help("How do I use the voice assistant?")
+    assert answer is not None
+    assert "Start conversation" in answer
+    assert "Interrupt / ask now" in answer
+    assert "cannot place emergency calls" in answer
+
+
+def test_app_help_describes_supported_app_pages():
+    from components.chatbot import _app_help
+
+    answer = _app_help("What features does this app have?")
+    assert answer is not None
+    for page in ("Command Center", "Report Incident", "Scenario Simulator",
+                 "Live Government Alerts", "Incident Operations", "Situation Reports",
+                 "Route Planner", "ResQ Assistant"):
+        assert page in answer
+
+
+def test_app_help_is_used_even_when_llm_is_configured(monkeypatch):
+    import components.chatbot as chatbot
+
+    monkeypatch.setattr(chatbot, "llm_configured", lambda: True)
+
+    def unexpected_llm_call(*args, **kwargs):
+        raise AssertionError("Known app how-to questions should not require an LLM")
+
+    monkeypatch.setattr(chatbot.LLMClient, "complete_json", unexpected_llm_call)
+    answer = chatbot.answer_question("How can I report an incident?", _empty_center())
+    assert "ANALYZE INCIDENT" in answer
