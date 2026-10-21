@@ -103,12 +103,13 @@ def _greeting_response(question: str) -> str | None:
 
 
 def _incident_count_answer(question: str, center: CommandCenter) -> str | None:
-    """Answer explicit incident-count questions from the loaded snapshot, not from guesses."""
+    """Count matching incident records from the loaded snapshot for explicit count questions."""
     raw = re.sub(r"[^a-z0-9]+", " ", question.casefold()).strip()
-    count_intent = ("how many" in raw or "number of" in raw or "count of" in raw or "total" in raw or bool(re.search(r"\\bcount\\b", raw)))
+    padded = f" {raw} "
+    count_intent = any(marker in padded for marker in (" how many ", " number of ", " count of ", " total ", " count "))
     if not count_intent:
         return None
-    type_aliases = {
+    aliases = {
         "earthquake": ("earthquake", "earthquakes", "earth quake", "tremor", "aftershock"),
         "flood": ("flood", "floods", "flooding"),
         "fire": ("fire", "fires", "wildfire", "wildfires"),
@@ -116,25 +117,34 @@ def _incident_count_answer(question: str, center: CommandCenter) -> str | None:
         "landslide": ("landslide", "landslides"),
         "storm": ("storm", "storms"),
     }
-    requested_type = next((kind for kind, aliases in type_aliases.items() if any(re.search(rf"\\b{re.escape(alias)}\\b", raw) for alias in aliases)), None)
-    if requested_type:
-        aliases = type_aliases[requested_type]
-        count = sum(1 for row in center.incidents if any(re.search(rf"\\b{re.escape(alias)}\\b", re.sub(r"[^a-z0-9]+", " ", str(row.get("disaster_type") or "").casefold())) for alias in aliases))
-        label = requested_type.capitalize()
-        return (f"**{count} {label.lower()}{'s' if count != 1 else ''} reported in the current incident snapshot.**\\n\\n"
-                "This count is based only on the incident records currently loaded in ResQ-AI. "
-                "The operational dataset may be simulated or incomplete, so this is not a verified live or government-wide count.")
-    if any(word in raw for word in ("incident", "incidents", "disaster", "disasters", "reported", "report")):
-        return (f"**{len(center.incidents)} incident records** are currently listed in the ResQ-AI snapshot.\\n\\n"
-                "This is the count of records loaded in the app, not necessarily the number of unique real-world events. "
-                "The dataset may be simulated or incomplete.")
+    requested = next((kind for kind, words in aliases.items() if any(f" {word} " in padded for word in words)), None)
+    if requested:
+        count = 0
+        for row in center.incidents:
+            kind = " " + re.sub(r"[^a-z0-9]+", " ", str(row.get("disaster_type") or "").casefold()).strip() + " "
+            if any(f" {word} " in kind for word in aliases[requested]):
+                count += 1
+        label = requested.lower()
+        return (
+            f"**{count} {label}{"" if count == 1 else "s"} in the current ResQ-AI incident records.**\n\n"
+            "This counts only records currently loaded in the app. Operational records may be simulated or incomplete; "
+            "this is not a verified live or government-wide count."
+        )
+    if any(word in padded for word in (" incident ", " incidents ", " disaster ", " disasters ", " reported ", " report ")):
+        return (
+            f"**{len(center.incidents)} incident records** are currently loaded in ResQ-AI.\n\n"
+            "This is a record count, not necessarily a count of unique real-world events. The data may be simulated or incomplete."
+        )
     return None
-
 
 def _app_help(question: str) -> str | None:
     """Answer common how-to questions using the repository's actual app workflow."""
     q = question.casefold()
-    if _has_phrase(q, ("report an incident", "report incident", "submit an incident", "file an incident", "create an incident report", "how do i report an incident", "how can i report an incident")):
+    tokens = _intent_tokens(q)
+    report_verbs = {"report", "reporting", "submit", "submitting", "file", "filing", "create", "creating"}
+    incident_terms = {"incident", "incidents", "emergency", "emergencies", "disaster", "disasters"}
+    # Require both a reporting action and an incident concept; count questions are not how-to questions.
+    if report_verbs.intersection(tokens) and incident_terms.intersection(tokens):
         return (
             "**How to report an incident**\n\n"
             "1. Open **Report Incident** from the sidebar.\n"
