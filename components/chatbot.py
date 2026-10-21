@@ -9,6 +9,7 @@ import streamlit as st
 
 from core.llm_client import LLMClient, llm_configured
 from core.state import CommandCenter
+from components.voice_assistant import voice_assistant
 
 SYSTEM_PROMPT = """You are ResQ Assistant, a disaster-response decision-support assistant.
 Use the supplied snapshot only for operational incident/resource facts; it is not a live government alert feed.
@@ -193,11 +194,21 @@ def render_chatbot(center: CommandCenter) -> None:
     st.caption("AI provider configured · grounded in the current snapshot" if llm_configured() else "Offline fallback active · no API key required for built-in question patterns")
 
     history: list[dict[str, str]] = st.session_state.setdefault("resq_chat_messages", [])
+    prompt = None
+
+    voice_result = voice_assistant(
+        response_text=st.session_state.get("resq_voice_response", ""),
+        response_id=st.session_state.get("resq_voice_response_id", 0),
+    )
+    if isinstance(voice_result, dict) and voice_result.get("text"):
+        voice_id = str(voice_result.get("id", ""))
+        if voice_id and voice_id != st.session_state.get("resq_last_voice_id"):
+            st.session_state["resq_last_voice_id"] = voice_id
+            prompt = str(voice_result["text"]).strip()
+
     for item in history:
         with st.chat_message(item["role"]):
             st.markdown(item["content"])
-
-    prompt = None
     if not history:
         st.markdown("**Try asking**")
         columns = st.columns(4)
@@ -219,6 +230,10 @@ def render_chatbot(center: CommandCenter) -> None:
             st.markdown(response)
         history.append({"role": "assistant", "content": response})
         st.session_state.resq_chat_messages = history[-24:]
+        st.session_state["resq_voice_response"] = response
+        st.session_state["resq_voice_response_id"] = int(
+            st.session_state.get("resq_voice_response_id", 0)
+        ) + 1
         st.rerun()
     with st.sidebar:
         st.markdown("### ResQ Assistant")
