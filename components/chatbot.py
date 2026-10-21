@@ -125,8 +125,9 @@ def _incident_count_answer(question: str, center: CommandCenter) -> str | None:
             if any(f" {word} " in kind for word in aliases[requested]):
                 count += 1
         label = requested.lower()
+        plural = "" if count == 1 else "s"
         return (
-            f"**{count} {label}{"" if count == 1 else "s"} in the current ResQ-AI incident records.**\n\n"
+            f"**{count} {label}{plural} in the current ResQ-AI incident records.**\n\n"
             "This counts only records currently loaded in the app. Operational records may be simulated or incomplete; "
             "this is not a verified live or government-wide count."
         )
