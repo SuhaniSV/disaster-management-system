@@ -9,7 +9,9 @@ from __future__ import annotations
 import base64
 import hashlib
 import os
+import re
 import threading
+from html.parser import HTMLParser
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -39,6 +41,13 @@ IMD_WIS2_CAP_URL = (
 )
 IMD_CAP_METADATA_ID = "urn:wmo:md:in-imd:cap_alerts"
 
+# Public, current subdivision forecast/warning outlook from IMD RMC New Delhi.
+# This is separate from the CAP event feed and does not require an API token.
+IMD_PUBLIC_WARNING_URL = (
+    "https://mausam.imd.gov.in/imd_latest/contents/"
+    "subdivisionwise-warning_mc.php?id=25"
+)
+
 NDMA_PORTAL = "https://sachet.ndma.gov.in/"
 NDMA_FEED_GUIDE = "https://sachet.ndma.gov.in/CapFeed"
 
@@ -52,6 +61,106 @@ _cache: dict[str, dict[str, Any]] = {}
 def _now() -> str:
     """Return the current UTC timestamp."""
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+class _VisibleTextParser(HTMLParser):
+    """Extract readable page text without adding an external HTML dependency."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.parts: list[str] = []
+
+    def handle_data(self, data: str) -> None:
+        value = data.strip()
+        if value:
+            self.parts.append(value)
+
+    def text(self) -> str:
+        return " ".join(self.parts)
+
+
+def get_imd_public_warning_outlook() -> dict[str, Any]:
+    """Fetch current public IMD subdivision warnings from the official website."""
+    cache_key = "imd-public-warning-outlook:" + IMD_PUBLIC_WARNING_URL
+    now_monotonic = time.monotonic()
+
+    with _lock:
+        cached = _cache.get(cache_key)
+        if cached and now_monotonic - cached.get("_cached_at", 0) < _CACHE_SECONDS:
+            return {**cached, "cached": True}
+
+    result: dict[str, Any] = {
+        "ok": False,
+        "rows": [],
+        "fetched_at": _now(),
+        "cached": False,
+        "source_url": IMD_PUBLIC_WARNING_URL,
+        "error": None,
+    }
+
+    try:
+        response = requests.get(
+            IMD_PUBLIC_WARNING_URL,
+            timeout=_TIMEOUT_SECONDS,
+            verify=certifi.where(),
+            headers={
+                "Accept": "text/html",
+                "User-Agent": "ResQ-AI/1.0 (government-data dashboard)",
+            },
+        )
+        response.raise_for_status()
+        parser = _VisibleTextParser()
+        parser.feed(response.text)
+        text = re.sub(r"\s+", " ", parser.text())
+
+        issue_match = re.search(
+            r"Date of Issue:\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})",
+            text,
+            re.IGNORECASE,
+        )
+        issue_date = issue_match.group(1) if issue_match else ""
+
+        sections = list(
+            re.finditer(r"Warnings for\s+(.+?)\s+Date of Issue:", text, re.IGNORECASE)
+        )
+        rows: list[dict[str, Any]] = []
+        for index, section in enumerate(sections):
+            area = section.group(1).strip(" :-")
+            end = sections[index + 1].start() if index + 1 < len(sections) else len(text)
+            block = text[section.end():end]
+            day_pattern = re.compile(
+                r"Day\s*(\d+)\s*:\s*(.*?)\s*\|\s*(.*?)(?=\s+Day\s*\d+\s*:|$)",
+                re.IGNORECASE,
+            )
+            for match in day_pattern.finditer(block):
+                day_number, forecast_date, warning = (
+                    match.group(1), match.group(2).strip(), match.group(3).strip()
+                )
+                if not warning or re.fullmatch(r"No warning|No warnings|Nil", warning, re.IGNORECASE):
+                    continue
+                rows.append({
+                    "title": warning,
+                    "summary": f"IMD subdivision outlook: {area}. Day {day_number}: {forecast_date}. Issue date: {issue_date or 'not stated'}.",
+                    "area": area,
+                    "published": issue_date,
+                    "expires": "",
+                    "severity": "Warning" if "warning" in warning.casefold() else "Outlook",
+                    "source": "IMD public subdivision warning outlook",
+                    "link": IMD_PUBLIC_WARNING_URL,
+                    "forecast_day": int(day_number),
+                    "forecast_date": forecast_date,
+                })
+
+        result["ok"] = True
+        result["rows"] = rows
+        result["records_seen"] = len(sections)
+    except (requests.RequestException, ValueError, TypeError) as exc:
+        result["error"] = f"IMD public warning outlook failed: {type(exc).__name__}"
+
+    result["_cached_at"] = time.monotonic()
+    with _lock:
+        _cache[cache_key] = result
+    return {**result, "cached": False}
 
 
 def _setting(name: str, default: str = "") -> str:
@@ -406,10 +515,11 @@ def _parse_wis2_cap_items(
             or ""
         )
         normalized_metadata = metadata_id.casefold().replace("_", "-")
+        expected_metadata = IMD_CAP_METADATA_ID.casefold().replace("_", "-")
         normalized_data_id = data_id.casefold()
 
         if (
-            IMD_CAP_METADATA_ID.casefold() not in normalized_metadata
+            expected_metadata not in normalized_metadata
             and "cap_alerts" not in normalized_data_id
             and "cap-alerts" not in normalized_data_id
         ):
@@ -419,33 +529,55 @@ def _parse_wis2_cap_items(
 
         content = props.get("content", feature.get("content"))
         if isinstance(content, dict):
-            encoded = content.get("value") or content.get("data")
-            encoding = str(content.get("encoding") or "base64").casefold()
+            encoded = (
+                content.get("value")
+                or content.get("data")
+                or content.get("content")
+            )
+            encoding = str(content.get("encoding") or "").casefold()
         elif isinstance(content, str):
             encoded = content
-            encoding = "base64"
+            encoding = ""
         else:
             encoded = None
-            encoding = "base64"
+            encoding = ""
 
-        if isinstance(encoded, str) and encoded:
-            try:
-                decoded = (
-                    base64.b64decode(encoded, validate=True)
-                    if encoding == "base64"
-                    else encoded.encode("utf-8")
-                )
+        # WIS2 deployments have returned both base64-encoded CAP XML and
+        # literal XML/text despite omitting the encoding field. Try the
+        # declared encoding first, then a safe literal-XML fallback. Do not
+        # silently count a catalogue record as a parsed alert.
+        if isinstance(encoded, str) and encoded.strip():
+            candidates: list[bytes] = []
+            if encoding in {"base64", "base64binary", "base64-encoded"}:
+                try:
+                    candidates.append(base64.b64decode(encoded, validate=True))
+                except (ValueError, TypeError):
+                    pass
+            elif encoding in {"identity", "utf-8", "utf8", "xml", "text", "text/xml", "application/xml"}:
+                candidates.append(encoded.encode("utf-8"))
+            else:
+                # Unknown or missing encoding: first try base64, then literal
+                # XML. This handles real WIS2 payload variants without
+                # treating arbitrary non-XML text as a CAP alert.
+                try:
+                    candidates.append(base64.b64decode(encoded, validate=True))
+                except (ValueError, TypeError):
+                    pass
+                candidates.append(encoded.encode("utf-8"))
+
+            content_parsed = False
+            for decoded in candidates:
                 parsed = _parse_cap_xml(
                     decoded,
                     source="IMD WIS2 CAP feed",
                 )
-
                 if parsed:
                     alerts.extend(parsed)
-                    continue
+                    content_parsed = True
+                    break
 
-            except (ValueError, TypeError):
-                pass
+            if content_parsed:
+                continue
 
         # Some WIS2 records expose a link to the underlying CAP XML.
         links = props.get("links", feature.get("links", []))
