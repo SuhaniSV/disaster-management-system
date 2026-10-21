@@ -254,7 +254,16 @@ def get_ndma_cap_alerts() -> dict[str, Any]:
         status = getattr(exc.response, "status_code", "unknown")
         message = f"NDMA feed request failed (HTTP {status}). Verify the authorized feed URL and access."
     except requests.RequestException as exc:
-        message = f"Could not retrieve NDMA feed: {type(exc).__name__}. Check feed availability and network access."
+        # Surface the underlying TLS/network reason so deployment failures can be diagnosed.
+        # Remove the configured URL from the detail to avoid exposing query-string credentials.
+        detail = " ".join(str(exc).split())
+        detail = detail.replace(url, f"{parsed.scheme}://{parsed.netloc}{parsed.path}")
+        if len(detail) > 320:
+            detail = detail[:317] + "..."
+        message = (
+            f"Could not retrieve NDMA feed: {type(exc).__name__}: {detail}. "
+            "Check TLS certificate verification, feed availability, and network access."
+        )
     return {
         "source": "NDMA SACHET / India CAP", "source_url": url, "ok": False,
         "configured": True, "alerts": [], "fetched_at": None, "error": message,
