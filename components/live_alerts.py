@@ -101,9 +101,12 @@ def render_live_alerts() -> None:
             )
         public_result = imd.get("public_alerts", {})
         if public_result.get("ok"):
+            rss_status = "RSS reachable" if public_result.get("rss_ok") else "RSS unavailable"
+            wis2_status = "WIS2 reachable" if public_result.get("wis2_ok") else "WIS2 fallback failed" if public_result.get("error") else "WIS2 not needed"
             st.markdown(
-                f"- **Public IMD CAP feed:** OK · {len(public_result.get('alerts', []))} active alerts · "
-                f"{public_result.get('records_seen', len(public_result.get('alerts', [])))} CAP records checked · "
+                f"- **Public IMD CAP feed:** {rss_status} · {wis2_status} · "
+                f"{len(public_result.get('alerts', []))} active alerts · "
+                f"{public_result.get('records_seen', 0)} CAP records parsed · "
                 f"fetched {_fmt_time(public_result.get('fetched_at'))}"
             )
             st.caption(
@@ -111,7 +114,7 @@ def render_live_alerts() -> None:
                 "It supplements the authenticated district API; it does not replace district nowcasts/warnings."
             )
         elif public_result.get("error"):
-            st.caption(f"Public IMD CAP fallback: {public_result['error']}")
+            st.warning(f"Public IMD CAP source unavailable: {public_result['error']}")
         for name in ("nowcast", "warnings"):
             result = imd.get(name, {})
             status = "OK" if result.get("ok") else "Unavailable"
