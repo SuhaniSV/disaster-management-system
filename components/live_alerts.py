@@ -359,20 +359,26 @@ def render_live_alerts() -> None:
     with st.expander("Source status and diagnostics", expanded=True):
         st.markdown("**India Meteorological Department (IMD)**")
         st.markdown(
-            "Status: "
+            "Public-feed status: "
             + (
-                "🟢 At least one request succeeded"
-                if imd.get("ok")
-                else "🟡 Unavailable"
+                "🟢 Public CAP request succeeded"
+                if public_result.get("ok")
+                else "🟡 Public CAP feed unavailable"
             )
+        )
+        st.caption(
+            "The public CAP feed does not require IMD_API_TOKEN. The token "
+            "is only needed for the authenticated district nowcast and "
+            "district-warning endpoints."
         )
 
         if not imd.get("configured"):
             st.warning(
-                "IMD_API_TOKEN is missing. For the deployed app, add it "
-                "in Streamlit Community Cloud → app settings → Secrets. "
-                "For local runs, add it to your ignored `.env` file and "
-                "restart Streamlit."
+                "IMD_API_TOKEN is not configured, so district nowcasts and "
+                "district warnings cannot be fetched from the authenticated "
+                "IMD API. Add an issued token in Streamlit Community Cloud → "
+                "App settings → Secrets. This does not disable the public "
+                "IMD CAP feed."
             )
 
         if imd.get("error"):
@@ -396,14 +402,16 @@ def render_live_alerts() -> None:
                 f"- **Public IMD CAP feed:** {rss_status} · "
                 f"{wis2_status} · "
                 f"{len(imd_public_alerts)} active alerts · "
-                f"{public_result.get('records_seen', 0)} CAP records parsed · "
+                f"{public_result.get('records_seen', 0)} CAP records matched · "
                 f"fetched {_fmt_time(public_result.get('fetched_at'))}"
             )
 
             st.caption(
                 "This public CAP feed is linked from IMD's official "
-                "Mausam website. It supplements the authenticated district "
-                "API; it does not replace district nowcasts or warnings."
+                "Mausam website. Zero active alerts means no active CAP "
+                "items were returned by the checked feeds; it does not mean "
+                "there are no weather risks. District nowcasts and warnings "
+                "are separate authenticated endpoints."
             )
         elif public_result.get("error"):
             st.warning(
