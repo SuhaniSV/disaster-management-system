@@ -395,6 +395,10 @@ def _fallback(question: str, center: CommandCenter) -> str:
 
 
 def answer_question(question: str, center: CommandCenter, history: list[dict[str, str]] | None = None) -> str:
+    count_answer = _incident_count_answer(question, center)
+    if count_answer:
+        return count_answer
+
     # App how-to answers are grounded in known UI workflows and should not depend on LLM availability.
     app_help = _app_help(question)
     if app_help:
