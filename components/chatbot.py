@@ -469,6 +469,11 @@ def answer_question(question: str, center: CommandCenter, history: list[dict[str
     if guidance:
         return guidance
 
+    # Greetings should receive a stable response even when an LLM provider is configured.
+    greeting = _greeting_response(question)
+    if greeting:
+        return greeting
+
     if not llm_configured():
         return _fallback(question, center)
     prompt = json.dumps({
