@@ -33,7 +33,7 @@ let recognition=null,finalText="",active=false,listening=false,speaking=false,la
 send("streamlit:componentReady",{apiVersion:1});send("streamlit:setFrameHeight",{height:540});
 function setStatus(t){status.textContent=t}
 function renderInlineMarkdown(text,parent){
- const pattern=/\\[([^\\]]+)\\]\\((https?:\\/\\/[^\\s)]+)\\)|\\*\\*([^*]+)\\*\\*/g;
+ const pattern=/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*/g;
  let cursor=0,match;
  while((match=pattern.exec(text))!==null){
   parent.appendChild(document.createTextNode(text.slice(cursor,match.index)));
@@ -50,15 +50,15 @@ function renderInlineMarkdown(text,parent){
 }
 function renderResponse(text){
  responseBox.replaceChildren();
- const lines=String(text||"").split(/\\r?\\n/);
+ const lines=String(text||"").split(/\r?\n/);
  let list=null;
  for(const raw of lines){
   const line=raw.trim();
   if(!line){list=null;continue}
-  if(/^[-*]\\s+/.test(line)){
+  if(/^[-*]\s+/.test(line)){
    if(!list){list=document.createElement("ul");list.style.margin="4px 0";list.style.paddingLeft="20px";responseBox.appendChild(list)}
    const item=document.createElement("li");item.style.margin="3px 0";
-   renderInlineMarkdown(line.replace(/^[-*]\\s+/,""),item);list.appendChild(item);
+   renderInlineMarkdown(line.replace(/^[-*]\s+/,""),item);list.appendChild(item);
   }else{
    list=null;const paragraph=document.createElement("p");paragraph.style.margin="0 0 7px";
    renderInlineMarkdown(line,paragraph);responseBox.appendChild(paragraph);
