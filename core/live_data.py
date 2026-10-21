@@ -372,7 +372,9 @@ def _parse_wis2_cap_items(
     if not isinstance(payload, dict):
         return [], 0
 
-    features = payload.get("features", payload.get("items", []))
+    features = payload.get("features", payload.get("items", payload.get("data", [])))
+    if isinstance(features, dict):
+        features = features.get("features", features.get("items", []))
     if not isinstance(features, list):
         return [], 0
 
@@ -387,37 +389,51 @@ def _parse_wis2_cap_items(
         if not isinstance(props, dict):
             continue
 
+        # WIS2 versions can expose identifiers at the feature or properties
+        # level, with slightly different key casing/formatting.
         metadata_id = str(
             props.get("metadata_id")
             or props.get("metadataId")
+            or feature.get("metadata_id")
+            or feature.get("metadataId")
             or ""
         )
         data_id = str(
             props.get("data_id")
             or props.get("dataId")
+            or feature.get("data_id")
+            or feature.get("dataId")
             or ""
         )
+        normalized_metadata = metadata_id.casefold().replace("_", "-")
+        normalized_data_id = data_id.casefold()
 
         if (
-            metadata_id != IMD_CAP_METADATA_ID
-            and "cap_alerts" not in data_id.casefold()
+            IMD_CAP_METADATA_ID.casefold() not in normalized_metadata
+            and "cap_alerts" not in normalized_data_id
+            and "cap-alerts" not in normalized_data_id
         ):
             continue
 
         records_seen += 1
 
-        content = props.get("content")
-        encoded = (
-            content.get("value")
-            if isinstance(content, dict)
-            else None
-        )
+        content = props.get("content", feature.get("content"))
+        if isinstance(content, dict):
+            encoded = content.get("value") or content.get("data")
+            encoding = str(content.get("encoding") or "base64").casefold()
+        elif isinstance(content, str):
+            encoded = content
+            encoding = "base64"
+        else:
+            encoded = None
+            encoding = "base64"
 
         if isinstance(encoded, str) and encoded:
             try:
-                decoded = base64.b64decode(
-                    encoded,
-                    validate=True,
+                decoded = (
+                    base64.b64decode(encoded, validate=True)
+                    if encoding == "base64"
+                    else encoded.encode("utf-8")
                 )
                 parsed = _parse_cap_xml(
                     decoded,
@@ -546,7 +562,7 @@ def get_imd_public_cap_alerts() -> dict[str, Any]:
         try:
             response = requests.get(
                 IMD_WIS2_CAP_URL,
-                params={"limit": 100, "f": "json"},
+                params={"limit": 100, "f": "json", "sortby": "-datetime"},
                 headers={
                     "Accept": "application/geo+json, application/json",
                     "User-Agent": "ResQ-AI/1.0 (government-data dashboard)",
