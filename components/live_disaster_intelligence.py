@@ -19,6 +19,7 @@ def _cached_usgs() -> dict:
     return fetch_usgs_earthquakes()
 
 
+@st.fragment(run_every=300)
 def render_live_disaster_intelligence() -> None:
     st.markdown('<div class="resq-kicker">RESQ-AI / GLOBAL MONITORING</div>', unsafe_allow_html=True)
     st.title("Live Disaster Intelligence")
@@ -130,7 +131,7 @@ def render_live_disaster_intelligence() -> None:
         if force_refresh:
             st.success("Refresh requested: both feeds were fetched directly, bypassing the five-minute cache.")
         else:
-            st.caption("Automatic cache lifetime: up to 5 minutes while the page is being used. No background polling occurs while the app is idle.")
+            st.caption("This view automatically rechecks connected feeds every 5 minutes while the page remains open. Source adapters may cache responses for up to 5 minutes; no polling occurs when the app is closed.")
 
     if not events:
         if failures:
