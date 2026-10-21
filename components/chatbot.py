@@ -160,11 +160,34 @@ def _fallback(question: str, center: CommandCenter) -> str:
                 f"- Access: {row.get('accessibility', 'Unknown')}\n"
                 f"- Recommendation: {row.get('recommended_action', 'Review with coordinator')}\n\n"
                 "This is a deterministic ranking of simulated data, not dispatch authorization.")
-    return (f"ResQ-AI reports **{metrics.get('active_incidents', 0)} active incidents**, "
-            f"**{metrics.get('critical_incidents', 0)} critical incidents**, "
-            f"**{metrics.get('people_affected', 0)} people affected**, and "
-            f"**{metrics.get('available_resources', 0)} resources marked available** in simulated data.\n\n"
-            "Try: *Which incident is most urgent?*, *Explain INC-001*, *Which shelters have space?*, or *What hospital beds are available?*")
+    if any(phrase in q for phrase in ("what can you do", "your capabilities", "how can you help", "help me use", "what do you do")):
+        return (
+            "I can answer questions about incident IDs and priorities, reported rescue resources, hospital beds, "
+            "shelter spaces, and safety steps for earthquakes, floods, cyclones, fires, and extreme heat. "
+            "Operational records are demo data unless an authorized live source is explicitly connected. "
+            "I cannot dispatch teams, contact emergency services, or verify a live emergency."
+        )
+    if any(phrase in q for phrase in ("hello", "hi", "hey", "good morning", "good afternoon", "good evening")) and len(q.split()) <= 6:
+        return (
+            "Hello! I'm ResQ Assistant. Ask me a specific question about an incident, reported resources, "
+            "hospital beds, shelters, or disaster-safety guidance. I'll answer that question directly."
+        )
+    if any(phrase in q for phrase in ("how many active incidents", "active incident count", "incident statistics", "overall situation", "situation summary", "dashboard summary", "how many incidents")):
+        return (
+            f"**Current demo snapshot**\n\n"
+            f"- Active incidents: **{metrics.get('active_incidents', 0)}**\n"
+            f"- Critical incidents: **{metrics.get('critical_incidents', 0)}**\n"
+            f"- People affected: **{metrics.get('people_affected', 0)}**\n"
+            f"- Resources marked available: **{metrics.get('available_resources', 0)}**\n\n"
+            "These figures describe the currently loaded prototype records, not verified live operations."
+        )
+    return (
+        "I couldn't answer that specific question from the current offline response rules, and I don't want "
+        "to give you unrelated incident statistics. Try asking about a specific incident ID (for example, "
+        "INC-001), priority, available resources, hospital beds, shelter spaces, or disaster-safety guidance. "
+        "For broader questions, configure the optional language-model provider so I can interpret and answer "
+        "open-ended questions. Operational records may be simulated; I won't invent live facts."
+    )
 
 
 def answer_question(question: str, center: CommandCenter, history: list[dict[str, str]] | None = None) -> str:
