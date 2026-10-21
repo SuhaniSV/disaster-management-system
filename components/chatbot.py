@@ -171,6 +171,13 @@ def _app_help(question: str) -> str | None:
         "earthquake", "earthquakes", "flood", "floods", "fire", "fires", "cyclone", "cyclones",
         "hurricane", "hurricanes", "typhoon", "typhoons", "landslide", "landslides", "storm", "storms",
     }
+    # Keep count questions out of the how-to path even when they contain
+    # "reported" and a disaster name (e.g. "how many earthquakes reported").
+    if _contains_fuzzy_phrase(
+        q, ("how many", "number of", "count of", "incident count", "total", "count")
+    ):
+        return None
+
     # Accept common typos (e.g. "repot") without turning "how many ... reported?"
     # into a how-to request: count intent is handled earlier in answer_question.
     has_report_action = any(
