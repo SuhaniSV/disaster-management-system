@@ -38,26 +38,32 @@ def render_live_alerts() -> None:
 
     with st.expander("Connect official feeds", expanded=False):
         st.markdown(
-            "**IMD** — obtain API access from the official portal and set IMD_API_TOKEN in .env or Streamlit secrets. "
-            "The adapter reads district nowcast and district warning endpoints documented by IMD.\n\n"
-            "**NDMA SACHET / CAP** — set NDMA_CAP_FEED_URL to a feed URL supplied by SACHET/your authorized agency. "
-            "No undocumented feed identifier is guessed.\n\n"
-            "Use the links below to confirm current access requirements. Never put credentials in source code."
+            "**If this app is deployed on Streamlit Community Cloud:** open the app's settings/manage page, "
+            "find **Secrets**, add the keys shown below, save, then restart/reload the app. Local .env values "
+            "on your computer are not automatically available to the deployed app.\n\n"
+            "**IMD** — first obtain an API token from the official IMD API portal. The adapter requests the "
+            "district nowcast and district warning endpoints; the token alone does not guarantee endpoint access.\n\n"
+            "**NDMA SACHET / CAP** — use the official guide to obtain the authorized feed URL/identifier. "
+            "Do not use a guessed URL. Never put credentials in GitHub or in the source code."
         )
         st.markdown(
             f"[IMD API portal]({IMD_API_PORTAL}) · [IMD API reference]({IMD_REFERENCE}) · "
             f"[SACHET portal]({NDMA_PORTAL}) · [SACHET CAP feed guide]({NDMA_FEED_GUIDE})"
         )
         st.code(
-            "IMD_API_TOKEN=your-issued-token\n"
-            "NDMA_CAP_FEED_URL=https://sachet.ndma.gov.in/your-authorized-feed-url",
-            language="text",
+            'IMD_API_TOKEN = "YOUR_ISSUED_IMD_API_TOKEN"\n'
+            'NDMA_CAP_FEED_URL = "YOUR_AUTHORIZED_SACHET_CAP_FEED_URL"',
+            language="toml",
+        )
+        st.caption(
+            "Replace both placeholders with values actually issued/provided by the official services. "
+            "Do not paste secrets into chat, commit them, or use the example values literally."
         )
 
     with st.form("live_alert_filters"):
         col1, col2 = st.columns(2)
-        state = col1.text_input("Filter by state (optional)", placeholder="e.g. Maharashtra")
-        district = col2.text_input("Filter by district (optional)", placeholder="e.g. Pune")
+        state = col1.text_input("Filter IMD by state (optional)", placeholder="e.g. Maharashtra")
+        district = col2.text_input("Filter IMD by district (optional)", placeholder="e.g. Pune")
         refresh = st.form_submit_button("Fetch latest government data", type="primary")
 
     desired_filters = {"state": state.strip(), "district": district.strip()}
@@ -77,32 +83,53 @@ def render_live_alerts() -> None:
     m1, m2, m3 = st.columns(3)
     m1.metric("Government alert items", len(imd_rows) + len(ndma_rows))
     m2.metric("Sources responding", f"{good_sources} / 2")
-    m3.metric("Last successful fetch", _fmt_time(max([x for x in (imd.get("fetched_at"), ndma.get("fetched_at")) if x] or [None])))
-    st.caption("Requests are on-demand. IMD responses are cached for five minutes; SACHET uses ETag validation when provided.")
+    successful_times = [x for x in (imd.get("fetched_at"), ndma.get("fetched_at")) if x]
+    m3.metric("Last successful fetch", _fmt_time(max(successful_times) if successful_times else None))
+    st.caption(
+        "Requests are on-demand. IMD responses are cached for five minutes; SACHET uses ETag validation when provided. "
+        "State/district filters apply to IMD records; the authorized SACHET feed is displayed as supplied by that feed."
+    )
 
     with st.expander("Source status and diagnostics", expanded=True):
         st.markdown("**India Meteorological Department (IMD)**")
-        st.markdown(f"Status: {'🟢 Request succeeded' if imd.get('ok') else '🟡 Not connected / unavailable'}")
+        st.markdown(f"Status: {'🟢 At least one request succeeded' if imd.get('ok') else '🟡 Unavailable'}")
         if not imd.get("configured"):
-            st.info("IMD API token is not configured. Add IMD_API_TOKEN locally and refresh.")
+            st.warning(
+                "IMD_API_TOKEN is missing. For the deployed app, add it in Streamlit Community Cloud → app settings → "
+                "Secrets. For local runs, add it to your ignored .env file and restart Streamlit."
+            )
         for name in ("nowcast", "warnings"):
             result = imd.get(name, {})
-            st.markdown(f"- **District {name}:** {'OK' if result.get('ok') else 'Unavailable'} · {len(result.get('rows', []))} records · fetched {_fmt_time(result.get('fetched_at'))}")
+            status = "OK" if result.get("ok") else "Unavailable"
+            st.markdown(
+                f"- **District {name}:** {status} · {len(result.get('rows', []))} records · "
+                f"fetched {_fmt_time(result.get('fetched_at'))}"
+            )
+            if result.get("cached"):
+                st.caption(f"{name.title()} response served from the five-minute cache.")
             if result.get("error"):
                 st.caption(result["error"])
         st.markdown(f"[Open IMD source]({IMD_REFERENCE})")
         st.divider()
         st.markdown("**NDMA SACHET / India CAP**")
-        st.markdown(f"Status: {'🟢 Request succeeded' if ndma.get('ok') else '🟡 Not connected / unavailable'}")
-        st.caption(ndma.get("error") or "")
+        st.markdown(f"Status: {'🟢 Request succeeded' if ndma.get('ok') else '🟡 Unavailable'}")
+        if not ndma.get("configured"):
+            st.warning(
+                "NDMA_CAP_FEED_URL is missing. Obtain the authorized feed URL from the official SACHET guide, "
+                "then add it under Streamlit Community Cloud Secrets or your local .env file."
+            )
+        if ndma.get("error"):
+            st.caption(ndma["error"])
         st.caption(f"Records: {len(ndma_rows)} · fetched {_fmt_time(ndma.get('fetched_at'))}")
+        if ndma.get("cached"):
+            st.caption("SACHET returned HTTP 304; the previously fetched feed is being reused.")
         st.markdown(f"[Open SACHET portal]({NDMA_PORTAL}) · [CAP feed guide]({NDMA_FEED_GUIDE})")
 
     st.markdown("### IMD district nowcasts")
     if not imd.get("nowcast", {}).get("ok"):
-        st.info("Nowcast data is unavailable. Confirm IMD API access and token before interpreting the absence of records.")
+        st.info("Nowcast data is unavailable. See the IMD status and diagnostic message above.")
     elif not imd.get("nowcast", {}).get("rows"):
-        st.info("The successful response returned no records matching these filters.")
+        st.info("The request succeeded, but no nowcast records matched these filters. This does not establish that no warnings exist.")
     else:
         for row in imd["nowcast"]["rows"][:50]:
             title = _value(row, ("District", "district", "district_name", "Station", "station", "name"), "District nowcast")
@@ -112,9 +139,9 @@ def render_live_alerts() -> None:
 
     st.markdown("### IMD district warnings")
     if not imd.get("warnings", {}).get("ok"):
-        st.info("Warning data is unavailable. See source diagnostics above.")
+        st.info("Warning data is unavailable. See the IMD status and diagnostic message above.")
     elif not imd.get("warnings", {}).get("rows"):
-        st.info("The successful response returned no warning records matching these filters.")
+        st.info("The request succeeded, but no warning records matched these filters. This does not establish that no warnings exist.")
     else:
         for row in imd["warnings"]["rows"][:50]:
             title = _value(row, ("District", "district", "district_name", "warning", "Warning", "event"), "District warning")
@@ -124,11 +151,11 @@ def render_live_alerts() -> None:
 
     st.markdown("### NDMA SACHET / CAP alerts")
     if not ndma.get("configured"):
-        st.info("NDMA feed setup is required. Use the official SACHET guide to obtain the authorized feed URL.")
+        st.info("Feed setup is required. Use the official SACHET guide to obtain the authorized feed URL.")
     elif not ndma.get("ok"):
-        st.info(ndma.get("error") or "Feed unavailable. Check the official source.")
+        st.info(ndma.get("error") or "Feed unavailable. Check the official source and feed access.")
     elif not ndma_rows:
-        st.info("The feed request succeeded but returned no parseable alert items.")
+        st.info("The feed request succeeded but returned no parseable alert items. Check the feed format and source response.")
     else:
         for row in ndma_rows[:100]:
             with st.container(border=True):

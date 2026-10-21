@@ -1,10 +1,11 @@
 """Official live-data adapters for IMD weather warnings and NDMA CAP alerts.
 
-These feeds are kept separate from operator-reported incidents: a weather alert is
-not automatically an incident and never changes deterministic incident scores.
+These read-only feeds remain separate from operator-reported incidents and never
+change deterministic incident scores or dispatch resources.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import threading
 import time
@@ -32,7 +33,7 @@ def _now() -> str:
 
 
 def _setting(name: str, default: str = "") -> str:
-    """Read environment configuration first, then Streamlit secrets when available."""
+    """Read environment variables first, then Streamlit secrets."""
     value = os.getenv(name, "").strip()
     if value:
         return value
@@ -45,7 +46,7 @@ def _setting(name: str, default: str = "") -> str:
 
 
 def _as_rows(payload: Any) -> list[dict[str, Any]]:
-    """Normalize the list and common wrapped response shapes used by public APIs."""
+    """Normalize lists and common wrapped JSON response shapes."""
     if isinstance(payload, list):
         return [row for row in payload if isinstance(row, dict)]
     if isinstance(payload, dict):
@@ -62,48 +63,71 @@ def _as_rows(payload: Any) -> list[dict[str, Any]]:
 
 
 def _cached_get_json(url: str, token: str) -> dict[str, Any]:
+    """Fetch JSON with a five-minute cache scoped to the credential used."""
+    if not token:
+        return {
+            "ok": False, "rows": [], "fetched_at": None, "cached": False,
+            "error": "IMD_API_TOKEN is missing. Obtain an issued token from the official IMD API portal and configure it in the app's secrets.",
+        }
+
+    # Never store the token itself in the cache key.
+    cache_key = f"{url}:{hashlib.sha256(token.encode('utf-8')).hexdigest()}"
     now = time.monotonic()
     with _lock:
-        cached = _cache.get(url)
+        cached = _cache.get(cache_key)
         if cached and now - cached["stored_at"] < _CACHE_SECONDS:
-            return {"ok": True, "rows": cached["rows"], "fetched_at": cached["fetched_at"], "cached": True, "error": None}
-    if not token:
-        return {"ok": False, "rows": [], "fetched_at": None, "cached": False,
-                "error": "IMD API credentials are not configured. Register at the official IMD API portal and set IMD_API_TOKEN."}
-    header_name = os.getenv("IMD_API_AUTH_HEADER", "Authorization").strip() or "Authorization"
-    scheme = os.getenv("IMD_API_AUTH_SCHEME", "Bearer").strip()
+            return {
+                "ok": True, "rows": cached["rows"], "fetched_at": cached["fetched_at"],
+                "cached": True, "error": None,
+            }
+
+    header_name = _setting("IMD_API_AUTH_HEADER", "Authorization").strip() or "Authorization"
+    scheme = _setting("IMD_API_AUTH_SCHEME", "Bearer").strip()
     auth_value = f"{scheme} {token}".strip()
     try:
         response = requests.get(
             url,
-            headers={header_name: auth_value, "Accept": "application/json", "User-Agent": "ResQ-AI/1.0 (government-data dashboard)"},
+            headers={
+                header_name: auth_value,
+                "Accept": "application/json",
+                "User-Agent": "ResQ-AI/1.0 (government-data dashboard)",
+            },
             timeout=_TIMEOUT_SECONDS,
         )
         if response.status_code == 304 and cached:
             with _lock:
                 cached["stored_at"] = now
-            return {"ok": True, "rows": cached["rows"], "fetched_at": cached["fetched_at"], "cached": True, "error": None}
+            return {
+                "ok": True, "rows": cached["rows"], "fetched_at": cached["fetched_at"],
+                "cached": True, "error": None,
+            }
         response.raise_for_status()
         payload = response.json()
         rows = _as_rows(payload)
         fetched_at = _now()
         with _lock:
-            _cache[url] = {"rows": rows, "fetched_at": fetched_at, "stored_at": now, "etag": response.headers.get("ETag")}
+            _cache[cache_key] = {
+                "rows": rows, "fetched_at": fetched_at, "stored_at": now,
+                "etag": response.headers.get("ETag"),
+            }
         return {"ok": True, "rows": rows, "fetched_at": fetched_at, "cached": False, "error": None}
     except requests.HTTPError as exc:
         status = getattr(exc.response, "status_code", "unknown")
         if status in (401, 403):
-            message = f"IMD rejected the credentials (HTTP {status}). Check your issued token and auth header settings."
+            message = f"IMD rejected the credentials (HTTP {status}). Check the issued token, permissions, and documented auth header."
         else:
-            message = f"IMD request failed (HTTP {status})."
+            message = f"IMD request failed (HTTP {status}). Check endpoint access and the current IMD API reference."
     except (requests.RequestException, ValueError) as exc:
-        message = f"Could not retrieve valid IMD data: {type(exc).__name__}."
+        message = f"Could not retrieve valid IMD data: {type(exc).__name__}. Check network access and the official API response format."
     return {"ok": False, "rows": [], "fetched_at": None, "cached": False, "error": message}
 
 
 def _matches(row: dict[str, Any], state: str = "", district: str = "") -> bool:
     state_text = " ".join(str(row.get(key, "")) for key in ("State", "STATE", "state", "state_name")).casefold()
-    district_text = " ".join(str(row.get(key, "")) for key in ("District", "DISTRICT", "district", "district_name", "Station", "station")).casefold()
+    district_text = " ".join(
+        str(row.get(key, ""))
+        for key in ("District", "DISTRICT", "district", "district_name", "Station", "station")
+    ).casefold()
     return (not state or state.casefold() in state_text) and (not district or district.casefold() in district_text)
 
 
@@ -112,19 +136,19 @@ def _clean_rows(rows: list[dict[str, Any]], state: str = "", district: str = "")
 
 
 def get_imd_live_data(state: str = "", district: str = "") -> dict[str, Any]:
-    """Fetch IMD district nowcasts and five-day district warnings."""
+    """Fetch IMD district nowcasts and warnings using the configured official API."""
+    api_base = _setting("IMD_API_BASE", IMD_API_BASE).rstrip("/")
     token = _setting("IMD_API_TOKEN")
-    nowcast = _cached_get_json(f"{IMD_API_BASE}/districtnowcast", token)
-    warnings = _cached_get_json(f"{IMD_API_BASE}/districtwarning", token)
+    nowcast = _cached_get_json(f"{api_base}/districtnowcast", token)
+    warnings = _cached_get_json(f"{api_base}/districtwarning", token)
     nowcast["rows"] = _clean_rows(nowcast["rows"], state, district)
     warnings["rows"] = _clean_rows(warnings["rows"], state, district)
-    configured = bool(token)
     successful = sum(bool(item["ok"]) for item in (nowcast, warnings))
     return {
         "source": "India Meteorological Department (IMD)",
         "source_url": IMD_REFERENCE,
         "portal_url": IMD_API_PORTAL,
-        "configured": configured,
+        "configured": bool(token),
         "ok": successful > 0,
         "fetched_at": max((item["fetched_at"] for item in (nowcast, warnings) if item["fetched_at"]), default=None),
         "nowcast": nowcast,
@@ -143,7 +167,7 @@ def _xml_text(element: ET.Element, local_name: str) -> str:
 
 
 def _parse_cap_xml(content: bytes) -> list[dict[str, Any]]:
-    """Parse RSS items or CAP alert XML without assuming one feed wrapper."""
+    """Parse RSS item XML or a single CAP alert XML document."""
     try:
         root = ET.fromstring(content)
     except ET.ParseError:
@@ -172,11 +196,7 @@ def _parse_cap_xml(content: bytes) -> list[dict[str, Any]]:
 
 
 def get_ndma_cap_alerts() -> dict[str, Any]:
-    """Fetch an NDMA SACHET CAP/RSS feed URL supplied by the user/agency.
-
-    SACHET's official agency guide requires ETag-aware caching. We honor ETag
-    validators and reuse the last parsed response on HTTP 304.
-    """
+    """Fetch a CAP/RSS URL supplied by SACHET or an authorized agency."""
     url = _setting("NDMA_CAP_FEED_URL")
     if not url:
         return {
@@ -186,16 +206,25 @@ def get_ndma_cap_alerts() -> dict[str, Any]:
             "configured": False,
             "alerts": [],
             "fetched_at": None,
-            "error": "Configure NDMA_CAP_FEED_URL with the authorized CAP/RSS feed URL supplied by SACHET. The official guide uses a feed identifier; do not guess it.",
+            "error": "NDMA_CAP_FEED_URL is missing. Obtain the authorized CAP/RSS feed URL from SACHET; the app will not guess a feed identifier.",
         }
+
     parsed = urlparse(url)
     if parsed.scheme != "https" or parsed.hostname not in {"sachet.ndma.gov.in", "www.sachet.ndma.gov.in"}:
-        return {"source": "NDMA SACHET / India CAP", "source_url": NDMA_PORTAL, "ok": False, "configured": True,
-                "alerts": [], "fetched_at": None, "error": "For safety, NDMA feed URL must use HTTPS on sachet.ndma.gov.in."}
+        return {
+            "source": "NDMA SACHET / India CAP", "source_url": NDMA_PORTAL,
+            "ok": False, "configured": True, "alerts": [], "fetched_at": None,
+            "error": "For safety, the feed URL must use HTTPS on sachet.ndma.gov.in.",
+        }
+
     now = time.monotonic()
+    cache_key = "ndma:" + url
     with _lock:
-        cached = _cache.get("ndma:" + url)
-    headers = {"Accept": "application/rss+xml, application/xml, text/xml", "User-Agent": "ResQ-AI/1.0 (government-data dashboard)"}
+        cached = _cache.get(cache_key)
+    headers = {
+        "Accept": "application/rss+xml, application/xml, text/xml",
+        "User-Agent": "ResQ-AI/1.0 (government-data dashboard)",
+    }
     if cached and cached.get("etag"):
         headers["If-None-Match"] = cached["etag"]
     try:
@@ -203,15 +232,30 @@ def get_ndma_cap_alerts() -> dict[str, Any]:
         if response.status_code == 304 and cached:
             with _lock:
                 cached["stored_at"] = now
-            return {"source": "NDMA SACHET / India CAP", "source_url": url, "ok": True, "configured": True,
-                    "alerts": cached["alerts"], "fetched_at": cached["fetched_at"], "cached": True, "error": None}
+            return {
+                "source": "NDMA SACHET / India CAP", "source_url": url, "ok": True,
+                "configured": True, "alerts": cached["alerts"], "fetched_at": cached["fetched_at"],
+                "cached": True, "error": None,
+            }
         response.raise_for_status()
         alerts = _parse_cap_xml(response.content)
         fetched_at = _now()
         with _lock:
-            _cache["ndma:" + url] = {"alerts": alerts, "fetched_at": fetched_at, "stored_at": now, "etag": response.headers.get("ETag")}
-        return {"source": "NDMA SACHET / India CAP", "source_url": url, "ok": True, "configured": True,
-                "alerts": alerts, "fetched_at": fetched_at, "cached": False, "error": None}
+            _cache[cache_key] = {
+                "alerts": alerts, "fetched_at": fetched_at, "stored_at": now,
+                "etag": response.headers.get("ETag"),
+            }
+        return {
+            "source": "NDMA SACHET / India CAP", "source_url": url, "ok": True,
+            "configured": True, "alerts": alerts, "fetched_at": fetched_at,
+            "cached": False, "error": None,
+        }
+    except requests.HTTPError as exc:
+        status = getattr(exc.response, "status_code", "unknown")
+        message = f"NDMA feed request failed (HTTP {status}). Verify the authorized feed URL and access."
     except requests.RequestException as exc:
-        return {"source": "NDMA SACHET / India CAP", "source_url": url, "ok": False, "configured": True,
-                "alerts": [], "fetched_at": None, "error": f"Could not retrieve NDMA feed: {type(exc).__name__}."}
+        message = f"Could not retrieve NDMA feed: {type(exc).__name__}. Check feed availability and network access."
+    return {
+        "source": "NDMA SACHET / India CAP", "source_url": url, "ok": False,
+        "configured": True, "alerts": [], "fetched_at": None, "error": message,
+    }
