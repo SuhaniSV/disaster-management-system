@@ -63,6 +63,16 @@ def _safety_guidance(question: str) -> str | None:
             "[Ready.gov flood safety](https://www.ready.gov/floods)\n\n"
             "Check local authority alerts for current routes and evacuation orders; this assistant cannot verify road conditions."
         )
+    if any(word in q for word in ("thunderstorm", "thunder storm", "lightning", "lightning strike")):
+        return (
+            "**Thunderstorm and lightning safety**\\n\\n"
+            "- Go inside a substantial enclosed building or a hard-topped vehicle; no outdoor place is fully safe during lightning.\\n"
+            "- Stay away from windows, plumbing, corded electrical equipment, and water; avoid open fields, hilltops, isolated trees, and metal fences.\\n"
+            "- Wait at least 30 minutes after the last thunder before returning outdoors. If someone is struck, call emergency services; it is safe to touch them.\\n\\n"
+            "Official guidance: [India Meteorological Department](https://mausam.imd.gov.in/) · "
+            "[Ready.gov lightning safety](https://www.ready.gov/thunderstorms-lightning)\\n\\n"
+            "This is general guidance, not a live local warning. Follow official local instructions."
+        )
     if any(word in q for word in ("cyclone", "hurricane", "typhoon", "severe storm", "strong wind")):
         return (
             "**Cyclone and severe-storm safety**\n\n"
