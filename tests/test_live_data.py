@@ -443,3 +443,43 @@ def test_wis2_parser_accepts_base64_when_encoding_is_missing():
     assert seen == 1
     assert len(alerts) == 1
     assert alerts[0]["title"] == "Encoded warning"
+
+
+
+def test_imd_public_warning_outlook_parses_current_official_warning(monkeypatch):
+    cache_key = "imd-public-warning-outlook:" + live_data.IMD_PUBLIC_WARNING_URL
+    live_data._cache.pop(cache_key, None)
+
+    class FakeResponse:
+        text = """
+        <html><body>
+          <h2>Sub-division-wise warnings</h2>
+          <p>Warnings for West Rajasthan</p>
+          <p>Date of Issue: October 21, 2026</p>
+          <p>Day 1:October 21, 2026 | No warning</p>
+          <p>Day 4: October 24, 2026 | Thunderstorm &amp; Lightning, Squall etc</p>
+          <p>Warnings for East Rajasthan</p>
+          <p>Date of Issue: October 21, 2026</p>
+          <p>Day 1:October 21, 2026 | No warning</p>
+        </body></html>
+        """
+
+        def raise_for_status(self):
+            return None
+
+    def fake_get(url, *args, **kwargs):
+        assert url == live_data.IMD_PUBLIC_WARNING_URL
+        return FakeResponse()
+
+    monkeypatch.setattr(live_data.requests, "get", fake_get)
+
+    try:
+        result = live_data.get_imd_public_warning_outlook()
+        assert result["ok"] is True
+        assert len(result["rows"]) == 1
+        assert result["rows"][0]["area"] == "West Rajasthan"
+        assert result["rows"][0]["forecast_date"] == "October 24, 2026"
+        assert "Thunderstorm" in result["rows"][0]["title"]
+        assert result["rows"][0]["source"] == "IMD public subdivision warning outlook"
+    finally:
+        live_data._cache.pop(cache_key, None)
