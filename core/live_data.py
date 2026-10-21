@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlparse
 
+import certifi
 import requests
 
 IMD_API_BASE = os.getenv("IMD_API_BASE", "https://api.imd.gov.in/api/v1").rstrip("/")
@@ -273,7 +274,7 @@ def _parse_wis2_cap_items(payload: Any) -> tuple[list[dict[str, Any]], int]:
                 if not href.startswith("https://wis2box.imd.gov.in/"):
                     continue
                 try:
-                    response = requests.get(href, timeout=_TIMEOUT_SECONDS)
+                    response = requests.get(href, timeout=_TIMEOUT_SECONDS, verify=certifi.where())
                     response.raise_for_status()
                     parsed = _parse_cap_xml(response.content, source="IMD WIS2 CAP feed")
                     if parsed:
@@ -292,7 +293,8 @@ def get_imd_public_cap_alerts() -> dict[str, Any]:
         cached = _cache.get(cache_key)
         if cached and now - cached["stored_at"] < _CACHE_SECONDS:
             return {
-                "ok": True, "alerts": cached["alerts"], "records_seen": cached.get("records_seen", len(cached["alerts"])),
+                "ok": cached.get("ok", True), "alerts": cached["alerts"], "records_seen": cached.get("records_seen", len(cached["alerts"])),
+                "rss_ok": cached.get("rss_ok", False), "wis2_ok": cached.get("wis2_ok", False),
                 "fetched_at": cached["fetched_at"], "cached": True, "error": cached.get("error"),
                 "source_url": cached.get("source_url", IMD_PUBLIC_CAP_URL),
             }
@@ -300,6 +302,8 @@ def get_imd_public_cap_alerts() -> dict[str, Any]:
     errors: list[str] = []
     alerts: list[dict[str, Any]] = []
     records_seen = 0
+    rss_ok = False
+    wis2_ok = False
     etag = None
     source_url = IMD_PUBLIC_CAP_URL
     try:
@@ -308,13 +312,16 @@ def get_imd_public_cap_alerts() -> dict[str, Any]:
             headers={"Accept": "application/rss+xml, application/xml, text/xml",
                      "User-Agent": "ResQ-AI/1.0 (government-data dashboard)"},
             timeout=_TIMEOUT_SECONDS,
+            verify=certifi.where(),
         )
         response.raise_for_status()
+        rss_ok = True
         etag = response.headers.get("ETag")
-        alerts = _active_cap_alerts(_parse_cap_xml(response.content, source="IMD public CAP feed"))
-        records_seen = len(alerts)
+        parsed_rss = _parse_cap_xml(response.content, source="IMD public CAP feed")
+        records_seen = len(parsed_rss)
+        alerts = _active_cap_alerts(parsed_rss)
     except requests.RequestException as exc:
-        errors.append(f"IMD RSS: {type(exc).__name__}")
+        errors.append(f"IMD RSS: {type(exc).__name__}: {str(exc)[:180]}")
 
     if not alerts:
         source_url = IMD_WIS2_CAP_URL
@@ -325,16 +332,19 @@ def get_imd_public_cap_alerts() -> dict[str, Any]:
                 headers={"Accept": "application/geo+json, application/json",
                          "User-Agent": "ResQ-AI/1.0 (government-data dashboard)"},
                 timeout=_TIMEOUT_SECONDS,
+                verify=certifi.where(),
             )
             response.raise_for_status()
+            wis2_ok = True
             alerts, records_seen = _parse_wis2_cap_items(response.json())
         except (requests.RequestException, ValueError) as exc:
-            errors.append(f"IMD WIS2 CAP: {type(exc).__name__}")
+            errors.append(f"IMD WIS2 CAP: {type(exc).__name__}: {str(exc)[:180]}")
 
     fetched_at = _now()
     error = None if alerts else ("No active alerts parsed. " + "; ".join(errors) if errors else None)
     result = {
-        "ok": True, "alerts": alerts, "records_seen": records_seen,
+        "ok": rss_ok or wis2_ok, "rss_ok": rss_ok, "wis2_ok": wis2_ok,
+        "alerts": alerts, "records_seen": records_seen,
         "fetched_at": fetched_at, "cached": False, "error": error,
         "source_url": source_url,
     }
@@ -342,6 +352,7 @@ def get_imd_public_cap_alerts() -> dict[str, Any]:
         _cache[cache_key] = {
             "alerts": alerts, "records_seen": records_seen, "fetched_at": fetched_at,
             "stored_at": now, "etag": etag, "error": error, "source_url": source_url,
+            "ok": rss_ok or wis2_ok, "rss_ok": rss_ok, "wis2_ok": wis2_ok,
         }
     return result
 
