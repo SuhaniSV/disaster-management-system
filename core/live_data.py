@@ -455,6 +455,7 @@ def _parse_wis2_cap_items(
                     pass
                 candidates.append(encoded.encode("utf-8"))
 
+            content_parsed = False
             for decoded in candidates:
                 parsed = _parse_cap_xml(
                     decoded,
@@ -462,9 +463,10 @@ def _parse_wis2_cap_items(
                 )
                 if parsed:
                     alerts.extend(parsed)
+                    content_parsed = True
                     break
 
-            if alerts and alerts[-1].get("source") == "IMD WIS2 CAP feed":
+            if content_parsed:
                 continue
 
         # Some WIS2 records expose a link to the underlying CAP XML.
