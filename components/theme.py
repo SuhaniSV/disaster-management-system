@@ -1605,7 +1605,7 @@ def render_sidebar(center: CommandCenter) -> None:
             </div>
           </div>
           <div class="rx-brand-line"></div>
-          <div class="rx-brand-status"><span class="rx-status-dot"></span> COMMAND SYSTEM · ONLINE</div>
+          <div class="rx-brand-status"><span class="rx-status-dot"></span> AI-ASSISTED DECISION SUPPORT</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1690,7 +1690,7 @@ def render_header(center: CommandCenter, subtitle: str) -> None:
         f"""
         <div class="resq-header">
           <div>
-            <div class="resq-kicker">RESCUEX · LIVE INTELLIGENCE</div>
+            <div class="resq-kicker">RESQ-AI · LIVE INTELLIGENCE</div>
             <h1 class="resq-title">INTELLIGENT DISASTER COMMAND CENTER</h1>
             <div class="resq-sub">{subtitle}</div>
           </div>
