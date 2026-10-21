@@ -14,7 +14,7 @@ import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import certifi
 import requests
@@ -769,8 +769,17 @@ def get_imd_live_data(
 
 
 def get_ndma_cap_alerts() -> dict[str, Any]:
-    """Fetch a CAP/RSS URL supplied by SACHET or an authorized agency."""
+    """Fetch the authorized SACHET CAP feed URL or build it from an issued identifier."""
     url = _setting("NDMA_CAP_FEED_URL")
+    identifier = _setting("NDMA_CAP_IDENTIFIER")
+
+    # SACHET's official integration guide documents this endpoint pattern.
+    # The identifier must be supplied by SACHET; never guess one.
+    if not url and identifier:
+        url = (
+            "https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile"
+            f"?identifier={quote(identifier, safe='')}"
+        )
 
     if not url:
         return {
