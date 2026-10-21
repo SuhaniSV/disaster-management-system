@@ -111,17 +111,17 @@ def get_imd_public_warning_outlook() -> dict[str, Any]:
         response.raise_for_status()
         parser = _VisibleTextParser()
         parser.feed(response.text)
-        text = re.sub(r"\\s+", " ", parser.text())
+        text = re.sub(r"\s+", " ", parser.text())
 
         issue_match = re.search(
-            r"Date of Issue:\\s*([A-Za-z]+\\s+\\d{1,2},\\s+\\d{4})",
+            r"Date of Issue:\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})",
             text,
             re.IGNORECASE,
         )
         issue_date = issue_match.group(1) if issue_match else ""
 
         sections = list(
-            re.finditer(r"Warnings for\\s+(.+?)\\s+Date of Issue:", text, re.IGNORECASE)
+            re.finditer(r"Warnings for\s+(.+?)\s+Date of Issue:", text, re.IGNORECASE)
         )
         rows: list[dict[str, Any]] = []
         for index, section in enumerate(sections):
@@ -129,7 +129,7 @@ def get_imd_public_warning_outlook() -> dict[str, Any]:
             end = sections[index + 1].start() if index + 1 < len(sections) else len(text)
             block = text[section.end():end]
             day_pattern = re.compile(
-                r"Day\\s*(\\d+)\\s*:\\s*(.*?)\\s*\\|\\s*(.*?)(?=\\s+Day\\s*\\d+\\s*:|$)",
+                r"Day\s*(\d+)\s*:\s*(.*?)\s*\|\s*(.*?)(?=\s+Day\s*\d+\s*:|$)",
                 re.IGNORECASE,
             )
             for match in day_pattern.finditer(block):
