@@ -41,8 +41,8 @@ def test_general_preparedness_links_official_sources():
 
 def test_unmatched_question_falls_back_to_operational_snapshot_summary():
     answer = _fallback("Give me a dashboard summary", _empty_center())
-    assert "active incidents" in answer
-    assert "simulated data" in answer
+    assert "active incidents" in answer.casefold()
+    assert "simulated data" in answer.casefold()
 
 
 def test_answer_question_uses_deterministic_safety_guidance_when_llm_is_configured(monkeypatch):
@@ -85,8 +85,8 @@ def test_answer_question_falls_back_when_llm_request_fails(monkeypatch):
     monkeypatch.setattr(chatbot, "LLMClient", FailingLLMClient)
     answer = chatbot.answer_question("Summarize the response snapshot", _empty_center())
 
-    assert "active incidents" in answer
-    assert "simulated data" in answer
+    assert "active incidents" in answer.casefold()
+    assert "simulated data" in answer.casefold()
 
 
 def test_answer_question_falls_back_when_llm_returns_invalid_json(monkeypatch):
@@ -101,8 +101,8 @@ def test_answer_question_falls_back_when_llm_returns_invalid_json(monkeypatch):
     monkeypatch.setattr(chatbot, "LLMClient", InvalidJSONLLMClient)
     answer = chatbot.answer_question("Summarize the response snapshot", _empty_center())
 
-    assert "active incidents" in answer
-    assert "simulated data" in answer
+    assert "active incidents" in answer.casefold()
+    assert "simulated data" in answer.casefold()
 
 def test_ambulance_request_gets_emergency_guidance_without_llm(monkeypatch):
     import components.chatbot as chatbot

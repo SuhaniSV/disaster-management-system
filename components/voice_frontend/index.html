@@ -32,6 +32,39 @@ const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 let recognition=null,finalText="",active=false,listening=false,speaking=false,lastResponseId=null,restartPending=false;
 send("streamlit:componentReady",{apiVersion:1});send("streamlit:setFrameHeight",{height:540});
 function setStatus(t){status.textContent=t}
+function renderInlineMarkdown(text,parent){
+ const pattern=/\\[([^\\]]+)\\]\\((https?:\\/\\/[^\\s)]+)\\)|\\*\\*([^*]+)\\*\\*/g;
+ let cursor=0,match;
+ while((match=pattern.exec(text))!==null){
+  parent.appendChild(document.createTextNode(text.slice(cursor,match.index)));
+  if(match[1]&&match[2]){
+   const link=document.createElement("a");link.textContent=match[1];link.href=match[2];
+   link.target="_blank";link.rel="noopener noreferrer";link.style.color="#a9bdff";
+   parent.appendChild(link);
+  }else if(match[3]){
+   const strong=document.createElement("strong");strong.textContent=match[3];parent.appendChild(strong);
+  }
+  cursor=pattern.lastIndex;
+ }
+ parent.appendChild(document.createTextNode(text.slice(cursor)));
+}
+function renderResponse(text){
+ responseBox.replaceChildren();
+ const lines=String(text||"").split(/\\r?\\n/);
+ let list=null;
+ for(const raw of lines){
+  const line=raw.trim();
+  if(!line){list=null;continue}
+  if(/^[-*]\\s+/.test(line)){
+   if(!list){list=document.createElement("ul");list.style.margin="4px 0";list.style.paddingLeft="20px";responseBox.appendChild(list)}
+   const item=document.createElement("li");item.style.margin="3px 0";
+   renderInlineMarkdown(line.replace(/^[-*]\\s+/,""),item);list.appendChild(item);
+  }else{
+   list=null;const paragraph=document.createElement("p");paragraph.style.margin="0 0 7px";
+   renderInlineMarkdown(line,paragraph);responseBox.appendChild(paragraph);
+  }
+ }
+}
 function setActive(v){active=v;startBtn.disabled=v;stopBtn.disabled=!v;interruptBtn.disabled=!v;orb.classList.toggle("active",v)}
 function listen(){if(!active||!recognition||listening||speaking)return;finalText="";try{recognition.start()}catch(_){restartPending=true}}
 function speak(text){
@@ -54,6 +87,6 @@ else{
 startBtn.addEventListener("click",()=>{if(!recognition)return;setActive(true);setStatus("Starting voice conversation…");listen()});
 stopBtn.addEventListener("click",()=>{setActive(false);restartPending=false;if(recognition&&listening)recognition.stop();if("speechSynthesis"in window)window.speechSynthesis.cancel();speaking=false;setStatus("Voice conversation ended.")});
 interruptBtn.addEventListener("click",()=>{if(!active||!recognition)return;if("speechSynthesis"in window)window.speechSynthesis.cancel();speaking=false;if(listening){try{recognition.stop()}catch(_){}}setStatus("Interrupted. Listening to you now…");window.setTimeout(listen,150)});
-window.addEventListener("message",event=>{const d=event.data;if(!d||d.type!=="streamlit:render"||!d.args)return;const a=d.args,t=String(a.response_text||"");if(t)responseBox.textContent=t;if(a.response_id!==undefined&&a.response_id!==lastResponseId){lastResponseId=a.response_id;if(t)speak(t)}send("streamlit:setFrameHeight",{height:document.body.scrollHeight+4})});
+window.addEventListener("message",event=>{const d=event.data;if(!d||d.type!=="streamlit:render"||!d.args)return;const a=d.args,t=String(a.response_text||"");if(t)renderResponse(t);if(a.response_id!==undefined&&a.response_id!==lastResponseId){lastResponseId=a.response_id;if(t)speak(t)}send("streamlit:setFrameHeight",{height:document.body.scrollHeight+4})});
 })();
 </script></body></html>
