@@ -171,9 +171,13 @@ def render_live_alerts() -> None:
             "portal. The adapter requests district nowcast and district "
             "warning endpoints; a token alone does not guarantee endpoint "
             "access.\n\n"
-            "**NDMA SACHET / CAP** — use the official guide to obtain the "
-            "authorized feed URL or identifier. Do not use a guessed URL. "
-            "Never put credentials in GitHub or source code."
+            "**NDMA SACHET / CAP** — the official integration guide documents "
+            "the CAP XML endpoint. Add either an authorized feed URL or the "
+            "identifier issued by SACHET. The identifier is not public or "
+            "guessable; do not invent one. This integrated CAP channel may "
+            "carry alerts from IMD, CWC, INCOIS, DGRE, GSI and FSI, depending "
+            "on the identifier and what each agency publishes. Never put "
+            "credentials in GitHub or source code."
         )
 
         st.markdown(
