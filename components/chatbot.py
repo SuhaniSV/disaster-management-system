@@ -205,7 +205,7 @@ def _app_help(question: str) -> str | None:
 def _safety_guidance(question: str) -> str | None:
     """Conservative general safety guidance with links to official public sources."""
     q = question.casefold()
-    if any(word in q for word in ("earthquake", "earth quake", "tremor", "aftershock")):
+    if _has_phrase(q, ("earthquake", "earth quake", "tremor", "aftershock")):
         return (
             "**Earthquake safety**\n\n"
             "- If shaking starts indoors: **Drop, Cover, and Hold On**; protect your head and neck and stay away from windows. "
@@ -217,7 +217,7 @@ def _safety_guidance(question: str) -> str | None:
             "[India NDMA](https://ndma.gov.in/)\n\n"
             "This is general guidance, not a location-specific warning. Follow local emergency instructions."
         )
-    if any(word in q for word in ("flood", "flash flood", "floodwater", "waterlogging")):
+    if _has_phrase(q, ("flood", "flash flood", "floodwater", "waterlogging")):
         return (
             "**Flood safety**\n\n"
             "- Move to higher ground early if flooding threatens; follow official evacuation instructions.\n"
@@ -227,7 +227,7 @@ def _safety_guidance(question: str) -> str | None:
             "[Ready.gov flood safety](https://www.ready.gov/floods)\n\n"
             "Check local authority alerts for current routes and evacuation orders; this assistant cannot verify road conditions."
         )
-    if any(word in q for word in ("cyclone", "hurricane", "typhoon", "severe storm", "strong wind")):
+    if _has_phrase(q, ("cyclone", "hurricane", "typhoon", "severe storm", "strong wind")):
         return (
             "**Cyclone and severe-storm safety**\n\n"
             "- Follow official warnings and evacuate when instructed; do not wait for visible conditions to worsen.\n"
@@ -237,7 +237,7 @@ def _safety_guidance(question: str) -> str | None:
             "[India Meteorological Department](https://mausam.imd.gov.in/)\n\n"
             "Use IMD and local-authority updates for current warnings; this answer is not a live forecast."
         )
-    if any(word in q for word in ("fire", "wildfire", "smoke", "building burning")):
+    if _has_phrase(q, ("fire", "wildfire", "smoke", "building burning")):
         return (
             "**Fire and smoke safety**\n\n"
             "- Leave immediately using the safest available exit; stay low under smoke and do not use elevators.\n"
@@ -247,7 +247,7 @@ def _safety_guidance(question: str) -> str | None:
             "[Ready.gov](https://www.ready.gov/)\n\n"
             "If there is an active fire or immediate danger, contact emergency services now."
         )
-    if any(word in q for word in ("heatwave", "heat wave", "extreme heat", "heat stroke", "hot weather")):
+    if _has_phrase(q, ("heatwave", "heat wave", "extreme heat", "heat stroke", "hot weather")):
         return (
             "**Extreme-heat safety**\n\n"
             "- Move to a cool or shaded place, reduce exertion, and drink water regularly if the person is conscious and able to swallow.\n"
@@ -270,7 +270,7 @@ def _safety_guidance(question: str) -> str | None:
             "If you are elsewhere, use your local emergency number.\n"
             "- Do not enter an unsafe area or delay calling for help to use this chatbot. ResQ Assistant cannot call responders or dispatch resources."
         )
-    if any(word in q for word in ("safety advice", "prepare for disaster", "emergency kit", "preparedness", "go bag")):
+    if _has_phrase(q, ("safety advice", "prepare for disaster", "emergency kit", "preparedness", "go bag")):
         return (
             "**Basic disaster preparedness**\n\n"
             "- Keep drinking water, essential medicines, a first-aid kit, a torch, batteries/power bank, important documents, and emergency contacts ready.\n"
@@ -294,16 +294,16 @@ def _fallback(question: str, center: CommandCenter) -> str:
     metrics = center.metrics()
     active = [row for row in center.incidents if str(row.get("status", "")).lower() != "resolved"]
     active.sort(key=lambda row: int(row.get("priority_score") or 0), reverse=True)
-    if any(word in q for word in ("shelter", "evacuation centre", "evacuation center")):
+    if _has_phrase(q, ("shelter", "evacuation centre", "evacuation center")):
         shelters = sorted(center.shelters, key=lambda row: max(0, int(row.get("capacity") or 0) - int(row.get("occupied") or 0)), reverse=True)
         lines = ["Shelter capacity in the simulated dataset:"]
         lines += [f"- **{r.get('name', r.get('id'))}**: {max(0, int(r.get('capacity') or 0)-int(r.get('occupied') or 0))} spaces reported free." for r in shelters[:5]]
         return "\n".join(lines) + "\n\nVerify capacity with local authorities before directing anyone to a shelter."
-    if any(word in q for word in ("hospital", "bed", "medical capacity")):
+    if _has_phrase(q, ("hospital", "bed", "medical capacity")):
         lines = [f"Reported available hospital beds: **{metrics.get('hospital_beds_available', 0)}**."]
         lines += [f"- **{r.get('name', r.get('id'))}**: {r.get('available_beds', 0)} of {r.get('total_beds', 0)} beds reported available." for r in center.hospitals]
         return "\n".join(lines) + "\n\nThese are simulated figures and must be confirmed directly."
-    if any(word in q for word in ("resource", "team", "ambulance", "available unit")):
+    if _has_phrase(q, ("resource", "team", "ambulance", "available unit")):
         rows = [r for r in center.resources if str(r.get("status", "")).lower() == "available"]
         return f"**{len(rows)} resources** are marked available in the demo state.\n" + "\n".join(f"- {r.get('id')}: {r.get('name', r.get('type', 'Resource'))}" for r in rows[:10]) + "\n\nConfirm availability before deployment."
     match = re.search(r"\bINC[- ]?\d+\b", question, re.I)
@@ -319,7 +319,7 @@ def _fallback(question: str, center: CommandCenter) -> str:
                     f"- Recommendation: {row.get('recommended_action', 'Review with coordinator')}\n\n"
                     "The priority is calculated by the deterministic engine; this assistant cannot authorize dispatch.")
         return f"I couldn't find **{incident_id}** in the current demo snapshot."
-    if any(word in q for word in ("urgent", "critical", "highest priority", "most important", "top incident", "priorit")) and active:
+    if _has_phrase(q, ("urgent", "critical", "highest priority", "most important", "top incident", "priorit")) and active:
         row = active[0]
         return (f"**Highest-priority active incident: {row.get('id')} — {row.get('disaster_type')}**\n\n"
                 f"- Score: **{row.get('priority_score', 0)}/100 ({row.get('urgency', 'Unknown')})**\n"
